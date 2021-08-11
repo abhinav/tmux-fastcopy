@@ -12,7 +12,7 @@ TOOLS = $(GOLINT) $(STATICCHECK) $(MOCKGEN)
 export GOBIN ?= $(shell pwd)/$(BIN)
 
 .PHONY: all
-all: build lint test
+all: build lint test gomodtidy nogenerate
 
 .PHONY: build
 build: $(TMUX_FASTCOPY)
@@ -63,3 +63,23 @@ staticcheck: $(STATICCHECK)
 
 $(STATICCHECK): tools/go.mod
 	cd tools && go install honnef.co/go/tools/cmd/staticcheck
+
+.PHONY: gomodtidy
+gomodtidy: go.mod go.sum tools/go.mod tools/go.sum
+	go mod tidy
+	cd tools && go mod tidy
+	@if ! git diff --quiet $^; then \
+		echo "go mod tidy changed files:" && \
+		git status --porcelain $^ && \
+		false; \
+	fi
+
+.PHONY: nogenerate
+nogenerate:
+	make generate
+	@if ! git diff --quiet; then \
+		echo "working tree is dirty after generate:" && \
+		git status --porcelain && \
+		false; \
+	fi
+
