@@ -32,7 +32,7 @@ tools: $(TOOLS)
 
 .PHONY: test
 test: $(GO_FILES)
-	go test -v -race ./...
+	go test -race ./...
 
 .PHONY: cover
 cover: $(GO_FILES)
