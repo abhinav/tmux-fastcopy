@@ -2,9 +2,7 @@ package main
 
 import (
 	"fmt"
-	"os/exec"
 	"regexp"
-	"strings"
 
 	"github.com/abhinav/tmux-fastcopy/internal/log"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux"
@@ -30,8 +28,10 @@ var _alphabet = []rune("abcdefghijklmnopqrstuvwxyz")
 // running inside a tmux window that it has full control over. (wrapper takes
 // care of ensuring that.)
 type app struct {
-	Log       *log.Logger
-	Tmux      tmux.Driver
+	Log    *log.Logger
+	Tmux   tmux.Driver
+	Action action // what to do with the selection
+
 	NewScreen func() (tcell.Screen, error) // == tcell.NewScreen
 }
 
@@ -115,23 +115,7 @@ func (app *app) Run(cfg *config) error {
 		return err
 	}
 
-	if len(cfg.Action) == 0 {
-		return app.Tmux.SetBuffer(tmux.SetBufferRequest{
-			Client: targetPane.ClientName,
-			Data:   selection,
-		})
-	}
-
-	// Log stdout and stderr for the user-provided command.
-	logw := &log.Writer{
-		Log: app.Log.WithName(cfg.Action),
-	}
-	defer logw.Close()
-	cmd := exec.Command(cfg.Action)
-	cmd.Stdin = strings.NewReader(selection)
-	cmd.Stdout = logw
-	cmd.Stderr = logw
-	return cmd.Run()
+	return app.Action.Run(selection)
 }
 
 type ctrl struct {

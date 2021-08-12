@@ -8,6 +8,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-runewidth v0.0.13
+	github.com/mattn/go-shellwords v1.0.12
 	github.com/maxatome/go-testdeep v1.9.2
 	github.com/rivo/uniseg v0.2.0
 	go.uber.org/atomic v1.9.0 // indirect
