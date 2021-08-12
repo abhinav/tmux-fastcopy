@@ -2,13 +2,22 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"sort"
 )
 
-const _defaultAlphabet = "abcdefghijklmnopqrstuvwxyz"
+const _defaultAlphabet alphabet = "abcdefghijklmnopqrstuvwxyz"
 
-func validateAlphabet(alpha string) error {
+type alphabet string
+
+var _ flag.Value = (*alphabet)(nil)
+
+func (al *alphabet) String() string {
+	return string(*al)
+}
+
+func (al *alphabet) Set(alpha string) error {
 	if len(alpha) < 2 {
 		return errors.New("alphabet must have at least two items")
 	}
@@ -23,6 +32,8 @@ func validateAlphabet(alpha string) error {
 	}
 
 	if len(dupes) == 0 {
+		// success!
+		*al = alphabet(alpha)
 		return nil
 	}
 

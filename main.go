@@ -56,7 +56,7 @@ The following flags are available:
 			-action pbcopy
 		Uses 'tmux set-buffer' by default.
 	-alphabet STRING
-		characters used for hints in-order.
+		characters used to generate labels.
 			-alphabet "asdfghjkl;"  # qwerty home row
 		Uses the English alphabet by default.
 	-log FILE
@@ -67,33 +67,21 @@ The following flags are available:
 `
 
 func (cmd *mainCmd) Run(args []string) error {
+	var cfg config
+
 	flag := flag.NewFlagSet("tmux-fastcopy", flag.ContinueOnError)
 	flag.SetOutput(cmd.Stderr)
 	flag.Usage = func() {
 		name := flag.Name()
 		fmt.Fprintf(flag.Output(), _usage, name)
 	}
-
-	cfg := newConfig(flag)
-
+	cfg.RegisterFlags(flag)
 	if err := flag.Parse(args); err != nil {
 		return err
 	}
 
 	if args := flag.Args(); len(args) > 0 {
 		return fmt.Errorf("unexpected arguments %q", args)
-	}
-
-	if len(cfg.Action) == 0 {
-		cfg.Action = _defaultAction
-	}
-
-	if alpha := cfg.Alphabet; len(alpha) > 0 {
-		if err := validateAlphabet(alpha); err != nil {
-			return err
-		}
-	} else {
-		cfg.Alphabet = _defaultAlphabet
 	}
 
 	logW, closeLog, err := cfg.BuildLogWriter(cmd.Stderr)
@@ -107,11 +95,6 @@ func (cmd *mainCmd) Run(args []string) error {
 		logger = logger.WithLevel(log.Debug)
 	}
 
-	action, err := (&actionFactory{Log: logger}).New(cfg.Action)
-	if err != nil {
-		return fmt.Errorf("load action %q: %v", cfg.Action, err)
-	}
-
 	tmuxDriver := tmux.ShellDriver{Log: logger.WithName("tmux")}
 
 	return (&wrapper{
@@ -119,12 +102,14 @@ func (cmd *mainCmd) Run(args []string) error {
 			Log:       logger,
 			Tmux:      &tmuxDriver,
 			NewScreen: tcell.NewScreen,
-			Action:    action,
+			NewAction: (&actionFactory{
+				Log: logger,
+			}).New,
 		},
 		Log:        logger,
 		Tmux:       &tmuxDriver,
 		Executable: cmd.Executable,
 		Getenv:     cmd.Getenv,
 		Getpid:     cmd.Getpid,
-	}).Run(cfg)
+	}).Run(&cfg)
 }

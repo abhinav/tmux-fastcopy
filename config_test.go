@@ -15,7 +15,7 @@ import (
 	"github.com/maxatome/go-testdeep/td"
 )
 
-func TestConfigParse(t *testing.T) {
+func TestConfigFlags(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -56,17 +56,19 @@ func TestConfigParse(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			t.Parallel()
 
+			var cfg config
 			fset := flag.NewFlagSet(t.Name(), flag.ContinueOnError)
-			cfg := newConfig(fset)
+			cfg.RegisterFlags(fset)
 
 			td.CmpNoError(t, fset.Parse(tt.give))
-			td.Cmp(t, cfg, &tt.want)
+			td.Cmp(t, cfg, tt.want)
 
 			t.Run("args", func(t *testing.T) {
-				args := cfg.Args()
+				args := cfg.Flags()
 
 				fset := flag.NewFlagSet(t.Name(), flag.ContinueOnError)
-				got := newConfig(fset)
+				var got config
+				got.RegisterFlags(fset)
 
 				if !td.CmpNoError(t, fset.Parse(args)) {
 					return
@@ -140,7 +142,7 @@ func TestConfigBuildLogWriter(t *testing.T) {
 	})
 }
 
-func TestConfigArgsQuickCheck(t *testing.T) {
+func TestConfigFlagsQuickCheck(t *testing.T) {
 	// Make sure that config is always round-trippable because we need to
 	// the wrapper process to be able to send the exact same configuration
 	// down to the wrapped process.
@@ -155,22 +157,24 @@ func TestConfigArgsQuickCheck(t *testing.T) {
 	random := rand.New(rand.NewSource(seed))
 	quick.Check(func(give config) bool {
 		flag := flag.NewFlagSet(t.Name(), flag.ContinueOnError)
-		got := newConfig(flag)
+		var got config
+		got.RegisterFlags(flag)
 
-		if !td.CmpNoError(t, flag.Parse(give.Args())) {
+		if !td.CmpNoError(t, flag.Parse(give.Flags())) {
 			return false
 		}
 
-		return td.Cmp(t, got, &give)
+		return td.Cmp(t, got, give)
 	}, &quick.Config{Rand: random})
 }
 
 func TestUsageHasAllConfigFlags(t *testing.T) {
 	// We use _usage to write the user facing help. Make sure that every
-	// flag registered by newConfig has a corresponding entry in _usage.
+	// flag registered by RegisterFlags has a corresponding entry in
+	// _usage.
 
 	fset := flag.NewFlagSet(t.Name(), flag.ContinueOnError)
-	newConfig(fset)
+	new(config).RegisterFlags(fset)
 
 	fset.VisitAll(func(f *flag.Flag) {
 		td.Cmp(t, _usage, td.Contains("\t-"+f.Name),
