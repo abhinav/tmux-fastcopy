@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/abhinav/tmux-fastcopy/internal/log"
+	"github.com/abhinav/tmux-fastcopy/internal/log/logtest"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux/tmuxtest"
 	"github.com/golang/mock/gomock"
 	"github.com/maxatome/go-testdeep/td"
@@ -32,7 +32,7 @@ func TestWrapperWrapped(t *testing.T) {
 		w := wrapper{
 			Wrapped: runFunc(wrapped),
 			Tmux:    mockTmux,
-			Log:     log.Discard,
+			Log:     logtest.NewLogger(t),
 			Getenv:  getenv,
 		}
 		return w.Run(nil)
