@@ -39,7 +39,8 @@ func TestValidateAlphabet(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			t.Parallel()
 
-			err := validateAlphabet(tt.give)
+			var alpha alphabet
+			err := alpha.Set(tt.give)
 			if len(tt.wantErr) == 0 {
 				td.CmpNoError(t, err)
 				return

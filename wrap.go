@@ -9,6 +9,7 @@ import (
 	"github.com/abhinav/tmux-fastcopy/internal/log"
 	"github.com/abhinav/tmux-fastcopy/internal/tail"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux"
+	"github.com/abhinav/tmux-fastcopy/internal/tmux/tmuxopt"
 	"go.uber.org/multierr"
 )
 
@@ -76,6 +77,16 @@ func (w *wrapper) Run(cfg *config) (err error) {
 	}()
 	cfg.LogFile = tmpLog.Name()
 
+	tmuxLoader := tmuxopt.Loader{Tmux: w.Tmux}
+	var tmuxCfg config
+	tmuxCfg.RegisterOptions(&tmuxLoader)
+	if err := tmuxLoader.Load(tmux.ShowOptionsRequest{Global: true}); err != nil {
+		return fmt.Errorf("load options: %v", err)
+	}
+
+	cfg.FillFrom(&tmuxCfg)
+	cfg.FillFrom(&_defaultConfig)
+
 	// TODO: This is probably the spot for us to interpret tmux options and
 	// turn them into flags.
 
@@ -84,7 +95,7 @@ func (w *wrapper) Run(cfg *config) (err error) {
 		Height:   pane.Height,
 		Detached: true,
 		Env:      []string{fmt.Sprintf("%v=%v", _parentPIDEnv, parent)},
-		Command:  append([]string{exe}, cfg.Args()...),
+		Command:  append([]string{exe}, cfg.Flags()...),
 	}
 	if _, err := w.Tmux.NewSession(req); err != nil {
 		return err

@@ -26,9 +26,9 @@ var _regex = []*regexp.Regexp{
 // running inside a tmux window that it has full control over. (wrapper takes
 // care of ensuring that.)
 type app struct {
-	Log    *log.Logger
-	Tmux   tmux.Driver
-	Action action // what to do with the selection
+	Log       *log.Logger
+	Tmux      tmux.Driver
+	NewAction func(string) (action, error)
 
 	NewScreen func() (tcell.Screen, error) // == tcell.NewScreen
 }
@@ -114,7 +114,12 @@ func (app *app) Run(cfg *config) error {
 		return err
 	}
 
-	return app.Action.Run(selection)
+	action, err := app.NewAction(cfg.Action)
+	if err != nil {
+		return fmt.Errorf("load action %q: %v", cfg.Action, err)
+	}
+
+	return action.Run(selection)
 }
 
 type ctrl struct {
