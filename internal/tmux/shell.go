@@ -189,19 +189,3 @@ func (s *ShellDriver) SendSignal(sig string) error {
 	s.Log.Debugf("wait-for -S: %v", sig)
 	return cmd.Run()
 }
-
-func (s *ShellDriver) SetBuffer(req SetBufferRequest) error {
-	s.init()
-
-	args := []string{"set-buffer"}
-	if c := req.Client; len(c) > 0 {
-		args = append(args, "-t", c)
-	}
-	args = append(args, req.Data)
-
-	cmd := s.cmd(args...)
-	defer s.errorWriter(&cmd.Stdout, &cmd.Stderr)()
-
-	s.Log.Debugf("set buffer: %v", req)
-	return cmd.Run()
-}

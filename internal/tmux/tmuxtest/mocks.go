@@ -107,20 +107,6 @@ func (mr *MockDriverMockRecorder) SendSignal(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendSignal", reflect.TypeOf((*MockDriver)(nil).SendSignal), arg0)
 }
 
-// SetBuffer mocks base method.
-func (m *MockDriver) SetBuffer(arg0 tmux.SetBufferRequest) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetBuffer", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetBuffer indicates an expected call of SetBuffer.
-func (mr *MockDriverMockRecorder) SetBuffer(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetBuffer", reflect.TypeOf((*MockDriver)(nil).SetBuffer), arg0)
-}
-
 // SwapPane mocks base method.
 func (m *MockDriver) SwapPane(arg0 tmux.SwapPaneRequest) error {
 	m.ctrl.T.Helper()

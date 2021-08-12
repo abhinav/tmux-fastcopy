@@ -49,16 +49,20 @@ The following flags are available:
 		pane identifier.
 		Uses the current pane if unspecified.
 	-action COMMAND
-		shell command that handles the selection.
-		COMMAND should expect the selection over stdin.
-		By default, tmux-fastcopy will update the write to the tmux
-		copy buffer.
+		command and arguments that handle the selection.
+		The first '{}' in the argument list is the selected text.
+			-action 'tmux set-buffer -- {}'
+		If there is no '{}', the selected text is sent over stdin.
+			-action pbcopy
+		Uses 'tmux set-buffer' by default.
 	-log FILE
 		file to write logs to.
 		Uses stderr by default.
 	-verbose
 		log more output.
 `
+
+const _defaultAction = "tmux set-buffer -- {}"
 
 func (cmd *mainCmd) Run(args []string) error {
 	flag := flag.NewFlagSet("tmux-fastcopy", flag.ContinueOnError)
@@ -78,6 +82,10 @@ func (cmd *mainCmd) Run(args []string) error {
 		return fmt.Errorf("unexpected arguments %q", args)
 	}
 
+	if len(cfg.Action) == 0 {
+		cfg.Action = _defaultAction
+	}
+
 	logW, closeLog, err := cfg.BuildLogWriter(cmd.Stderr)
 	if err != nil {
 		return err
@@ -89,6 +97,11 @@ func (cmd *mainCmd) Run(args []string) error {
 		logger = logger.WithLevel(log.Debug)
 	}
 
+	action, err := (&actionFactory{Log: logger}).New(cfg.Action)
+	if err != nil {
+		return fmt.Errorf("load action %q: %v", cfg.Action, err)
+	}
+
 	tmuxDriver := tmux.ShellDriver{Log: logger.WithName("tmux")}
 
 	return (&wrapper{
@@ -96,6 +109,7 @@ func (cmd *mainCmd) Run(args []string) error {
 			Log:       logger,
 			Tmux:      &tmuxDriver,
 			NewScreen: tcell.NewScreen,
+			Action:    action,
 		},
 		Log:        logger,
 		Tmux:       &tmuxDriver,

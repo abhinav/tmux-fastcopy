@@ -29,9 +29,6 @@ type Driver interface {
 	// SendSignal runs the tmux wait-for command, activating anyone waiting
 	// for this signal.
 	SendSignal(string) error
-
-	// SetBuffer runs the tmux set-buffer command.
-	SetBuffer(SetBufferRequest) error
 }
 
 // NewSessionRequest specifies the parameter for a new-session command.
@@ -136,18 +133,5 @@ func (r ResizeWindowRequest) String() string {
 	b.Put("window", r.Window)
 	b.Put("width", r.Width)
 	b.Put("height", r.Height)
-	return b.String()
-}
-
-// SetBufferRequest specifies the parameters for a set-buffer command.
-type SetBufferRequest struct {
-	Client string
-	Data   string
-}
-
-func (r SetBufferRequest) String() string {
-	var b stringobj.Builder
-	b.Put("client", r.Client)
-	b.Put("data", r.Data)
 	return b.String()
 }
