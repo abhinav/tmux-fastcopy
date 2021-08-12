@@ -95,17 +95,6 @@ func (l *Loader) Load(req tmux.ShowOptionsRequest) (err error) {
 type stringValue string
 
 func (v *stringValue) Set(s string) error {
-	if len(s) > 0 {
-		// Try to unquote but don't fail if it doesn't work.
-		switch s[0] {
-		case '"', '\'':
-			o, err := strconv.Unquote(s)
-			if err == nil {
-				s = o
-			}
-		}
-	}
-
 	*(*string)(v) = s
 	return nil
 }
