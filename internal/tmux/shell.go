@@ -11,6 +11,18 @@ import (
 
 const _defaultTmux = "tmux"
 
+// minimal hook to change how exec.Cmd are run. Tests will provide a different
+// implementation.
+type runner struct {
+	Run    func(*exec.Cmd) error
+	Output func(*exec.Cmd) ([]byte, error)
+}
+
+var defaultRunner = runner{
+	Run:    (*exec.Cmd).Run,
+	Output: (*exec.Cmd).Output,
+}
+
 // ShellDriver is a Driver implementation that shells out to tmux to run
 // commands.
 type ShellDriver struct {
@@ -20,8 +32,7 @@ type ShellDriver struct {
 	// Logger to write to.
 	Log *log.Logger
 
-	// Optional OS environment override. Used in tests.
-	env  []string
+	run  *runner
 	once sync.Once
 }
 
@@ -36,12 +47,15 @@ func (s *ShellDriver) init() {
 		if s.Log == nil {
 			s.Log = log.Discard
 		}
+
+		if s.run == nil {
+			s.run = &defaultRunner
+		}
 	})
 }
 
 func (s *ShellDriver) cmd(args ...string) *exec.Cmd {
 	cmd := exec.Command(s.Path, args...)
-	cmd.Env = s.env
 	return cmd
 }
 
@@ -87,7 +101,7 @@ func (s *ShellDriver) NewSession(req NewSessionRequest) ([]byte, error) {
 	defer s.errorWriter(&cmd.Stderr)()
 
 	s.Log.Debugf("new session: %v", req)
-	return cmd.Output()
+	return s.run.Output(cmd)
 }
 
 // CapturePane runs the capture-pane command and returns its output.
@@ -108,7 +122,7 @@ func (s *ShellDriver) CapturePane(req CapturePaneRequest) ([]byte, error) {
 	defer s.errorWriter(&cmd.Stderr)()
 
 	s.Log.Debugf("capture pane: %v", req)
-	return cmd.Output()
+	return s.run.Output(cmd)
 }
 
 // DisplayMessage displays the given message in tmux and returns its output.
@@ -125,7 +139,7 @@ func (s *ShellDriver) DisplayMessage(req DisplayMessageRequest) ([]byte, error) 
 	defer s.errorWriter(&cmd.Stderr)()
 
 	s.Log.Debugf("display message: %v", req)
-	return cmd.Output()
+	return s.run.Output(cmd)
 }
 
 // SwapPane runs the swap-pane command.
@@ -144,7 +158,7 @@ func (s *ShellDriver) SwapPane(req SwapPaneRequest) error {
 	defer s.errorWriter(&cmd.Stdout, &cmd.Stderr)()
 
 	s.Log.Debugf("swap pane: %v", req)
-	return cmd.Run()
+	return s.run.Run(cmd)
 }
 
 // ResizeWindow runs the resize-window command.
@@ -167,7 +181,7 @@ func (s *ShellDriver) ResizeWindow(req ResizeWindowRequest) error {
 	defer s.errorWriter(&cmd.Stdout, &cmd.Stderr)()
 
 	s.Log.Debugf("resize window: %v", req)
-	return cmd.Run()
+	return s.run.Run(cmd)
 }
 
 // WaitForSignal runs the wait-for command.
@@ -177,7 +191,7 @@ func (s *ShellDriver) WaitForSignal(sig string) error {
 	defer s.errorWriter(&cmd.Stdout, &cmd.Stderr)()
 
 	s.Log.Debugf("wait-for: %v", sig)
-	return cmd.Run()
+	return s.run.Run(cmd)
 }
 
 // SendSignal runs the wait-for -S command.
@@ -187,5 +201,5 @@ func (s *ShellDriver) SendSignal(sig string) error {
 	defer s.errorWriter(&cmd.Stdout, &cmd.Stderr)()
 
 	s.Log.Debugf("wait-for -S: %v", sig)
-	return cmd.Run()
+	return s.run.Run(cmd)
 }
