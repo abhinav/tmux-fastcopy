@@ -29,6 +29,10 @@ type Driver interface {
 	// SendSignal runs the tmux wait-for command, activating anyone waiting
 	// for this signal.
 	SendSignal(string) error
+
+	// ShowOptions runs the tmux shopw-options command and returns its
+	// output.
+	ShowOptions(ShowOptionsRequest) ([]byte, error)
 }
 
 // NewSessionRequest specifies the parameter for a new-session command.
@@ -133,5 +137,16 @@ func (r ResizeWindowRequest) String() string {
 	b.Put("window", r.Window)
 	b.Put("width", r.Width)
 	b.Put("height", r.Height)
+	return b.String()
+}
+
+// ShowOptionsRequest specifies the parameters for a show-options command.
+type ShowOptionsRequest struct {
+	Global bool // show global options
+}
+
+func (r ShowOptionsRequest) String() string {
+	var b stringobj.Builder
+	b.Put("global", r.Global)
 	return b.String()
 }

@@ -203,3 +203,18 @@ func (s *ShellDriver) SendSignal(sig string) error {
 	s.Log.Debugf("wait-for -S: %v", sig)
 	return s.run.Run(cmd)
 }
+
+// ShowOptions runs the show-options command.
+func (s *ShellDriver) ShowOptions(req ShowOptionsRequest) ([]byte, error) {
+	s.init()
+
+	args := []string{"show-options"}
+	if req.Global {
+		args = append(args, "-g")
+	}
+	cmd := s.cmd(args...)
+	defer s.errorWriter(&cmd.Stderr)()
+
+	s.Log.Debugf("show options: %v", req)
+	return s.run.Output(cmd)
+}
