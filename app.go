@@ -22,8 +22,6 @@ var _regex = []*regexp.Regexp{
 	regexp.MustCompile(`[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}`),
 }
 
-var _alphabet = []rune("abcdefghijklmnopqrstuvwxyz")
-
 // app implements the main fastcopy application logic. It assumes that it's
 // running inside a tmux window that it has full control over. (wrapper takes
 // care of ensuring that.)
@@ -89,9 +87,10 @@ func (app *app) Run(cfg *config) error {
 	defer screen.Fini()
 
 	ctrl := ctrl{
-		Screen: screen,
-		Log:    app.Log,
-		Text:   string(bs),
+		Screen:   screen,
+		Log:      app.Log,
+		Text:     string(bs),
+		Alphabet: []rune(cfg.Alphabet),
 	}
 	ctrl.Init()
 
@@ -119,9 +118,10 @@ func (app *app) Run(cfg *config) error {
 }
 
 type ctrl struct {
-	Screen tcell.Screen
-	Log    *log.Logger
-	Text   string
+	Screen   tcell.Screen
+	Log      *log.Logger
+	Alphabet []rune
+	Text     string
 
 	w   *Widget
 	ui  *ui.App
@@ -146,7 +146,7 @@ func (c *ctrl) Init() {
 		Text:         c.Text,
 		Matches:      ms,
 		Handler:      c,
-		HintAlphabet: _alphabet,
+		HintAlphabet: c.Alphabet,
 		Style: Style{
 			Normal:         base,
 			Match:          base.Foreground(tcell.ColorGreen),

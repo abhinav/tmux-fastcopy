@@ -51,18 +51,20 @@ The following flags are available:
 	-action COMMAND
 		command and arguments that handle the selection.
 		The first '{}' in the argument list is the selected text.
-			-action 'tmux set-buffer -- {}'
+			-action 'tmux set-buffer -- {}'  # default
 		If there is no '{}', the selected text is sent over stdin.
 			-action pbcopy
 		Uses 'tmux set-buffer' by default.
+	-alphabet STRING
+		characters used for hints in-order.
+			-alphabet "asdfghjkl;"  # qwerty home row
+		Uses the English alphabet by default.
 	-log FILE
 		file to write logs to.
 		Uses stderr by default.
 	-verbose
 		log more output.
 `
-
-const _defaultAction = "tmux set-buffer -- {}"
 
 func (cmd *mainCmd) Run(args []string) error {
 	flag := flag.NewFlagSet("tmux-fastcopy", flag.ContinueOnError)
@@ -84,6 +86,14 @@ func (cmd *mainCmd) Run(args []string) error {
 
 	if len(cfg.Action) == 0 {
 		cfg.Action = _defaultAction
+	}
+
+	if alpha := cfg.Alphabet; len(alpha) > 0 {
+		if err := validateAlphabet(alpha); err != nil {
+			return err
+		}
+	} else {
+		cfg.Alphabet = _defaultAlphabet
 	}
 
 	logW, closeLog, err := cfg.BuildLogWriter(cmd.Stderr)
