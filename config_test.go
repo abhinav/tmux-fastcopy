@@ -5,9 +5,12 @@ import (
 	"flag"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"testing"
+	"testing/quick"
+	"time"
 
 	"github.com/maxatome/go-testdeep/td"
 )
@@ -40,6 +43,11 @@ func TestConfigParse(t *testing.T) {
 			desc: "action",
 			give: []string{"-action", "pbcopy"},
 			want: config{Action: "pbcopy"},
+		},
+		{
+			desc: "alphabet",
+			give: []string{"-alphabet", "0123456789"},
+			want: config{Alphabet: "0123456789"},
 		},
 	}
 
@@ -130,6 +138,31 @@ func TestConfigBuildLogWriter(t *testing.T) {
 		_, err = os.Stat(logFile)
 		td.CmpError(t, err)
 	})
+}
+
+func TestConfigArgsQuickCheck(t *testing.T) {
+	// Make sure that config is always round-trippable because we need to
+	// the wrapper process to be able to send the exact same configuration
+	// down to the wrapped process.
+
+	seed := time.Now().UnixNano()
+	defer func() {
+		if t.Failed() {
+			t.Logf("random seed: %v", seed)
+		}
+	}()
+
+	random := rand.New(rand.NewSource(seed))
+	quick.Check(func(give config) bool {
+		flag := flag.NewFlagSet(t.Name(), flag.ContinueOnError)
+		got := newConfig(flag)
+
+		if !td.CmpNoError(t, flag.Parse(give.Args())) {
+			return false
+		}
+
+		return td.Cmp(t, got, &give)
+	}, &quick.Config{Rand: random})
 }
 
 func TestUsageHasAllConfigFlags(t *testing.T) {

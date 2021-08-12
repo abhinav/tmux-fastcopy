@@ -7,20 +7,24 @@ import (
 )
 
 type config struct {
-	Pane    string
-	Verbose bool
+	Pane     string
+	Action   string
+	Alphabet string
+
 	LogFile string
-	Action  string
+	Verbose bool
 }
 
 func newConfig(flag *flag.FlagSet) *config {
 	var c config
 
 	// No help here because we put it all in _usage.
+
 	flag.StringVar(&c.Pane, "pane", "", "")
 	flag.StringVar(&c.Action, "action", "", "")
-	flag.BoolVar(&c.Verbose, "verbose", false, "")
+	flag.StringVar(&c.Alphabet, "alphabet", "", "")
 	flag.StringVar(&c.LogFile, "log", "", "")
+	flag.BoolVar(&c.Verbose, "verbose", false, "")
 
 	return &c
 }
@@ -32,14 +36,17 @@ func (c *config) Args() []string {
 	if len(c.Pane) > 0 {
 		args = append(args, "-pane", c.Pane)
 	}
+	if len(c.Action) > 0 {
+		args = append(args, "-action", c.Action)
+	}
+	if len(c.Alphabet) > 0 {
+		args = append(args, "-alphabet", c.Alphabet)
+	}
 	if c.Verbose {
 		args = append(args, "-verbose")
 	}
 	if len(c.LogFile) > 0 {
 		args = append(args, "-log", c.LogFile)
-	}
-	if len(c.Action) > 0 {
-		args = append(args, "-action", c.Action)
 	}
 	return args
 }
