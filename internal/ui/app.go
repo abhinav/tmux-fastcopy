@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/abhinav/tmux-fastcopy/internal/log"
+	"github.com/benbjohnson/clock"
 	"github.com/gdamore/tcell/v2"
 )
 
@@ -27,6 +28,9 @@ type App struct {
 	// FPS specifies the refresh rate for the UI. Defaults to 25.
 	FPS int
 
+	// Clock is the source of time for the app.
+	Clock clock.Clock
+
 	once   sync.Once
 	err    error // error, if any
 	quit   chan struct{}
@@ -37,6 +41,10 @@ func (app *App) init() {
 	app.once.Do(func() {
 		if app.Log == nil {
 			app.Log = log.Discard
+		}
+
+		if app.Clock == nil {
+			app.Clock = clock.New()
 		}
 
 		app.quit = make(chan struct{})
@@ -62,6 +70,8 @@ func (app *App) Wait() error {
 }
 
 func (app *App) run() {
+	defer app.handlePanic()
+
 	events := app.events
 	for {
 		select {
@@ -80,20 +90,20 @@ func (app *App) run() {
 }
 
 func (app *App) handleEvent(ev tcell.Event) {
-	if app.Root.HandleEvent(ev) {
-		return
-	}
-
 	switch ev := ev.(type) {
 	case *tcell.EventResize:
 		app.Screen.Sync()
+		return
 
 	case *tcell.EventKey:
 		switch ev.Key() {
 		case tcell.KeyEscape, tcell.KeyCtrlC:
 			app.Stop()
+			return
 		}
 	}
+
+	app.Root.HandleEvent(ev)
 }
 
 // Stop informs the application that it's time to stop. This will cause the Run
@@ -150,7 +160,7 @@ func (app *App) renderLoop() {
 		fps = _defaultFPS
 	}
 
-	ticker := time.NewTicker(time.Second / time.Duration(fps))
+	ticker := app.Clock.Ticker(time.Second / time.Duration(fps))
 	defer ticker.Stop()
 
 	for {

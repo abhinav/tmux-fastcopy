@@ -5,6 +5,8 @@ import (
 	"github.com/gdamore/tcell/v2/views"
 )
 
+//go:generate mockgen -destination mocks_for_test.go -package ui github.com/abhinav/tmux-fastcopy/internal/ui Widget
+
 // Widget is a drawable object that may handle events.
 type Widget interface {
 	// Draw draws the widget on the supplied view. Widgets do not need to
