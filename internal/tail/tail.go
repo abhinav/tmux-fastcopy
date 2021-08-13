@@ -72,6 +72,9 @@ func (t *Tee) Stop() error {
 	// until there is something. To unblock it, we need to close the
 	// reader.
 	err := t.R.Close()
+	if errors.Is(err, fs.ErrClosed) {
+		err = nil
+	}
 
 	return multierr.Append(err, t.Wait())
 }
@@ -90,8 +93,8 @@ func (t *Tee) run() {
 	defer ticker.Stop()
 
 	for {
-		_, err := io.CopyBuffer(t.W, t.R, t.buffer)
-		if err == nil {
+		n, err := io.CopyBuffer(t.W, t.R, t.buffer)
+		if err == nil && n > 0 {
 			// If the write succeded, copy the next chunk.
 			continue
 		}
@@ -101,7 +104,7 @@ func (t *Tee) run() {
 			// File is closed. No new logs are expected.
 			return
 
-		case errors.Is(err, io.EOF):
+		case errors.Is(err, io.EOF) || (err == nil && n == 0):
 			// Wait for quit or up to the specified delay and try
 			// again.
 			select {
