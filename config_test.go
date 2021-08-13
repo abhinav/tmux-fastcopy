@@ -156,6 +156,11 @@ func TestConfigFlagsQuickCheck(t *testing.T) {
 
 	random := rand.New(rand.NewSource(seed))
 	quick.Check(func(give config) bool {
+		// Skip invalid alphabets.
+		if give.Alphabet.Validate() != nil {
+			return true
+		}
+
 		flag := flag.NewFlagSet(t.Name(), flag.ContinueOnError)
 		var got config
 		got.RegisterFlags(flag)

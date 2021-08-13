@@ -18,13 +18,18 @@ func (al *alphabet) String() string {
 }
 
 func (al *alphabet) Set(alpha string) error {
-	if len(alpha) < 2 {
+	*al = alphabet(alpha)
+	return al.Validate()
+}
+
+func (al alphabet) Validate() error {
+	if len(al) < 2 {
 		return errors.New("alphabet must have at least two items")
 	}
 
-	seen := make(map[rune]struct{}, len(alpha))
+	seen := make(map[rune]struct{}, len(al))
 	dupes := make(map[rune]struct{})
-	for _, r := range alpha {
+	for _, r := range al {
 		if _, ok := seen[r]; ok {
 			dupes[r] = struct{}{}
 		}
@@ -32,9 +37,7 @@ func (al *alphabet) Set(alpha string) error {
 	}
 
 	if len(dupes) == 0 {
-		// success!
-		*al = alphabet(alpha)
-		return nil
+		return nil // success
 	}
 
 	dlist := make([]rune, 0, len(dupes))
