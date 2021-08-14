@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"sort"
+	"sync"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/gdamore/tcell/v2/views"
@@ -45,6 +46,7 @@ type AnnotatedText struct {
 	Text  string
 	Style tcell.Style
 
+	mu   sync.RWMutex
 	anns []TextAnnotation // sorted by offset
 }
 
@@ -56,11 +58,17 @@ func (at *AnnotatedText) SetAnnotations(anns ...TextAnnotation) {
 	anns = append(make([]TextAnnotation, 0, len(anns)), anns...)
 	sort.Sort(byOffset(anns))
 	// TODO: detect overlaps?
+
+	at.mu.Lock()
 	at.anns = anns
+	at.mu.Unlock()
 }
 
 // Draw draws the annotated text onto the provided view.
 func (at *AnnotatedText) Draw(view views.View) {
+	at.mu.RLock()
+	defer at.mu.RUnlock()
+
 	var (
 		lastIdx int
 		pos     Pos
@@ -74,6 +82,10 @@ func (at *AnnotatedText) Draw(view views.View) {
 		if ann.offset() < lastIdx {
 			continue
 		}
+
+		// TODO: The way this is set up, an overlay annotation
+		// can undo the row increment that would happen from a newline.
+		// This is probably not the best internal representation.
 
 		pos = DrawText(at.Text[lastIdx:ann.offset()], at.Style, view, pos)
 
