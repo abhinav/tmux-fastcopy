@@ -11,6 +11,8 @@ import (
 	tcell "github.com/gdamore/tcell/v2"
 )
 
+var _version = "dev"
+
 func main() {
 	cmd := mainCmd{
 		Stdin:      os.Stdin,
@@ -66,6 +68,8 @@ The following flags are available:
 		Uses stderr by default.
 	-verbose
 		log more output.
+	-version
+		display version information.
 `
 
 func (cmd *mainCmd) Run(args []string) error {
@@ -78,8 +82,14 @@ func (cmd *mainCmd) Run(args []string) error {
 		fmt.Fprintf(flag.Output(), _usage, name)
 	}
 	cfg.RegisterFlags(flag)
+	version := flag.Bool("version", false, "")
 	if err := flag.Parse(args); err != nil {
 		return err
+	}
+
+	if *version {
+		fmt.Fprintf(cmd.Stdout, "tmux-fastcopy version %v\n", _version)
+		return nil
 	}
 
 	if args := flag.Args(); len(args) > 0 {
