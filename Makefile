@@ -2,17 +2,20 @@ BIN = bin
 GO_FILES = $(shell find . -path '*/.*' -prune -o \
 	   '(' -type f -a -name '*.go' ')' -print)
 
+TOOLS_GO_FILES = $(shell find tools -type f -a -name '*.go')
+
 TMUX_FASTCOPY = $(BIN)/tmux-fastcopy
 
 GOLINT = $(BIN)/golint
 MOCKGEN = $(BIN)/mockgen
 STATICCHECK = $(BIN)/staticcheck
-TOOLS = $(GOLINT) $(STATICCHECK) $(MOCKGEN)
+EXTRACT_CHANGELOG = $(BIN)/extract-changelog
+TOOLS = $(GOLINT) $(STATICCHECK) $(MOCKGEN) $(EXTRACT_CHANGELOG)
 
 export GOBIN ?= $(shell pwd)/$(BIN)
 
 .PHONY: all
-all: build lint test gomodtidy nogenerate
+all: build lint test
 
 .PHONY: build
 build: $(TMUX_FASTCOPY)
@@ -40,7 +43,7 @@ cover: $(GO_FILES)
 	go tool cover -html=cover.out -o cover.html
 
 .PHONY: lint
-lint: gofmt golint staticcheck
+lint: gofmt golint staticcheck gomodtidy nogenerate
 
 .PHONY: gofmt
 gofmt:
@@ -64,6 +67,9 @@ staticcheck: $(STATICCHECK)
 $(STATICCHECK): tools/go.mod
 	cd tools && go install honnef.co/go/tools/cmd/staticcheck
 
+$(EXTRACT_CHANGELOG): tools/go.mod $(TOOLS_GO_FILES)
+	cd tools && go install github.com/abhinav/tmux-fastcopy/tools/cmd/extract-changelog
+
 .PHONY: gomodtidy
 gomodtidy: go.mod go.sum tools/go.mod tools/go.sum
 	go mod tidy
@@ -82,4 +88,3 @@ nogenerate:
 		git status --porcelain && \
 		false; \
 	fi
-
