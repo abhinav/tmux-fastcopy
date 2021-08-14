@@ -12,6 +12,10 @@ import (
 	"testing/quick"
 	"time"
 
+	"github.com/abhinav/tmux-fastcopy/internal/tmux"
+	"github.com/abhinav/tmux-fastcopy/internal/tmux/tmuxopt"
+	"github.com/abhinav/tmux-fastcopy/internal/tmux/tmuxtest"
+	"github.com/golang/mock/gomock"
 	"github.com/maxatome/go-testdeep/td"
 )
 
@@ -76,6 +80,122 @@ func TestConfigFlags(t *testing.T) {
 
 				td.Cmp(t, got, cfg)
 			})
+		})
+	}
+}
+
+func TestConfigTmuxOptions(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		desc string
+		give string // output of tmux show-options
+		want config
+	}{
+		{
+			desc: "action",
+			give: "@fastcopy-action pbcopy",
+			want: config{Action: "pbcopy"},
+		},
+		{
+			desc: "action quoted",
+			give: `@fastcopy-action "tmux set-buffer -- {}"`,
+			want: config{Action: "tmux set-buffer -- {}"},
+		},
+		{
+			desc: "alphabet",
+			give: "@fastcopy-alphabet abc",
+			want: config{Alphabet: "abc"},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.desc, func(t *testing.T) {
+			t.Parallel()
+
+			ctrl := gomock.NewController(t)
+			mockTmux := tmuxtest.NewMockDriver(ctrl)
+
+			loader := tmuxopt.Loader{Tmux: mockTmux}
+
+			var got config
+			got.RegisterOptions(&loader)
+
+			mockTmux.EXPECT().
+				ShowOptions(gomock.Any()).
+				Return([]byte(tt.give), nil)
+
+			err := loader.Load(tmux.ShowOptionsRequest{})
+			td.CmpNoError(t, err)
+			td.Cmp(t, got, tt.want)
+		})
+	}
+}
+
+func TestConfigMerge(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		desc string
+		give []config
+		want config
+	}{
+		{
+			desc: "fill all",
+			give: []config{
+				{
+					Pane:     "foo",
+					Action:   "bar",
+					Alphabet: "abc",
+					LogFile:  "log.txt",
+					Verbose:  true,
+				},
+				{
+					Pane:     "ignored",
+					Action:   "ignored",
+					Alphabet: "ignored",
+					LogFile:  "ignored",
+				},
+			},
+			want: config{
+				Pane:     "foo",
+				Action:   "bar",
+				Alphabet: "abc",
+				LogFile:  "log.txt",
+				Verbose:  true,
+			},
+		},
+		{
+			desc: "partial merge",
+			give: []config{
+				{Pane: "foo"},
+				{Action: "bar"},
+				{Alphabet: "abc"},
+				{LogFile: "log.txt"},
+				{Verbose: true},
+			},
+			want: config{
+				Pane:     "foo",
+				Action:   "bar",
+				Alphabet: "abc",
+				LogFile:  "log.txt",
+				Verbose:  true,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.desc, func(t *testing.T) {
+			t.Parallel()
+
+			var got config
+			for _, c := range tt.give {
+				got.FillFrom(&c)
+			}
+
+			td.Cmp(t, got, tt.want)
 		})
 	}
 }

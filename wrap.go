@@ -28,6 +28,9 @@ type wrapper struct {
 	Executable func() (string, error) // os.Executable
 	Getenv     func(string) string    // os.Getenv
 	Getpid     func() int             // os.Getpid
+
+	// To override tmux.InspectPane for tests.
+	inspectPane func(tmux.Driver, string) (*tmux.PaneInfo, error)
 }
 
 // Run runs the wrapper with the provided configuration. If we're already
@@ -60,7 +63,11 @@ func (w *wrapper) Run(cfg *config) (err error) {
 
 	// Disambiguate the pane identifier to a pane ID. This is unqiue across
 	// sessions.
-	pane, err := tmux.InspectPane(w.Tmux, cfg.Pane)
+	inspectPane := tmux.InspectPane
+	if w.inspectPane != nil {
+		inspectPane = w.inspectPane
+	}
+	pane, err := inspectPane(w.Tmux, cfg.Pane)
 	if err != nil {
 		return fmt.Errorf("inspect pane %q: %v", cfg.Pane, err)
 	}
@@ -85,10 +92,6 @@ func (w *wrapper) Run(cfg *config) (err error) {
 	}
 
 	cfg.FillFrom(&tmuxCfg)
-	cfg.FillFrom(&_defaultConfig)
-
-	// TODO: This is probably the spot for us to interpret tmux options and
-	// turn them into flags.
 
 	req := tmux.NewSessionRequest{
 		Width:    pane.Width,
