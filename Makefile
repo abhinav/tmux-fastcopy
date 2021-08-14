@@ -12,7 +12,7 @@ TOOLS = $(GOLINT) $(STATICCHECK) $(MOCKGEN)
 export GOBIN ?= $(shell pwd)/$(BIN)
 
 .PHONY: all
-all: build lint test gomodtidy nogenerate
+all: build lint test
 
 .PHONY: build
 build: $(TMUX_FASTCOPY)
@@ -40,7 +40,7 @@ cover: $(GO_FILES)
 	go tool cover -html=cover.out -o cover.html
 
 .PHONY: lint
-lint: gofmt golint staticcheck
+lint: gofmt golint staticcheck gomodtidy nogenerate
 
 .PHONY: gofmt
 gofmt:
@@ -82,4 +82,3 @@ nogenerate:
 		git status --porcelain && \
 		false; \
 	fi
-
