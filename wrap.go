@@ -87,9 +87,6 @@ func (w *wrapper) Run(cfg *config) (err error) {
 	cfg.FillFrom(&tmuxCfg)
 	cfg.FillFrom(&_defaultConfig)
 
-	// TODO: This is probably the spot for us to interpret tmux options and
-	// turn them into flags.
-
 	req := tmux.NewSessionRequest{
 		Width:    pane.Width,
 		Height:   pane.Height,
