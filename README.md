@@ -38,6 +38,7 @@ The following methods of installation are available:
 
 - via [Tmux Plugin Manager](#tmux-plugin-manager)
 - [Manual installation](#manual-installation)
+- [Binary installation](#binary-installation)
 
 ### Tmux Plugin Manager
 
@@ -67,6 +68,21 @@ Source it in your `.tmux.conf`.
 Refresh your tmux server if it's already running.
 
     tmux source-file ~/.tmux.conf
+
+### Binary installation
+
+Alternatively, instead of instaling tmux-fastcopy as a tmux plugin, you can
+install it as an independent binary.
+
+1. Download a pre-built binary from the [releases page][] and place it on your
+   `$PATH`.
+2. Add the following to your `.tmux.conf`.
+
+    ```
+    bind-key f run-shell -b tmux-fastcopy
+    ```
+
+  [releases page]: https://github.com/abhinav/tmux-fastcopy/releases
 
 ## Usage
 
