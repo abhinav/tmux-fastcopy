@@ -19,7 +19,7 @@ var _regex = []*regexp.Regexp{
 	regexp.MustCompile(`(?:[\w\-\.]+|~)?(?:/[\w\-\.]+)+`), // paths
 
 	// UUIDs
-	regexp.MustCompile(`[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}`),
+	regexp.MustCompile(`(?i)[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}`),
 }
 
 // app implements the main fastcopy application logic. It assumes that it's
