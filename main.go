@@ -36,6 +36,8 @@ type mainCmd struct {
 	Getpid     func() int
 }
 
+const _name = "tmux-fastcopy"
+
 const _usage = `usage: %v [options]
 
 Renders a vimium/vimperator-style overlay on top of the text in a tmux window
@@ -69,7 +71,7 @@ The following flags are available:
 func (cmd *mainCmd) Run(args []string) error {
 	var cfg config
 
-	flag := flag.NewFlagSet("tmux-fastcopy", flag.ContinueOnError)
+	flag := flag.NewFlagSet(_name, flag.ContinueOnError)
 	flag.SetOutput(cmd.Stderr)
 	flag.Usage = func() {
 		name := flag.Name()
