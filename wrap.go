@@ -85,7 +85,6 @@ func (w *wrapper) Run(cfg *config) (err error) {
 	}
 
 	cfg.FillFrom(&tmuxCfg)
-	cfg.FillFrom(&_defaultConfig)
 
 	req := tmux.NewSessionRequest{
 		Width:    pane.Width,

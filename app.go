@@ -35,6 +35,8 @@ type app struct {
 
 // Run runs the application with the provided configuration.
 func (app *app) Run(cfg *config) error {
+	cfg.FillFrom(&_defaultConfig)
+
 	targetPane, err := tmux.InspectPane(app.Tmux, cfg.Pane)
 	if err != nil {
 		return fmt.Errorf("inspect pane %q: %v", cfg.Pane, err)
