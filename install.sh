@@ -4,9 +4,30 @@ IFS=$'\n\t'
 
 # Places a copy of tmux-fastcopy at bin/tmux-fastcopy.
 
+# Invoke with "-c $VERSION" to check if this would install "$VERSION".
+
 IMPORTPATH=github.com/abhinav/tmux-fastcopy
 NAME=tmux-fastcopy
 VERSION=0.1.0
+
+while getopts 'c:' opt; do
+	case "$opt" in
+		c)
+			if [[ "$VERSION" == "$OPTARG" ]]; then
+				echo >&2 "Versions match!"
+				exit 0
+			fi
+			echo >&2 "Version mismatch:"
+			echo >&2 "  want: $VERSION"
+			echo >&2 "   got: $OPTARG"
+			exit 1
+			;;
+		'?')
+			exit 1
+	esac
+done
+shift "$((OPTIND-1))"
+
 OS=$(uname -s)
 ARCH=$(uname -m)
 
