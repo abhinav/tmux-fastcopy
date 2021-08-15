@@ -1,7 +1,9 @@
 project_name: tmux-fastcopy
 before:
   hooks:
-    - make lint
+    # Verify that the version number in the install.sh matches the planned
+    # version.
+    - ./install.sh -c {{.Version}}
 builds:
   - env:
       - CGO_ENABLED=0
