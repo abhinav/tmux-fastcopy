@@ -7,20 +7,14 @@ fi
 
 FASTCOPY_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FASTCOPY_EXE="$FASTCOPY_ROOT/bin/tmux-fastcopy"
-if [[ ! -x "$FASTCOPY_EXE" ]]; then
-	FASTCOPY_EXE=$(command -v tmux-fastcopy)
-fi
-
-if [[ -n "$FASTCOPY_EXE" ]]; then
-	tmux bind-key "$FASTCOPY_KEY" run-shell -b "$FASTCOPY_EXE"
-else
-	if command -v go >/dev/null; then
-		tmux display-message 'Building tmux-fastcopy...'
-		tmux split-window -c "$FASTCOPY_ROOT" \
-			-e "GOBIN=$FASTCOPY_ROOT/bin" \
-			"go install github.com/abhinav/tmux-fastcopy"
+if [ ! -x "$FASTCOPY_EXE" ]; then
+	if command -v tmux-fastcopy >/dev/null; then
+		# Fall back to a globally installed version if available.
+		FASTCOPY_EXE=tmux-fastcopy
 	else
-		tmux display-message -d 0 \
-			"tmux-fastcopy not installed. Plese check the README."
+		tmux display-message 'Installing tmux-fastcopy locally...'
+		tmux split-window -c "$FASTCOPY_ROOT" "$FASTCOPY_ROOT/install.sh"
 	fi
 fi
+
+tmux bind-key "$FASTCOPY_KEY" run-shell -b "$FASTCOPY_EXE"

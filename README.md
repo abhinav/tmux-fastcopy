@@ -71,7 +71,7 @@ Refresh your tmux server if it's already running.
 
 ### Binary installation
 
-Alternatively, instead of instaling tmux-fastcopy as a tmux plugin, you can
+Alternatively, instead of installing tmux-fastcopy as a tmux plugin, you can
 install it as an independent binary.
 
 1. Download a pre-built binary from the [releases page][] and place it on your
