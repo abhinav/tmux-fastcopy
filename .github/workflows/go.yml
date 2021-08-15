@@ -35,3 +35,6 @@ jobs:
 
     - name: Test
       run: make cover
+
+    - name: Coverage
+      uses: codecov/codecov-action@v2
