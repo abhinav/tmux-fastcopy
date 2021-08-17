@@ -2,25 +2,12 @@ package main
 
 import (
 	"fmt"
-	"regexp"
 
 	"github.com/abhinav/tmux-fastcopy/internal/log"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux"
 	"github.com/abhinav/tmux-fastcopy/internal/ui"
 	tcell "github.com/gdamore/tcell/v2"
 )
-
-var _regex = []*regexp.Regexp{
-	regexp.MustCompile(`\d{1,3}(?:\.\d{1,3}){3}`),         // IP v4 addresses
-	regexp.MustCompile(`[0-9a-f]{7,40}`),                  // git SHAs
-	regexp.MustCompile(`(?i)0x[0-9a-f]{2,}`),              // hex addresses
-	regexp.MustCompile(`(?i)#[0-9a-f]{6}`),                // hex colors
-	regexp.MustCompile(`-?\d{4,}`),                        // numbers
-	regexp.MustCompile(`(?:[\w\-\.]+|~)?(?:/[\w\-\.]+)+`), // paths
-
-	// UUIDs
-	regexp.MustCompile(`(?i)[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}`),
-}
 
 // app implements the main fastcopy application logic. It assumes that it's
 // running inside a tmux window that it has full control over. (wrapper takes
@@ -36,6 +23,17 @@ type app struct {
 // Run runs the application with the provided configuration.
 func (app *app) Run(cfg *config) error {
 	cfg.FillFrom(&_defaultConfig)
+
+	matcher := make(matcher, 0, len(cfg.Regexes))
+	for name, reg := range cfg.Regexes {
+		m, err := compileRegexpMatcher(name, reg)
+		if err != nil {
+			return fmt.Errorf("compile regex %q: %v", name, reg)
+		}
+		if m != nil {
+			matcher = append(matcher, m)
+		}
+	}
 
 	targetPane, err := tmux.InspectPane(app.Tmux, cfg.Pane)
 	if err != nil {
@@ -93,6 +91,7 @@ func (app *app) Run(cfg *config) error {
 		Log:      app.Log,
 		Text:     string(bs),
 		Alphabet: []rune(cfg.Alphabet),
+		Matcher:  matcher,
 	}
 	ctrl.Init()
 
@@ -129,6 +128,7 @@ type ctrl struct {
 	Log      *log.Logger
 	Alphabet []rune
 	Text     string
+	Matcher  matcher
 
 	w   *Widget
 	ui  *ui.App
@@ -136,22 +136,13 @@ type ctrl struct {
 }
 
 func (c *ctrl) Init() {
-	var matches [][]int
-	for _, re := range _regex {
-		matches = append(matches, re.FindAllStringIndex(c.Text, -1)...)
-	}
-	ms := make([]Range, len(matches))
-	for i, m := range matches {
-		ms[i] = Range{Start: m[0], End: m[1]}
-	}
-
 	base := tcell.StyleDefault.
 		Background(tcell.ColorBlack).
 		Foreground(tcell.ColorWhite)
 
 	c.w = New(Config{
 		Text:         c.Text,
-		Matches:      ms,
+		Matches:      c.Matcher.Match(c.Text),
 		Handler:      c,
 		HintAlphabet: c.Alphabet,
 		Style: Style{

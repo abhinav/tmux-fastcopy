@@ -15,6 +15,11 @@ import (
 // subslice of the text.
 type Range struct{ Start, End int }
 
+// Len reports the length of this range.
+func (r *Range) Len() int {
+	return r.End - r.Start
+}
+
 // Style configures the display style of the widget.
 type Style struct {
 	Normal       tcell.Style // normal text

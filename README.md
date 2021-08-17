@@ -113,10 +113,12 @@ Use the following tmux options to configure the behavior of tmux-fastcopy.
 - [`@fastcopy-key`][] invokes tmux-fastcopy with the tmux prefix
 - [`@fastcopy-action`][] copies the selected text
 - [`@fastcopy-alphabet`][] specifies the letters used to generate labels
+- [`@fastcopy-regex-*`][] specify the regular expressions for matching text
 
   [`@fastcopy-key`]: #fastcopy-key
   [`@fastcopy-action`]: #fastcopy-action
   [`@fastcopy-alphabet`]: #fastcopy-alphabet
+  [`@fastcopy-regex-*`]: #fastcopy-regex-
 
 ### `@fastcopy-key`
 
@@ -154,6 +156,147 @@ Specify the letters used to generate labels for matched text.
 
 This must be a string containing at least two letters, and all of them must be
 unique.
+
+For example, if you want to only use the letters from the QWERTY home row, use
+the following.
+
+    set-option -g @fastcopy-alphabet asdfghjkl
+
+### `@fastcopy-regex-*`
+
+These specify the regular expressions used to match text.
+
+**Default**:
+
+	set-option -g @fastcopy-regex-ipv4 "\\b\\d{1,3}(?:\\.\\d{1,3}){3}\\b"
+	set-option -g @fastcopy-regex-gitsha "\\b[0-9a-f]{7,40}\\b"
+	set-option -g @fastcopy-regex-hexaddr "\\b(?i)0x[0-9a-f]{2,}\\b"
+	set-option -g @fastcopy-regex-hexcolor "(?i)#(?:[0-9a-f]{3}|[0-9a-f]{6})\\b"
+	set-option -g @fastcopy-regex-int "(?:-?|\\b)\\d{4,}\\b"
+	set-option -g @fastcopy-regex-path "(?:[\\w\\-\\.]+|~)?(?:/[\\w\\-\\.]+){2,}\\b"
+	set-option -g @fastcopy-regex-uuid "\\b(?i)[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\\b"
+	set-option -g @fastcopy-regex-isodate "\\d{4}-\\d{2}-\\d{2}"
+
+Add new regular expressions by introducing new options with the prefix,
+`@fastcopy-regex-`. For example, the following will match Phabricator revision
+IDs if they're at least three letters long.
+
+    set-option -g @fastcopy-regex-phab-diff "\\bD\\d{3,}\\b"
+
+**Note**: You must double all `\` symbols inside regular expressions to
+escape them properly.
+
+<aside>
+
+  > Read [this FAQ entry](#word-boundary) for an explanation of the `\\b`s
+  > inside the regular expressions above.
+
+</aside>
+
+#### Copying substrings
+
+Use regex capturing groups if you wish to copy only a portion of the matched
+string. tmux-fastcopy will copy the contents of the first capturing group. For
+example,
+
+    set-option -g @fastcopy-regex-python-import "import ([\\w\\.]+)"
+    # From "import os.path", copy only "os.path"
+
+This also means that to use `(...)` in regular expressions that should copy the
+whole string, you should add the `?:` prefix to the start of the capturing
+group to ignore it. For example,
+
+    # Matches commands suggested by 'git status' 
+    set-option -g @fastcopy-regex-git-rebase "git rebase --(?:continue|abort)"
+
+#### Regex names
+
+The portion after the `@fastcopy-regex-` can be any name that uniquely
+identifies this regular expression.
+
+For example, the name of this regular expression is `phab-diff`
+
+    set-option -g @fastcopy-regex-phab-diff "\\bD\\d{3,}\\b"
+
+You cannot have multiple regular expressions with the same name. New regular
+expressions with previously used names will overwrite them. For example, this
+overwrites the default `hexcolor` regular expression to copy only the color
+code, skipping the preceding `#`:
+
+	set-option -g @fastcopy-regex-hexcolor "(?i)#([0-9a-f]{3}|[0-9a-f]{6})\\b"
+
+You can delete previously defined or default regular expressions by setting
+them to a blank string.
+
+    set-option -g @fastcopy-regex-isodate ""
+
+## FAQ
+
+### How do I copy the text to my system clipboard?
+
+To copy the text to your system clipboard, set the `@fastcopy-action` to one of
+the following based on your operating system.
+
+    # macOS
+    set-option -g @fastcopy-action pbcopy
+
+    # For most Linux systems, you can copy to the system clipboard with xclip.
+    # You have to install xclip if it's not already installed.
+    set-option -g @fastcopy-action 'xclip -selection clipboard'
+
+### <a id="word-boundary"></a> What's the `\b` at the ends of some regexes?
+
+The `\b` at either end of the regular expression above specifies that it must
+start and/or end at a word boundary. A word boundary is the start or end of a
+line, or a non-alphanumeric character.
+
+For example, the regular expression `\bgit\b` will match the string `git`
+inside `git rebase --continue` and `git-rebase`, but not inside `github`
+because the "h" following the "git" is not a word boundary.
+
+### The entire string did not get copied
+
+If your regular expression uses capturing groups `(...)`, tmux-fastcopy will
+only copy the first of these from the matched string.
+
+In the regex below, only the strings "continue" or "abort" will be copied.
+
+    set-option -g @fastcopy-regex-git-rebase "git rebase --(continue|abort)"
+
+To copy the entire string, you can put the whole string in a capturing group,
+making it the first capturing group.
+
+    set-option -g @fastcopy-regex-git-rebase "(git rebase --(continue|abort))"
+
+Or you can mark the `(continue|abort)` group as ignored by starting it with
+`?:`.
+
+    set-option -g @fastcopy-regex-git-rebase "git rebase --(?:continue|abort)"
+
+### Are regular expressions case sensitive?
+
+Yes, the regular expressions matched by tmux-fastcopy are case sensitive. For
+example,
+
+    set-option -g @fastcopy-regex-github-project "github.com/(\w+/\w+)"
+
+This will match `github.com/abhinav/tmux-fastcopy` but not
+`GitHub.com/abhinav/tux-fastcopy`.
+
+If you want to turn your regular expression case insensitive, prefix it with
+`(?i)`.
+
+    set-option -g @fastcopy-regex-github-project "(?i)github.com/(\w+/\w+)"
+
+### How to overwrite or remove default regexes?
+
+To overwrite or remove default regular expressions, add a new regex to your
+`tmux.conf` with the same name as the default one, using a blank string as the
+value to delete it.
+
+For example, the following deletes the `isodate` regular expression.
+
+    set-option -g @fastcopy-regex-isodate ""
 
 ## Credits
 

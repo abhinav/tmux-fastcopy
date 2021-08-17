@@ -62,6 +62,18 @@ The following flags are available:
 		If there is no '{}', the selected text is sent over stdin.
 			-action pbcopy
 		Uses 'tmux set-buffer' by default.
+	-regex NAME:PATTERN
+		regular expressions to search for.
+		Name identifies the pattern. Add this option any number of
+		times.
+			-regex 'attr:\w+\.\w+'
+		Use prior names to replace or unset patterns.
+			-regex 'ipv4:'
+		Capture groups in the regex indicate the text to be copied,
+		defaulting to the whole string if there are no capture groups.
+			-regex 'gitsha:([0-9a-f]{7})[0-9a-f]{,33}'
+		Default set includes: ipv4, gitsha, hexaddr, hexcolor, int,
+		path, uuid.
 	-alphabet STRING
 		characters used to generate labels.
 			-alphabet "asdfghjkl;"  # qwerty home row

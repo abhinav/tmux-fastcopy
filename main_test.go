@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"io"
 	"os"
 	"path/filepath"
@@ -46,7 +47,7 @@ func TestMainLogOverride(t *testing.T) {
 		Stdout: &stdout,
 		Stderr: &stderr,
 	}).Run([]string{"--help"})
-	td.CmpNoError(t, err)
+	td.Cmp(t, err, flag.ErrHelp)
 
 	body, err := os.ReadFile(logfile)
 	td.CmpNoError(t, err)

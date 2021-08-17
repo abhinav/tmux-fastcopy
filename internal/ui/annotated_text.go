@@ -57,7 +57,6 @@ var _ Widget = (*AnnotatedText)(nil)
 func (at *AnnotatedText) SetAnnotations(anns ...TextAnnotation) {
 	anns = append(make([]TextAnnotation, 0, len(anns)), anns...)
 	sort.Sort(byOffset(anns))
-	// TODO: detect overlaps?
 
 	at.mu.Lock()
 	at.anns = anns
