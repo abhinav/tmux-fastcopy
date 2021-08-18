@@ -1,13 +1,11 @@
 package ui
 
 import (
-	"errors"
-	"fmt"
-	"runtime/debug"
 	"sync"
 	"time"
 
 	"github.com/abhinav/tmux-fastcopy/internal/log"
+	"github.com/abhinav/tmux-fastcopy/internal/paniclog"
 	"github.com/benbjohnson/clock"
 	"github.com/gdamore/tcell/v2"
 )
@@ -122,25 +120,13 @@ func (app *App) Stop() {
 
 // Defer this inside goroutines to catch panics inside them.
 func (app *App) handlePanic() {
-	pval := recover()
-	if pval == nil {
-		return
+	w := log.Writer{Log: app.Log, Level: log.Error}
+	defer w.Close()
+
+	if err := paniclog.Handle(recover(), &w); err != nil {
+		app.err = err
+		app.Stop()
 	}
-
-	app.Log.Errorf("panic: %v\n%s", pval, debug.Stack())
-
-	var err error
-	switch pval := pval.(type) {
-	case string:
-		err = errors.New(pval)
-	case error:
-		err = pval
-	default:
-		err = fmt.Errorf("panic: %v", pval)
-	}
-
-	app.err = err
-	app.Stop()
 }
 
 // streams events from tcell to the app.events channel. Blocks until Stop is

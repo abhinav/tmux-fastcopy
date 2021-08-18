@@ -15,15 +15,15 @@ import (
 
 const (
 	_parentPIDEnv = "TMUX_FASTCOPY_WRAPPED_BY"
+	_logfileEnv   = "TMUX_FASTCOPY_LOG_FILE"
 	_signalPrefix = "TMUX_FASTCOPY_WRAPPER_"
 )
 
 // wrapper wraps another function to ensure that it runs in its own tmux
 // session that it has full ownership of.
 type wrapper struct {
-	Wrapped interface{ Run(*config) error } // wrapped command
-	Tmux    tmux.Driver
-	Log     *log.Logger
+	Tmux tmux.Driver
+	Log  *log.Logger
 
 	Executable func() (string, error) // os.Executable
 	Getenv     func(string) string    // os.Getenv
@@ -46,15 +46,6 @@ func (w *wrapper) Run(cfg *config) (err error) {
 	// Further, we use the PID as part of the signal we sent to block and
 	// unblock the binary with tmux using the tmux wait-for command, so if
 	// the PID is 42, the signal is TMUX_FASTCOPY_WRAPPER_42.
-
-	parent := w.Getenv(_parentPIDEnv)
-	if len(parent) > 0 {
-		// We're in the wrapped process. Let it run as usual and send a
-		// signal to unblock the parent when done.
-		defer w.Tmux.SendSignal(_signalPrefix + parent)
-		return w.Wrapped.Run(cfg)
-	}
-	parent = strconv.Itoa(w.Getpid())
 
 	exe, err := w.Executable()
 	if err != nil {
@@ -82,7 +73,6 @@ func (w *wrapper) Run(cfg *config) (err error) {
 	defer func() {
 		err = multierr.Append(err, os.Remove(tmpLog.Name()))
 	}()
-	cfg.LogFile = tmpLog.Name()
 
 	tmuxLoader := tmuxopt.Loader{Tmux: w.Tmux}
 	var tmuxCfg config
@@ -93,12 +83,16 @@ func (w *wrapper) Run(cfg *config) (err error) {
 
 	cfg.FillFrom(&tmuxCfg)
 
+	parent := strconv.Itoa(w.Getpid())
 	req := tmux.NewSessionRequest{
 		Width:    pane.Width,
 		Height:   pane.Height,
 		Detached: true,
-		Env:      []string{fmt.Sprintf("%v=%v", _parentPIDEnv, parent)},
-		Command:  append([]string{exe}, cfg.Flags()...),
+		Env: []string{
+			fmt.Sprintf("%v=%v", _parentPIDEnv, w.Getpid()),
+			fmt.Sprintf("%v=%v", _logfileEnv, tmpLog.Name()),
+		},
+		Command: append([]string{exe}, cfg.Flags()...),
 	}
 	if _, err := w.Tmux.NewSession(req); err != nil {
 		return err
@@ -110,9 +104,8 @@ func (w *wrapper) Run(cfg *config) (err error) {
 	tee := tail.Tee{W: logw, R: tmpLog}
 	tee.Start()
 	defer func() {
-		if terr := tee.Stop(); terr != nil {
-			err = multierr.Append(err, fmt.Errorf("stopped copying logs: %v", terr))
-		}
+		err = multierr.Append(err, tmpLog.Close())
+		err = multierr.Append(err, tee.Stop())
 	}()
 
 	return w.Tmux.WaitForSignal(_signalPrefix + parent)

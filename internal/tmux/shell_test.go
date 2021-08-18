@@ -72,7 +72,7 @@ func TestNewSessionArgs(t *testing.T) {
 
 			driver := ShellDriver{
 				run: r.Runner(),
-				Log: logtest.NewLogger(t),
+				log: logtest.NewLogger(t),
 			}
 			got, err := driver.NewSession(tt.give)
 			td.CmpNoError(t, err)
@@ -123,7 +123,7 @@ func TestCapturePaneArgs(t *testing.T) {
 
 			driver := ShellDriver{
 				run: r.Runner(),
-				Log: logtest.NewLogger(t),
+				log: logtest.NewLogger(t),
 			}
 			got, err := driver.CapturePane(tt.give)
 			td.CmpNoError(t, err)
@@ -169,7 +169,7 @@ func TestDisplayMessageArgs(t *testing.T) {
 
 			driver := ShellDriver{
 				run: r.Runner(),
-				Log: logtest.NewLogger(t),
+				log: logtest.NewLogger(t),
 			}
 			got, err := driver.DisplayMessage(tt.give)
 			td.CmpNoError(t, err)
@@ -213,7 +213,7 @@ func TestSwapPaneArgs(t *testing.T) {
 
 			driver := ShellDriver{
 				run: r.Runner(),
-				Log: logtest.NewLogger(t),
+				log: logtest.NewLogger(t),
 			}
 			err := driver.SwapPane(tt.give)
 			td.CmpNoError(t, err)
@@ -246,7 +246,7 @@ func TestWaitForSignalArgs(t *testing.T) {
 
 			driver := ShellDriver{
 				run: r.Runner(),
-				Log: logtest.NewLogger(t),
+				log: logtest.NewLogger(t),
 			}
 			err := driver.WaitForSignal(tt.give)
 			td.CmpNoError(t, err)
@@ -279,7 +279,7 @@ func TestSendSignalArgs(t *testing.T) {
 
 			driver := ShellDriver{
 				run: r.Runner(),
-				Log: logtest.NewLogger(t),
+				log: logtest.NewLogger(t),
 			}
 			err := driver.SendSignal(tt.give)
 			td.CmpNoError(t, err)
@@ -326,7 +326,7 @@ func TestResizeWindow(t *testing.T) {
 
 			driver := ShellDriver{
 				run: r.Runner(),
-				Log: logtest.NewLogger(t),
+				log: logtest.NewLogger(t),
 			}
 			err := driver.ResizeWindow(tt.give)
 			td.CmpNoError(t, err)
@@ -366,7 +366,7 @@ func TestShowOptionsArgs(t *testing.T) {
 
 			driver := ShellDriver{
 				run: r.Runner(),
-				Log: logtest.NewLogger(t),
+				log: logtest.NewLogger(t),
 			}
 			got, err := driver.ShowOptions(tt.give)
 			td.CmpNoError(t, err)
