@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
-	"go.uber.org/multierr"
 )
 
 const (
@@ -20,8 +19,8 @@ const (
 // Tee copies text from source to destination until the user closes the source
 // or calls Tee.Stop.
 type Tee struct {
-	W io.Writer     // destination (required)
-	R io.ReadCloser // source (required)
+	W io.Writer // destination (required)
+	R io.Reader // source (required)
 
 	// Maximum delay between retries. If the end of the source is reached,
 	// we'll wait up to this much time before trying again. Defaults to 100
@@ -62,21 +61,14 @@ func (t *Tee) Start() {
 	go t.run()
 }
 
-// Stop tells Tee to stop copying text and CLOSES the source. It blocks until
-// it has cleaned up the background job. Returns errors encountered during run,
-// if any.
+// Stop tells Tee to stop copying text. It blocks until it has cleaned up the
+// background job. Returns errors encountered during run, if any.
+//
+// If this freezes, make sure you closed the underlying file.
 func (t *Tee) Stop() error {
 	close(t.quit)
 
-	// If there's nothing to read in the source, io.CopyBuffer will block
-	// until there is something. To unblock it, we need to close the
-	// reader.
-	err := t.R.Close()
-	if errors.Is(err, fs.ErrClosed) {
-		err = nil
-	}
-
-	return multierr.Append(err, t.Wait())
+	return t.Wait()
 }
 
 // Wait waits until the tee stops from an error or from Stop being called.
@@ -93,8 +85,8 @@ func (t *Tee) run() {
 	defer ticker.Stop()
 
 	for {
-		n, err := io.CopyBuffer(t.W, t.R, t.buffer)
-		if err == nil && n > 0 {
+		_, err := io.CopyBuffer(t.W, t.R, t.buffer)
+		if err == nil {
 			// If the write succeded, copy the next chunk.
 			continue
 		}
@@ -104,7 +96,7 @@ func (t *Tee) run() {
 			// File is closed. No new logs are expected.
 			return
 
-		case errors.Is(err, io.EOF) || (err == nil && n == 0):
+		case errors.Is(err, io.EOF):
 			// Wait for quit or up to the specified delay and try
 			// again.
 			select {

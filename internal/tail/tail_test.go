@@ -55,6 +55,7 @@ func TestTee(t *testing.T) {
 	}
 	tee.Start()
 	defer func() {
+		td.CmpNoError(t, r.Close())
 		td.CmpNoError(t, tee.Stop())
 	}()
 

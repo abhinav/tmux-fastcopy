@@ -1,13 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"flag"
-	"io"
-	"io/ioutil"
 	"math/rand"
-	"os"
-	"path/filepath"
 	"testing"
 	"testing/quick"
 	"time"
@@ -37,11 +32,6 @@ func TestConfigFlags(t *testing.T) {
 			desc: "verbose",
 			give: []string{"--verbose"},
 			want: config{Verbose: true},
-		},
-		{
-			desc: "log",
-			give: []string{"--log", "log.txt"},
-			want: config{LogFile: "log.txt"},
 		},
 		{
 			desc: "action",
@@ -148,21 +138,18 @@ func TestConfigMerge(t *testing.T) {
 					Pane:     "foo",
 					Action:   "bar",
 					Alphabet: "abc",
-					LogFile:  "log.txt",
 					Verbose:  true,
 				},
 				{
 					Pane:     "ignored",
 					Action:   "ignored",
 					Alphabet: "ignored",
-					LogFile:  "ignored",
 				},
 			},
 			want: config{
 				Pane:     "foo",
 				Action:   "bar",
 				Alphabet: "abc",
-				LogFile:  "log.txt",
 				Verbose:  true,
 			},
 		},
@@ -172,14 +159,12 @@ func TestConfigMerge(t *testing.T) {
 				{Pane: "foo"},
 				{Action: "bar"},
 				{Alphabet: "abc"},
-				{LogFile: "log.txt"},
 				{Verbose: true},
 			},
 			want: config{
 				Pane:     "foo",
 				Action:   "bar",
 				Alphabet: "abc",
-				LogFile:  "log.txt",
 				Verbose:  true,
 			},
 		},
@@ -198,68 +183,6 @@ func TestConfigMerge(t *testing.T) {
 			td.Cmp(t, got, tt.want)
 		})
 	}
-}
-
-func TestConfigBuildLogWriter(t *testing.T) {
-	t.Parallel()
-
-	t.Run("stderr", func(t *testing.T) {
-		t.Parallel()
-
-		var (
-			cfg  config
-			buff bytes.Buffer
-		)
-		w, closew, err := cfg.BuildLogWriter(&buff)
-		if !td.CmpNoError(t, err) {
-			return
-		}
-		defer closew()
-
-		if _, err := io.WriteString(w, "foo"); !td.CmpNoError(t, err) {
-			return
-		}
-
-		td.Cmp(t, buff.String(), "foo")
-	})
-
-	t.Run("file", func(t *testing.T) {
-		t.Parallel()
-
-		logFile := filepath.Join(t.TempDir(), "log.out")
-		cfg := config{LogFile: logFile}
-
-		var buff bytes.Buffer
-		defer func() { td.CmpEmpty(t, buff.String()) }()
-
-		w, closew, err := cfg.BuildLogWriter(&buff)
-		if !td.CmpNoError(t, err) {
-			return
-		}
-
-		if _, err := io.WriteString(w, "foo"); !td.CmpNoError(t, err) {
-			return
-		}
-		closew()
-
-		got, err := ioutil.ReadFile(logFile)
-		if td.CmpNoError(t, err) {
-			td.Cmp(t, string(got), "foo")
-		}
-	})
-
-	t.Run("file/open error", func(t *testing.T) {
-		t.Parallel()
-
-		logFile := filepath.Join(t.TempDir(), "does/not/exist/log.out")
-
-		cfg := config{LogFile: logFile}
-		_, _, err := cfg.BuildLogWriter(io.Discard)
-		td.CmpError(t, err)
-
-		_, err = os.Stat(logFile)
-		td.CmpError(t, err)
-	})
 }
 
 func TestConfigFlagsQuickCheck(t *testing.T) {

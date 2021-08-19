@@ -29,9 +29,7 @@ type ShellDriver struct {
 	// Path to the tmux executable. Defaults to "tmux".
 	Path string
 
-	// Logger to write to.
-	Log *log.Logger
-
+	log  *log.Logger
 	run  *runner
 	once sync.Once
 }
@@ -40,18 +38,24 @@ var _ Driver = (*ShellDriver)(nil)
 
 func (s *ShellDriver) init() {
 	s.once.Do(func() {
-		if s.Path == "" {
-			s.Path = _defaultTmux
+		if s.log == nil {
+			s.log = log.Discard
 		}
 
-		if s.Log == nil {
-			s.Log = log.Discard
+		if s.Path == "" {
+			s.Path = _defaultTmux
 		}
 
 		if s.run == nil {
 			s.run = &defaultRunner
 		}
 	})
+}
+
+// SetLogger specifies the logger for the ShellDriver. By default, the
+// ShellDriver does not log anything.
+func (s *ShellDriver) SetLogger(log *log.Logger) {
+	s.log = log
 }
 
 func (s *ShellDriver) cmd(args ...string) *exec.Cmd {
@@ -65,7 +69,7 @@ func (s *ShellDriver) cmd(args ...string) *exec.Cmd {
 //   cmd := s.cmd("some", "cmd")
 //   defer s.errorWriter(&cmd.Stderr)()
 func (s *ShellDriver) errorWriter(ws ...*io.Writer) (close func()) {
-	writer := &log.Writer{Log: s.Log, Level: log.Error}
+	writer := &log.Writer{Log: s.log, Level: log.Error}
 	for _, w := range ws {
 		*w = writer
 	}
@@ -100,7 +104,7 @@ func (s *ShellDriver) NewSession(req NewSessionRequest) ([]byte, error) {
 	cmd := s.cmd(args...)
 	defer s.errorWriter(&cmd.Stderr)()
 
-	s.Log.Debugf("new session: %v", req)
+	s.log.Debugf("new session: %v", req)
 	return s.run.Output(cmd)
 }
 
@@ -121,7 +125,7 @@ func (s *ShellDriver) CapturePane(req CapturePaneRequest) ([]byte, error) {
 	cmd := s.cmd(args...)
 	defer s.errorWriter(&cmd.Stderr)()
 
-	s.Log.Debugf("capture pane: %v", req)
+	s.log.Debugf("capture pane: %v", req)
 	return s.run.Output(cmd)
 }
 
@@ -138,7 +142,7 @@ func (s *ShellDriver) DisplayMessage(req DisplayMessageRequest) ([]byte, error) 
 	cmd := s.cmd(args...)
 	defer s.errorWriter(&cmd.Stderr)()
 
-	s.Log.Debugf("display message: %v", req)
+	s.log.Debugf("display message: %v", req)
 	return s.run.Output(cmd)
 }
 
@@ -157,7 +161,7 @@ func (s *ShellDriver) SwapPane(req SwapPaneRequest) error {
 	cmd := s.cmd(args...)
 	defer s.errorWriter(&cmd.Stdout, &cmd.Stderr)()
 
-	s.Log.Debugf("swap pane: %v", req)
+	s.log.Debugf("swap pane: %v", req)
 	return s.run.Run(cmd)
 }
 
@@ -180,7 +184,7 @@ func (s *ShellDriver) ResizeWindow(req ResizeWindowRequest) error {
 	cmd := s.cmd(args...)
 	defer s.errorWriter(&cmd.Stdout, &cmd.Stderr)()
 
-	s.Log.Debugf("resize window: %v", req)
+	s.log.Debugf("resize window: %v", req)
 	return s.run.Run(cmd)
 }
 
@@ -190,7 +194,7 @@ func (s *ShellDriver) WaitForSignal(sig string) error {
 	cmd := s.cmd("wait-for", sig)
 	defer s.errorWriter(&cmd.Stdout, &cmd.Stderr)()
 
-	s.Log.Debugf("wait-for: %v", sig)
+	s.log.Debugf("wait-for: %v", sig)
 	return s.run.Run(cmd)
 }
 
@@ -200,7 +204,7 @@ func (s *ShellDriver) SendSignal(sig string) error {
 	cmd := s.cmd("wait-for", "-S", sig)
 	defer s.errorWriter(&cmd.Stdout, &cmd.Stderr)()
 
-	s.Log.Debugf("wait-for -S: %v", sig)
+	s.log.Debugf("wait-for -S: %v", sig)
 	return s.run.Run(cmd)
 }
 
@@ -215,6 +219,6 @@ func (s *ShellDriver) ShowOptions(req ShowOptionsRequest) ([]byte, error) {
 	cmd := s.cmd(args...)
 	defer s.errorWriter(&cmd.Stderr)()
 
-	s.Log.Debugf("show options: %v", req)
+	s.log.Debugf("show options: %v", req)
 	return s.run.Output(cmd)
 }
