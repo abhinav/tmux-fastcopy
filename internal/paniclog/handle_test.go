@@ -93,4 +93,19 @@ func TestRecover(t *testing.T) {
 
 		defer Recover(&err, &buff)
 	})
+
+	t.Run("no panic with error", func(t *testing.T) {
+		t.Parallel()
+
+		err := errors.New("great sadness")
+		var buff bytes.Buffer
+
+		defer func() {
+			td.CmpError(t, err)
+			td.CmpContains(t, err.Error(), "great sadness")
+			td.CmpEmpty(t, buff.String())
+		}()
+
+		defer Recover(&err, &buff)
+	})
 }

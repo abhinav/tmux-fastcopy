@@ -30,5 +30,7 @@ func Handle(pval interface{}, w io.Writer) error {
 
 // Recover recovers a panic and appends it into the given error pointer.
 func Recover(err *error, w io.Writer) {
-	*err = Handle(recover(), w)
+	if pval := recover(); pval != nil {
+		*err = Handle(pval, w)
+	}
 }
