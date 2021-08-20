@@ -7,6 +7,7 @@ import (
 	"testing/quick"
 	"time"
 
+	"github.com/abhinav/tmux-fastcopy/internal/iotest"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux/tmuxopt"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux/tmuxtest"
@@ -52,6 +53,7 @@ func TestConfigFlags(t *testing.T) {
 
 			var cfg config
 			fset := flag.NewFlagSet(t.Name(), flag.ContinueOnError)
+			fset.SetOutput(iotest.Writer(t))
 			cfg.RegisterFlags(fset)
 
 			td.CmpNoError(t, fset.Parse(tt.give))
@@ -61,6 +63,7 @@ func TestConfigFlags(t *testing.T) {
 				args := cfg.Flags()
 
 				fset := flag.NewFlagSet(t.Name(), flag.ContinueOnError)
+				fset.SetOutput(iotest.Writer(t))
 				var got config
 				got.RegisterFlags(fset)
 
@@ -205,6 +208,7 @@ func TestConfigFlagsQuickCheck(t *testing.T) {
 		}
 
 		flag := flag.NewFlagSet(t.Name(), flag.ContinueOnError)
+		flag.SetOutput(iotest.Writer(t))
 		var got config
 		got.RegisterFlags(flag)
 
@@ -222,6 +226,7 @@ func TestUsageHasAllConfigFlags(t *testing.T) {
 	// _usage.
 
 	fset := flag.NewFlagSet(t.Name(), flag.ContinueOnError)
+	fset.SetOutput(iotest.Writer(t))
 	new(config).RegisterFlags(fset)
 
 	fset.VisitAll(func(f *flag.Flag) {
