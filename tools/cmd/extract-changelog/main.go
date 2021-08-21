@@ -64,7 +64,6 @@ func extract(r io.Reader, w io.Writer, version string) error {
 
 	const (
 		initial _state = iota
-		foundHeader
 		printing
 	)
 
@@ -77,17 +76,9 @@ func extract(r io.Reader, w io.Writer, version string) error {
 		switch state {
 		case initial:
 			if strings.HasPrefix(line, "## "+version+" ") {
-				state = foundHeader
+				fmt.Fprintln(w, line)
+				state = printing
 			}
-
-		case foundHeader:
-			// Skip empty lines from header until the changelog
-			// body begins.
-			if len(line) == 0 {
-				continue
-			}
-			state = printing
-			fallthrough
 
 		case printing:
 			if strings.HasPrefix(line, "## ") {
