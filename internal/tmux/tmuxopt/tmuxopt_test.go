@@ -1,6 +1,7 @@
 package tmuxopt
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -101,6 +102,120 @@ func TestLoaderStrings(t *testing.T) {
 	}
 }
 
+func TestLoaderMap(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		desc    string
+		give    []byte   // tmux response
+		options []string // prefixes to request
+		want    []map[string]string
+	}{
+		{
+			desc: "simple",
+			give: unlines(
+				"foo-bar baz",
+				"foo-baz qux",
+			),
+			options: []string{"foo-"},
+			want: []map[string]string{
+				{
+					"bar": "baz",
+					"baz": "qux",
+				},
+			},
+		},
+		{
+			desc: "quoted",
+			give: unlines(
+				`foo-bar "baz\tqux"`,
+			),
+			options: []string{"foo-"},
+			want: []map[string]string{
+				{"bar": "baz\tqux"},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.desc, func(t *testing.T) {
+			t.Parallel()
+
+			if !td.CmpLen(t, tt.want, len(tt.options), "invalid test") {
+				return
+			}
+
+			ctrl := gomock.NewController(t)
+			mockTmux := tmuxtest.NewMockDriver(ctrl)
+
+			loader := Loader{Tmux: mockTmux}
+			got := make([]map[string]string, len(tt.options))
+			for i, opt := range tt.options {
+				m := make(map[string]string)
+				loader.MapVar(mapVar(m), opt)
+				got[i] = m
+			}
+
+			mockTmux.EXPECT().
+				ShowOptions(gomock.Any()).
+				Return(tt.give, nil).
+				AnyTimes()
+
+			err := loader.Load(tmux.ShowOptionsRequest{})
+			td.CmpNoError(t, err)
+
+			td.Cmp(t, got, tt.want)
+		})
+	}
+}
+
+func TestLoaderShowOptionsError(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	mockTmux := tmuxtest.NewMockDriver(ctrl)
+
+	loader := Loader{Tmux: mockTmux}
+	loader.StringVar(new(string), "foo")
+	mockTmux.EXPECT().
+		ShowOptions(gomock.Any()).
+		Return(nil, errors.New("great sadness"))
+
+	err := loader.Load(tmux.ShowOptionsRequest{})
+	td.CmpError(t, err)
+	td.CmpContains(t, err.Error(), "great sadness")
+}
+
+func TestLoaderSetError(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	mockTmux := tmuxtest.NewMockDriver(ctrl)
+
+	loader := Loader{Tmux: mockTmux}
+	loader.Var(errorVar{errors.New("great sadness")}, "foo")
+
+	mockTmux.EXPECT().
+		ShowOptions(gomock.Any()).
+		Return([]byte("foo bar\n"), nil)
+
+	err := loader.Load(tmux.ShowOptionsRequest{})
+	td.CmpError(t, err)
+	td.CmpContains(t, err.Error(), `load option "foo": great sadness`)
+}
+
 func unlines(lines ...string) []byte {
 	return []byte(strings.Join(lines, "\n") + "\n")
 }
+
+type mapVar map[string]string
+
+func (m mapVar) Put(k, v string) error {
+	m[k] = v
+	return nil
+}
+
+type errorVar struct{ err error }
+
+func (e errorVar) Set(string) error { return e.err }

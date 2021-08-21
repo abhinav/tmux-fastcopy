@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/abhinav/tmux-fastcopy/internal/envtest"
+	"github.com/abhinav/tmux-fastcopy/internal/iotest"
 	"github.com/abhinav/tmux-fastcopy/internal/log/logtest"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux/tmuxtest"
@@ -65,6 +66,7 @@ func TestWrapper(t *testing.T) {
 			mockTmux.EXPECT().NewSession(gomock.Any()).
 				Do(func(req tmux.NewSessionRequest) {
 					fset := flag.NewFlagSet(_name, flag.ContinueOnError)
+					fset.SetOutput(iotest.Writer(t))
 
 					var gotConfig config
 					gotConfig.RegisterFlags(fset)
