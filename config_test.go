@@ -93,6 +93,21 @@ func TestMatcherDefaultRegexes(t *testing.T) {
 			give: "2021-08-14 12:34 -0700",
 			want: []string{"2021-08-14", "-0700"},
 		},
+		{
+			desc: "path/url overlap",
+			give: "http://example.com/foo/bar/baz",
+			want: []string{}, // no match
+		},
+		{
+			desc: "path/start of line",
+			give: "foo/bar/baz",
+			want: []string{"foo/bar/baz"}, // no match
+		},
+		{
+			desc: "path/boundary",
+			give: "path=foo/bar/baz",
+			want: []string{"foo/bar/baz"}, // no match
+		},
 	}
 
 	for _, tt := range tests {
