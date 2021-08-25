@@ -99,12 +99,11 @@ For example,
 By default, the copied text will be placed in your tmux buffer. Paste it by
 pressing `<prefix> + ]`.
 
-If you'd like to copy the text to your system clipboard, you can have
-tmux-fastcopy do that by setting the [`@fastcopy-action`][] option. For
-example, on macOS, add the following to your `~/.tmux.conf` to copy to the
-system clipboard.
+If you'd like to copy the text to your system clipboard, use the tmux
+`set-clipboard` option. See [How do I copy text to my clipboard?](#clipboard)
+for more information.
 
-    set-option -g @fastcopy-action pbcopy
+    set-option -g set-clipboard on
 
 ## Customization
 
@@ -232,17 +231,35 @@ them to a blank string.
 
 ## FAQ
 
-### How do I copy the text to my system clipboard?
+### <a id="clipboard"></a> How do I copy text to my clipboard?
 
-To copy the text to your system clipboard, set the `@fastcopy-action` to one of
-the following based on your operating system.
+To copy text to your system clipboard, you can use tmux's `set-clipboard`
+option.
 
-    # macOS
+    set-option -g set-clipboard on
+
+With this option set, tmux will make use of the OSC52 escape sequence to
+directly set the clipboard for your terminal emulator--it should work even
+through an SSH session. Also check out [A guide on how to copy text from anywhere][osc52]
+to read more about OSC52.
+
+  [osc52]: https://old.reddit.com/r/vim/comments/k1ydpn/a_guide_on_how_to_copy_text_from_anywhere/
+
+If your terminal emulator does not support OSC52, you can configure
+`@fastcopy-action` to have tmux-fastcopy send the text elsewhere. For example,
+
+    # On macOS:
     set-option -g @fastcopy-action pbcopy
 
-    # For most Linux systems, you can copy to the system clipboard with xclip.
-    # You have to install xclip if it's not already installed.
+    # For Linux systems using X11, install [xclip] and use:
+    #
+    #  [xclip]: https://github.com/astrand/xclip
     set-option -g @fastcopy-action 'xclip -selection clipboard'
+
+    # For Linux systems using Wayland, install [wl-clipboard] and use:
+    #
+    #  [wl-clipboard]: https://github.com/bugaevc/wl-clipboard
+    set-option -g @fastcopy-action wl-copy
 
 ### <a id="word-boundary"></a> What's the `\b` at the ends of some regexes?
 
