@@ -5,7 +5,8 @@ import (
 	"testing"
 
 	"github.com/abhinav/tmux-fastcopy/internal/log"
-	"github.com/maxatome/go-testdeep/td"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewCommandAction(t *testing.T) {
@@ -56,19 +57,19 @@ func TestNewCommandAction(t *testing.T) {
 			got, err := new(actionFactory).New(tt.give)
 			switch {
 			case len(tt.wantErr) > 0:
-				td.CmpError(t, err)
-				td.CmpContains(t, err.Error(), tt.wantErr)
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.wantErr)
 
 			case tt.wantArg != nil:
-				td.CmpNoError(t, err)
-				td.Cmp(t, got, tt.wantArg)
+				require.NoError(t, err)
+				assert.Equal(t, tt.wantArg, got)
 
 			case tt.wantStdin != nil:
-				td.CmpNoError(t, err)
-				td.Cmp(t, got, tt.wantStdin)
+				require.NoError(t, err)
+				assert.Equal(t, tt.wantStdin, got)
 
 			default:
-				t.Fatal("invalid test case")
+				assert.FailNow(t, "invalid test case")
 			}
 		})
 	}
@@ -83,8 +84,8 @@ func TestStdinAction(t *testing.T) {
 		Cmd: "cat",
 		Log: log.New(&buff),
 	}
-	td.CmpNoError(t, action.Run("foo"))
-	td.Cmp(t, buff.String(), "[cat] foo\n")
+	require.NoError(t, action.Run("foo"))
+	assert.Equal(t, "[cat] foo\n", buff.String())
 }
 
 func TestArgAction(t *testing.T) {
@@ -97,6 +98,6 @@ func TestArgAction(t *testing.T) {
 		AfterArgs:  []string{"3", "4"},
 		Log:        log.New(&buff),
 	}
-	td.CmpNoError(t, action.Run("foo"))
-	td.Cmp(t, buff.String(), "[echo] 1 2 foo 3 4\n")
+	require.NoError(t, action.Run("foo"))
+	assert.Equal(t, "[echo] 1 2 foo 3 4\n", buff.String())
 }

@@ -11,7 +11,8 @@ import (
 	"testing/iotest"
 
 	"github.com/benbjohnson/clock"
-	"github.com/maxatome/go-testdeep/td"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type lockedBuffer struct {
@@ -44,9 +45,7 @@ func TestTee(t *testing.T) {
 
 	var buff lockedBuffer
 	r, err := ioutil.TempFile(t.TempDir(), "file")
-	if !td.CmpNoError(t, err) {
-		return
-	}
+	require.NoError(t, err)
 
 	tee := Tee{
 		W:     &buff,
@@ -55,18 +54,18 @@ func TestTee(t *testing.T) {
 	}
 	tee.Start()
 	defer func() {
-		td.CmpNoError(t, r.Close())
-		td.CmpNoError(t, tee.Stop())
+		assert.NoError(t, r.Close())
+		assert.NoError(t, tee.Stop())
 	}()
 
 	w, err := os.OpenFile(r.Name(), os.O_WRONLY, 0644)
-	if !td.CmpNoError(t, err) {
+	if !assert.NoError(t, err) {
 		return
 	}
-	defer func() { td.CmpNoError(t, w.Close()) }()
+	defer func() { assert.NoError(t, w.Close()) }()
 
 	t.Run("empty", func(t *testing.T) {
-		td.CmpEmpty(t, buff.String())
+		assert.Empty(t, buff.String())
 	})
 
 	t.Run("write", func(t *testing.T) {
@@ -74,7 +73,7 @@ func TestTee(t *testing.T) {
 
 		io.WriteString(w, "hello")
 		clock.Add(_defaultDelay)
-		td.Cmp(t, buff.String(), "hello")
+		assert.Equal(t, "hello", buff.String())
 	})
 
 	t.Run("write delayed", func(t *testing.T) {
@@ -82,12 +81,12 @@ func TestTee(t *testing.T) {
 
 		for i := 0; i < 10; i++ {
 			clock.Add(_defaultDelay * 10)
-			td.CmpEmpty(t, buff.String())
+			assert.Empty(t, buff.String())
 		}
 
 		io.WriteString(w, "world")
 		clock.Add(_defaultDelay)
-		td.Cmp(t, buff.String(), "world")
+		assert.Equal(t, "world", buff.String())
 	})
 }
 
@@ -95,7 +94,7 @@ func TestTeeError(t *testing.T) {
 	t.Parallel()
 
 	var buff lockedBuffer
-	defer func() { td.CmpEmpty(t, buff.String()) }()
+	defer func() { assert.Empty(t, buff.String()) }()
 
 	r := iotest.ErrReader(errors.New("great sadness"))
 	tee := Tee{
@@ -105,20 +104,18 @@ func TestTeeError(t *testing.T) {
 	tee.Start()
 
 	err := tee.Stop()
-	td.CmpError(t, err)
-	td.CmpContains(t, err.Error(), "great sadness")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "great sadness")
 }
 
 func TestTeeClosed(t *testing.T) {
 	t.Parallel()
 
 	var buff lockedBuffer
-	defer func() { td.CmpEmpty(t, buff.String()) }()
+	defer func() { assert.Empty(t, buff.String()) }()
 
 	r, err := ioutil.TempFile(t.TempDir(), "file")
-	if !td.CmpNoError(t, err) {
-		return
-	}
+	require.NoError(t, err)
 
 	tee := Tee{
 		W: &buff,
@@ -126,8 +123,8 @@ func TestTeeClosed(t *testing.T) {
 	}
 	tee.Start()
 	defer func() {
-		td.CmpNoError(t, tee.Stop())
+		assert.NoError(t, tee.Stop())
 	}()
 
-	td.CmpNoError(t, r.Close())
+	assert.NoError(t, r.Close())
 }

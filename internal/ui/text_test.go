@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	tcell "github.com/gdamore/tcell/v2"
-	"github.com/maxatome/go-testdeep/td"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDrawText(t *testing.T) {
@@ -81,7 +81,7 @@ func TestDrawText(t *testing.T) {
 			got := DrawText(
 				tt.text, tcell.StyleDefault, scr, tt.give,
 			)
-			td.Cmp(t, got, tt.want)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

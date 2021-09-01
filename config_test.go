@@ -15,7 +15,8 @@ import (
 	"github.com/abhinav/tmux-fastcopy/internal/tmux/tmuxopt"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux/tmuxtest"
 	"github.com/golang/mock/gomock"
-	"github.com/maxatome/go-testdeep/td"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMatcherDefaultRegexes(t *testing.T) {
@@ -24,9 +25,7 @@ func TestMatcherDefaultRegexes(t *testing.T) {
 	matcher := make(matcher, 0, len(_defaultRegexes))
 	for name, reg := range _defaultRegexes {
 		m, err := compileRegexpMatcher(name, reg)
-		if !td.CmpNoError(t, err, "compile %q (%q)", name, reg) {
-			t.FailNow()
-		}
+		require.NoError(t, err, "compile %q (%q)", name, reg)
 		matcher = append(matcher, m)
 	}
 
@@ -120,7 +119,7 @@ func TestMatcherDefaultRegexes(t *testing.T) {
 				got = append(got, tt.give[m.Start:m.End])
 			}
 
-			td.Cmp(t, got, td.Bag(td.Flatten(tt.want)))
+			assert.ElementsMatch(t, tt.want, got)
 		})
 	}
 }
@@ -216,12 +215,12 @@ func TestConfigFlags(t *testing.T) {
 
 			err := fset.Parse(tt.give)
 			if len(tt.wantErr) > 0 {
-				td.CmpError(t, err, "parse failure")
-				td.CmpContains(t, err.Error(), tt.wantErr)
+				require.Error(t, err, "parse failure")
+				assert.Contains(t, err.Error(), tt.wantErr)
 				return
 			}
 
-			td.Cmp(t, cfg, tt.want, "parse flags")
+			assert.Equal(t, tt.want, cfg, "parse flags")
 
 			// The following turns the parsec cfg back into flags
 			// and tries again. This is worth trying only if an
@@ -234,11 +233,9 @@ func TestConfigFlags(t *testing.T) {
 				var got config
 				got.RegisterFlags(fset)
 
-				if !td.CmpNoError(t, fset.Parse(args)) {
-					return
-				}
+				require.NoError(t, fset.Parse(args))
 
-				td.Cmp(t, got, cfg)
+				assert.Equal(t, cfg, got)
 			})
 		})
 	}
@@ -304,8 +301,8 @@ func TestConfigTmuxOptions(t *testing.T) {
 				Return([]byte(tt.give), nil)
 
 			err := loader.Load(tmux.ShowOptionsRequest{})
-			td.CmpNoError(t, err)
-			td.Cmp(t, got, tt.want)
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -386,7 +383,7 @@ func TestConfigMerge(t *testing.T) {
 				got.FillFrom(&c)
 			}
 
-			td.Cmp(t, got, tt.want)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -416,7 +413,7 @@ func TestConfigFlagsQuickCheck(t *testing.T) {
 		var got config
 		got.RegisterFlags(flag)
 
-		if !td.CmpNoError(t, flag.Parse(give.Flags())) {
+		if !assert.NoError(t, flag.Parse(give.Flags())) {
 			return false
 		}
 
@@ -424,7 +421,7 @@ func TestConfigFlagsQuickCheck(t *testing.T) {
 			give.Regexes = nil // to make nil v non-nil map comparison easier
 		}
 
-		return td.Cmp(t, got, give)
+		return assert.Equal(t, give, got)
 	}, &quick.Config{
 		Rand: rand.New(rand.NewSource(seed)),
 		Values: func(vs []reflect.Value, rand *rand.Rand) {
@@ -445,7 +442,7 @@ func TestUsageHasAllConfigFlags(t *testing.T) {
 	new(config).RegisterFlags(fset)
 
 	fset.VisitAll(func(f *flag.Flag) {
-		td.Cmp(t, _usage, td.Contains("\t-"+f.Name),
+		assert.Contains(t, _usage, "\t-"+f.Name,
 			"flag %q should be documented", f.Name)
 	})
 
@@ -519,9 +516,7 @@ func generateString(t testing.TB, rand *rand.Rand, minLength int, msg ...interfa
 
 func generateValue(t testing.TB, rand *rand.Rand, typ reflect.Type, msg ...interface{}) interface{} {
 	v, ok := quick.Value(typ, rand)
-	if !td.CmpTrue(t, ok, msg...) {
-		t.FailNow()
-	}
+	require.True(t, ok, msg...)
 	return v.Interface()
 }
 

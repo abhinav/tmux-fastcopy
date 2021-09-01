@@ -13,7 +13,8 @@ import (
 	"github.com/abhinav/tmux-fastcopy/internal/tmux"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux/tmuxtest"
 	"github.com/golang/mock/gomock"
-	"github.com/maxatome/go-testdeep/td"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestVersion(t *testing.T) {
@@ -21,15 +22,15 @@ func TestVersion(t *testing.T) {
 
 	var stdout, stderr bytes.Buffer
 	defer func() {
-		td.CmpEmpty(t, stderr.String(), "stderr should be empty")
+		assert.Empty(t, stderr.String(), "stderr should be empty")
 	}()
 	err := (&mainCmd{
 		Stdout: &stdout,
 		Stderr: &stderr,
 		Getenv: envtest.Empty.Getenv,
 	}).Run([]string{"-version"})
-	td.CmpNoError(t, err)
-	td.CmpContains(t, stdout.String(), _version)
+	require.NoError(t, err)
+	assert.Contains(t, stdout.String(), _version)
 }
 
 func TestMainLogOverride(t *testing.T) {
@@ -38,8 +39,8 @@ func TestMainLogOverride(t *testing.T) {
 	logfile := filepath.Join(t.TempDir(), "log.txt")
 	var stdout, stderr bytes.Buffer
 	defer func() {
-		td.CmpEmpty(t, stdout.String(), "stdout must be empty")
-		td.CmpEmpty(t, stderr.String(), "stderr must be empty")
+		assert.Empty(t, stdout.String(), "stdout must be empty")
+		assert.Empty(t, stderr.String(), "stderr must be empty")
 	}()
 
 	err := (&mainCmd{
@@ -47,11 +48,11 @@ func TestMainLogOverride(t *testing.T) {
 		Stdout: &stdout,
 		Stderr: &stderr,
 	}).Run([]string{"--help"})
-	td.Cmp(t, err, flag.ErrHelp)
+	assert.Equal(t, flag.ErrHelp, err)
 
 	body, err := os.ReadFile(logfile)
-	td.CmpNoError(t, err)
-	td.CmpContains(t, string(body), "The following flags are available:")
+	require.NoError(t, err)
+	assert.Contains(t, string(body), "The following flags are available:")
 }
 
 type fakeTmux struct{ tmux.Driver }
@@ -66,8 +67,8 @@ func TestMainParentSignal(t *testing.T) {
 
 	var stdout, stderr bytes.Buffer
 	defer func() {
-		td.CmpEmpty(t, stdout.String(), "stdout must be empty")
-		td.CmpEmpty(t, stderr.String(), "stderr must be empty")
+		assert.Empty(t, stdout.String(), "stdout must be empty")
+		assert.Empty(t, stderr.String(), "stderr must be empty")
 	}()
 
 	mockTmux.EXPECT().
@@ -82,7 +83,7 @@ func TestMainParentSignal(t *testing.T) {
 			return fakeTmux{mockTmux}
 		},
 	}).Run([]string{"--version"})
-	td.CmpNoError(t, err)
+	assert.NoError(t, err)
 }
 
 func TestMainTargetPanicWithLog(t *testing.T) {
@@ -91,8 +92,8 @@ func TestMainTargetPanicWithLog(t *testing.T) {
 	logfile := filepath.Join(t.TempDir(), "log.txt")
 	var stdout, stderr bytes.Buffer
 	defer func() {
-		td.CmpEmpty(t, stdout.String(), "stdout must be empty")
-		td.CmpEmpty(t, stderr.String(), "stderr must be empty")
+		assert.Empty(t, stdout.String(), "stdout must be empty")
+		assert.Empty(t, stderr.String(), "stderr must be empty")
 	}()
 
 	ctrl := gomock.NewController(t)
@@ -100,7 +101,7 @@ func TestMainTargetPanicWithLog(t *testing.T) {
 
 	called := false
 	defer func() {
-		td.CmpTrue(t, called, "runTarget was called")
+		assert.True(t, called, "runTarget was called")
 	}()
 	runTarget := func(interface{ Run(*config) error }, *config) error {
 		called = true
@@ -119,10 +120,10 @@ func TestMainTargetPanicWithLog(t *testing.T) {
 		},
 		runTarget: runTarget,
 	}).Run(nil)
-	td.CmpError(t, err)
-	td.CmpContains(t, err.Error(), "great sadness")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "great sadness")
 
 	body, err := os.ReadFile(logfile)
-	td.CmpNoError(t, err)
-	td.CmpContains(t, string(body), "panic: great sadness")
+	require.NoError(t, err)
+	assert.Contains(t, string(body), "panic: great sadness")
 }

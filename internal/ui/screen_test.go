@@ -4,13 +4,12 @@ import (
 	"testing"
 
 	tcell "github.com/gdamore/tcell/v2"
+	"github.com/stretchr/testify/require"
 )
 
 func NewTestScreen(t testing.TB, w, h int) tcell.SimulationScreen {
 	scr := tcell.NewSimulationScreen("")
-	if err := scr.Init(); err != nil {
-		t.Fatalf("cannot initalize screen: %v", err)
-	}
+	require.NoError(t, scr.Init())
 	t.Cleanup(scr.Fini)
 	scr.SetSize(w, h)
 	return scr
