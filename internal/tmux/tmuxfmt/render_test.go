@@ -3,7 +3,7 @@ package tmuxfmt
 import (
 	"testing"
 
-	"github.com/maxatome/go-testdeep/td"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRender(t *testing.T) {
@@ -108,7 +108,7 @@ func TestRender(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			t.Parallel()
 
-			td.Cmp(t, Render(tt.give), tt.want)
+			assert.Equal(t, tt.want, Render(tt.give))
 		})
 	}
 }

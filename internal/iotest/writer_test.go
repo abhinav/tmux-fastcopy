@@ -6,7 +6,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/maxatome/go-testdeep/td"
+	"github.com/stretchr/testify/assert"
 )
 
 type fakeT struct {
@@ -26,7 +26,7 @@ func TestWriter(t *testing.T) {
 	fakeT := fakeT{T: t}
 	w := Writer(&fakeT)
 	io.WriteString(w, "foo")
-	td.Cmp(t, fakeT.Buffer.String(), "foo\n")
+	assert.Equal(t, "foo\n", fakeT.Buffer.String())
 	// TODO: If we wanted this to be more accurate, we would have it buffer
 	// the input on newlines simillar to the log-based io.Writer. It
 	// doesn't matter here.

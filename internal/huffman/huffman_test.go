@@ -3,11 +3,12 @@ package huffman
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 	"testing"
 	"testing/quick"
 	"time"
 
-	"github.com/maxatome/go-testdeep/td"
+	"github.com/stretchr/testify/assert"
 )
 
 // Index based test cases are difficult to read. Set up some machinery to write
@@ -102,7 +103,7 @@ func TestLabel(t *testing.T) {
 
 			gotIndexes := Label(tt.alphabet.Size(), freqs)
 			got := tt.alphabet.Labels(gotIndexes)
-			td.Cmp(t, got, want,
+			assert.Equal(t, want, got,
 				"Labels(%d, %v)", tt.alphabet.Size(), freqs)
 
 			assertLabelInvariants(t, len(tt.items), got)
@@ -131,7 +132,7 @@ func TestQuick(t *testing.T) {
 					Rand: rand.New(rand.NewSource(seed)),
 				},
 			)
-			td.CmpNoError(t, err)
+			assert.NoError(t, err)
 		})
 	}
 }
@@ -141,17 +142,17 @@ func assertLabelInvariants(t *testing.T, numItems int, labels []string) bool {
 
 	// 1) Number of labels must match the number of
 	//    frequencies/elements.
-	if !td.Cmp(t, labels, td.Len(numItems)) {
+	if !assert.Len(t, labels, numItems) {
 		return false
 	}
 
 	// 2) There must be no duplicates.
-	seen := make(map[string]struct{})
+	var seen []string
 	for _, label := range labels {
-		if !td.Cmp(t, seen, td.Not(td.ContainsKey(label))) {
+		if !assert.NotContains(t, seen, label, "duplicate label %q", label) {
 			return false
 		}
-		seen[label] = struct{}{}
+		seen = append(seen, label)
 	}
 
 	// 3) None of the labels is a prefix for another.
@@ -160,7 +161,9 @@ func assertLabelInvariants(t *testing.T, numItems int, labels []string) bool {
 			if i == j {
 				continue
 			}
-			if !td.Cmp(t, left, td.Not(td.HasPrefix(right))) {
+
+			prefix := strings.HasPrefix(left, right)
+			if !assert.False(t, prefix, "%q is a prefix of %q", right, left) {
 				return false
 			}
 		}

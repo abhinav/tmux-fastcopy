@@ -3,7 +3,8 @@ package tmuxfmt
 import (
 	"testing"
 
-	"github.com/maxatome/go-testdeep/td"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCapturer(t *testing.T) {
@@ -73,12 +74,10 @@ func TestCapturer(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			t.Parallel()
 
-			if !td.CmpLen(t, tt.want, len(tt.exprs)) {
-				t.Fatalf("invalid test: " +
-					"number of expressions must match the" +
-					"number of expected values " +
-					"if an error is not expectedd")
-			}
+			require.Len(t, tt.want, len(tt.exprs), "invalid test: "+
+				"number of expressions must match the"+
+				"number of expected values "+
+				"if an error is not expectedd")
 
 			got := make([]interface{}, len(tt.exprs))  // list of pointers
 			want := make([]interface{}, len(tt.exprs)) // list of pointers
@@ -112,13 +111,13 @@ func TestCapturer(t *testing.T) {
 			_, capture := c.Prepare()
 			err := capture(tt.give)
 			if len(tt.wantErr) > 0 {
-				td.CmpError(t, err)
-				td.Cmp(t, err.Error(), td.Re(tt.wantErr))
+				assert.Error(t, err)
+				assert.Regexp(t, tt.wantErr, err.Error())
 				return
 			}
 
-			td.CmpNoError(t, err)
-			td.Cmp(t, got, want)
+			require.NoError(t, err)
+			assert.Equal(t, want, got)
 		})
 	}
 }

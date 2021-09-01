@@ -10,7 +10,8 @@ import (
 	"github.com/benbjohnson/clock"
 	tcell "github.com/gdamore/tcell/v2"
 	"github.com/golang/mock/gomock"
-	"github.com/maxatome/go-testdeep/td"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAppRender(t *testing.T) {
@@ -31,7 +32,7 @@ func TestAppRender(t *testing.T) {
 	app.Start()
 	defer func() {
 		app.Stop()
-		td.CmpNoError(t, app.Wait())
+		assert.NoError(t, app.Wait())
 	}()
 
 	// There's a small race condition here, and since we don't have any
@@ -62,7 +63,7 @@ func TestAppEvents(t *testing.T) {
 	app.Start()
 	defer func() {
 		app.Stop()
-		td.CmpNoError(t, app.Wait())
+		assert.NoError(t, app.Wait())
 	}()
 
 	t.Run("resize", func(t *testing.T) {
@@ -81,7 +82,7 @@ func TestAppEvents(t *testing.T) {
 		scr.InjectKey(tcell.KeyEscape, 0, 0)
 
 		// If this deadlocks, esc didn't quit.
-		td.CmpNoError(t, app.Wait())
+		assert.NoError(t, app.Wait())
 	})
 }
 
@@ -92,13 +93,11 @@ func TestAppPanic(t *testing.T) {
 		t.Helper()
 
 		err := app.Wait()
-		td.CmpError(t, err)
-		td.CmpContains(t, err.Error(), "great sadness")
-		td.Cmp(t, buff.String(), td.All(
-			td.Contains("panic: great sadness"),
-			td.Contains("TestAppPanic"),
-			td.Contains("app_test.go"),
-		))
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "great sadness")
+		assert.Contains(t, buff.String(), "panic: great sadness")
+		assert.Contains(t, buff.String(), "TestAppPanic")
+		assert.Contains(t, buff.String(), "app_test.go")
 	}
 
 	t.Run("event panic", func(t *testing.T) {

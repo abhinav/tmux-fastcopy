@@ -3,7 +3,7 @@ package ui
 import (
 	"testing"
 
-	"github.com/maxatome/go-testdeep/td"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPos(t *testing.T) {
@@ -15,10 +15,10 @@ func TestPos(t *testing.T) {
 		var p Pos
 
 		x, y := p.Get()
-		td.Cmp(t, x, 0, "X")
-		td.Cmp(t, y, 0, "y")
+		assert.Equal(t, 0, x, "X")
+		assert.Equal(t, 0, y, "y")
 
-		td.Cmp(t, p.String(), "(0, 0)")
+		assert.Equal(t, "(0, 0)", p.String())
 	})
 
 	t.Run("zero", func(t *testing.T) {
@@ -27,9 +27,9 @@ func TestPos(t *testing.T) {
 		p := Pos{5, 6}
 
 		x, y := p.Get()
-		td.Cmp(t, x, 5, "X")
-		td.Cmp(t, y, 6, "y")
+		assert.Equal(t, 5, x, "X")
+		assert.Equal(t, 6, y, "y")
 
-		td.Cmp(t, p.String(), "(5, 6)")
+		assert.Equal(t, "(5, 6)", p.String())
 	})
 }

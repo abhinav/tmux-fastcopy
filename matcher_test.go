@@ -3,7 +3,8 @@ package main
 import (
 	"testing"
 
-	"github.com/maxatome/go-testdeep/td"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRegexpMatcher(t *testing.T) {
@@ -44,16 +45,14 @@ func TestRegexpMatcher(t *testing.T) {
 			t.Parallel()
 
 			m, err := compileRegexpMatcher(tt.desc, tt.regex)
-			if !td.CmpNoError(t, err, "compile regex") {
-				return
-			}
+			require.NoError(t, err, "compile regex")
 
-			td.CmpNotPanic(t, func() {
+			assert.NotPanics(t, func() {
 				_ = m.String()
 			}, "String")
 
 			t.Run("Name", func(t *testing.T) {
-				td.Cmp(t, m.Name(), tt.desc)
+				assert.Equal(t, tt.desc, m.Name())
 			})
 
 			t.Run("Matches", func(t *testing.T) {
@@ -65,8 +64,8 @@ func TestRegexpMatcher(t *testing.T) {
 					gotFull[i] = tt.s[m.Full.Start:m.Full.End]
 				}
 
-				td.Cmp(t, gotSel, tt.wantSel)
-				td.Cmp(t, gotFull, tt.wantFull)
+				assert.Equal(t, tt.wantSel, gotSel)
+				assert.Equal(t, tt.wantFull, gotFull)
 			})
 		})
 	}

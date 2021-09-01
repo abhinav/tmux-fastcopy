@@ -3,7 +3,8 @@ package main
 import (
 	"testing"
 
-	"github.com/maxatome/go-testdeep/td"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestValidateAlphabet(t *testing.T) {
@@ -42,12 +43,12 @@ func TestValidateAlphabet(t *testing.T) {
 			var alpha alphabet
 			err := alpha.Set(tt.give)
 			if len(tt.wantErr) == 0 {
-				td.CmpNoError(t, err)
+				assert.NoError(t, err)
 				return
 			}
 
-			td.CmpError(t, err)
-			td.CmpContains(t, err.Error(), tt.wantErr)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.wantErr)
 		})
 	}
 }

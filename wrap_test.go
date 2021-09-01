@@ -11,7 +11,8 @@ import (
 	"github.com/abhinav/tmux-fastcopy/internal/tmux"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux/tmuxtest"
 	"github.com/golang/mock/gomock"
-	"github.com/maxatome/go-testdeep/td"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestWrapper(t *testing.T) {
@@ -71,8 +72,8 @@ func TestWrapper(t *testing.T) {
 					var gotConfig config
 					gotConfig.RegisterFlags(fset)
 
-					td.CmpNoError(t, fset.Parse(req.Command[1:]))
-					td.Cmp(t, gotConfig, tt.wantConfig)
+					require.NoError(t, fset.Parse(req.Command[1:]))
+					assert.Equal(t, tt.wantConfig, gotConfig)
 				})
 
 			mockTmux.EXPECT().WaitForSignal(gomock.Any())
@@ -91,7 +92,7 @@ func TestWrapper(t *testing.T) {
 					return &tt.paneInfo, nil
 				},
 			}
-			td.CmpNoError(t, w.Run(&tt.giveConfig))
+			assert.NoError(t, w.Run(&tt.giveConfig))
 		})
 	}
 }

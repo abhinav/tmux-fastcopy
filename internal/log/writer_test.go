@@ -5,7 +5,8 @@ import (
 	"io"
 	"testing"
 
-	"github.com/maxatome/go-testdeep/td"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestWriter(t *testing.T) {
@@ -62,9 +63,9 @@ func TestWriter(t *testing.T) {
 			for _, s := range tt.give {
 				io.WriteString(&w, s)
 			}
-			td.CmpNoError(t, w.Close())
+			require.NoError(t, w.Close())
 
-			td.Cmp(t, buff.String(), tt.want)
+			assert.Equal(t, tt.want, buff.String())
 		})
 	}
 }

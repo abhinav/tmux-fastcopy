@@ -3,7 +3,7 @@ package stringobj
 import (
 	"testing"
 
-	"github.com/maxatome/go-testdeep/td"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBuilder(t *testing.T) {
@@ -53,7 +53,7 @@ func TestBuilder(t *testing.T) {
 				b.Put(i.key, i.value)
 			}
 
-			td.Cmp(t, b.String(), tt.want)
+			assert.Equal(t, tt.want, b.String())
 		})
 	}
 }

@@ -6,7 +6,8 @@ import (
 	"github.com/abhinav/tmux-fastcopy/internal/tmux"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux/tmuxtest"
 	"github.com/golang/mock/gomock"
-	"github.com/maxatome/go-testdeep/td"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestInspectPane(t *testing.T) {
@@ -22,13 +23,13 @@ func TestInspectPane(t *testing.T) {
 		Return(message, nil)
 
 	got, err := tmux.InspectPane(mockTmux, "foo")
-	td.CmpNoError(t, err)
-	td.Cmp(t, got, &tmux.PaneInfo{
+	require.NoError(t, err)
+	assert.Equal(t, &tmux.PaneInfo{
 		ID:             "%42",
 		WindowID:       "@123",
 		Width:          80,
 		Height:         40,
 		Mode:           tmux.CopyMode,
 		ScrollPosition: 40,
-	})
+	}, got)
 }

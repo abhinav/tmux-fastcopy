@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/maxatome/go-testdeep/td"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLevels(t *testing.T) {
@@ -15,7 +15,7 @@ func TestLevels(t *testing.T) {
 	t.Run("default level", func(t *testing.T) {
 		t.Parallel()
 
-		td.Cmp(t, New(io.Discard).Level(), Info)
+		assert.Equal(t, Info, New(io.Discard).Level())
 	})
 
 	t.Run("info", func(t *testing.T) {
@@ -28,7 +28,7 @@ func TestLevels(t *testing.T) {
 		log.Infof("info")
 		log.Errorf("error")
 
-		td.Cmp(t, buff.String(), unlines("debug", "info", "error"))
+		assert.Equal(t, unlines("debug", "info", "error"), buff.String())
 	})
 
 	t.Run("info", func(t *testing.T) {
@@ -41,7 +41,7 @@ func TestLevels(t *testing.T) {
 		log.Infof("info")
 		log.Errorf("error")
 
-		td.Cmp(t, buff.String(), unlines("info", "error"))
+		assert.Equal(t, unlines("info", "error"), buff.String())
 	})
 
 	t.Run("error", func(t *testing.T) {
@@ -54,7 +54,7 @@ func TestLevels(t *testing.T) {
 		log.Infof("info")
 		log.Errorf("error")
 
-		td.Cmp(t, buff.String(), unlines("error"))
+		assert.Equal(t, unlines("error"), buff.String())
 	})
 
 	t.Run("discard", func(t *testing.T) {
@@ -67,7 +67,7 @@ func TestLevels(t *testing.T) {
 		log.Infof("info")
 		log.Errorf("error")
 
-		td.CmpEmpty(t, buff.String())
+		assert.Empty(t, buff.String())
 	})
 }
 
@@ -80,10 +80,10 @@ func TestName(t *testing.T) {
 	log.Infof("info")
 	log.Errorf("error")
 
-	td.Cmp(t, buff.String(), unlines(
+	assert.Equal(t, unlines(
 		"[foo] info",
 		"[foo] error",
-	))
+	), buff.String())
 }
 
 func TestFormatting(t *testing.T) {
@@ -96,11 +96,11 @@ func TestFormatting(t *testing.T) {
 	log.Infof("level = %v", Info)
 	log.Errorf("level = %v", Error)
 
-	td.Cmp(t, buff.String(), unlines(
+	assert.Equal(t, unlines(
 		"level = debug",
 		"level = info",
 		"level = error",
-	))
+	), buff.String())
 }
 
 func TestTrailingNewline(t *testing.T) {
@@ -111,7 +111,7 @@ func TestTrailingNewline(t *testing.T) {
 
 	log.Infof("foo\n\n")
 
-	td.Cmp(t, buff.String(), unlines("foo"))
+	assert.Equal(t, unlines("foo"), buff.String())
 }
 
 func unlines(lines ...string) string {

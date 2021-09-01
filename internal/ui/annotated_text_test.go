@@ -4,7 +4,8 @@ import (
 	"testing"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/maxatome/go-testdeep/td"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAnnotatedText(t *testing.T) {
@@ -25,16 +26,14 @@ func TestAnnotatedText(t *testing.T) {
 	}
 
 	matchScreen := func(t *testing.T, want ...tcell.SimCell) {
-		if !td.CmpLen(t, want, W*H) {
-			t.Fatal("invalid test: not enouh cells")
-		}
+		require.Len(t, want, W*H, "invalid test: not enough cells")
 
 		t.Helper()
 
 		got, w, h := scr.GetContents()
-		td.Cmp(t, w, W)
-		td.Cmp(t, h, H)
-		td.Cmp(t, got, want)
+		assert.Equal(t, W, w)
+		assert.Equal(t, H, h)
+		assert.Equal(t, want, got)
 	}
 
 	// n generates a normal cell
@@ -159,8 +158,8 @@ func TestAnnotatedText(t *testing.T) {
 		foo.Length = 3
 		at.SetAnnotations(foo)
 
-		td.CmpPanic(t, func() {
+		assert.Panics(t, func() {
 			at.Draw(scr)
-		}, td.NotNil())
+		})
 	})
 }

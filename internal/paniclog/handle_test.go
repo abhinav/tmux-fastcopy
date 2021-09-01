@@ -5,7 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/maxatome/go-testdeep/td"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestHandle(t *testing.T) {
@@ -46,13 +47,13 @@ func TestHandle(t *testing.T) {
 
 			var buff bytes.Buffer
 			got := Handle(tt.give, &buff)
-			td.CmpContains(t, buff.String(), tt.wantMsg)
+			assert.Contains(t, buff.String(), tt.wantMsg)
 
 			if len(tt.wantErr) == 0 {
-				td.CmpNoError(t, got)
+				assert.NoError(t, got)
 			} else {
-				td.CmpError(t, got)
-				td.Cmp(t, got.Error(), tt.wantErr)
+				assert.Error(t, got)
+				assert.Equal(t, tt.wantErr, got.Error())
 			}
 		})
 	}
@@ -69,9 +70,9 @@ func TestRecover(t *testing.T) {
 			buff bytes.Buffer
 		)
 		defer func() {
-			td.CmpError(t, err)
-			td.Cmp(t, err.Error(), "great sadness")
-			td.CmpContains(t, buff.String(), "panic: great sadness\n")
+			assert.Error(t, err)
+			assert.Equal(t, "great sadness", err.Error())
+			assert.Contains(t, buff.String(), "panic: great sadness\n")
 		}()
 
 		defer Recover(&err, &buff)
@@ -87,8 +88,8 @@ func TestRecover(t *testing.T) {
 			buff bytes.Buffer
 		)
 		defer func() {
-			td.CmpNoError(t, err)
-			td.CmpEmpty(t, buff.String())
+			require.NoError(t, err)
+			assert.Empty(t, buff.String())
 		}()
 
 		defer Recover(&err, &buff)
@@ -101,9 +102,9 @@ func TestRecover(t *testing.T) {
 		var buff bytes.Buffer
 
 		defer func() {
-			td.CmpError(t, err)
-			td.CmpContains(t, err.Error(), "great sadness")
-			td.CmpEmpty(t, buff.String())
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "great sadness")
+			assert.Empty(t, buff.String())
 		}()
 
 		defer Recover(&err, &buff)

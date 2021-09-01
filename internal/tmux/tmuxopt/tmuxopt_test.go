@@ -8,7 +8,8 @@ import (
 	"github.com/abhinav/tmux-fastcopy/internal/tmux"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux/tmuxtest"
 	"github.com/golang/mock/gomock"
-	"github.com/maxatome/go-testdeep/td"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLoaderStrings(t *testing.T) {
@@ -76,9 +77,7 @@ func TestLoaderStrings(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			t.Parallel()
 
-			if !td.CmpLen(t, tt.want, len(tt.options), "invalid test") {
-				return
-			}
+			require.Len(t, tt.want, len(tt.options), "invalid test")
 
 			ctrl := gomock.NewController(t)
 			mockTmux := tmuxtest.NewMockDriver(ctrl)
@@ -95,9 +94,9 @@ func TestLoaderStrings(t *testing.T) {
 				AnyTimes()
 
 			err := loader.Load(tmux.ShowOptionsRequest{})
-			td.CmpNoError(t, err)
+			require.NoError(t, err)
 
-			td.Cmp(t, got, tt.want)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -142,9 +141,7 @@ func TestLoaderMap(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			t.Parallel()
 
-			if !td.CmpLen(t, tt.want, len(tt.options), "invalid test") {
-				return
-			}
+			require.Len(t, tt.want, len(tt.options), "invalid test")
 
 			ctrl := gomock.NewController(t)
 			mockTmux := tmuxtest.NewMockDriver(ctrl)
@@ -163,9 +160,9 @@ func TestLoaderMap(t *testing.T) {
 				AnyTimes()
 
 			err := loader.Load(tmux.ShowOptionsRequest{})
-			td.CmpNoError(t, err)
+			require.NoError(t, err)
 
-			td.Cmp(t, got, tt.want)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -183,8 +180,8 @@ func TestLoaderShowOptionsError(t *testing.T) {
 		Return(nil, errors.New("great sadness"))
 
 	err := loader.Load(tmux.ShowOptionsRequest{})
-	td.CmpError(t, err)
-	td.CmpContains(t, err.Error(), "great sadness")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "great sadness")
 }
 
 func TestLoaderSetError(t *testing.T) {
@@ -201,8 +198,8 @@ func TestLoaderSetError(t *testing.T) {
 		Return([]byte("foo bar\n"), nil)
 
 	err := loader.Load(tmux.ShowOptionsRequest{})
-	td.CmpError(t, err)
-	td.CmpContains(t, err.Error(), `load option "foo": great sadness`)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `load option "foo": great sadness`)
 }
 
 func unlines(lines ...string) []byte {

@@ -10,7 +10,8 @@ import (
 	"testing"
 
 	"github.com/abhinav/tmux-fastcopy/internal/log/logtest"
-	"github.com/maxatome/go-testdeep/td"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewSessionArgs(t *testing.T) {
@@ -75,8 +76,8 @@ func TestNewSessionArgs(t *testing.T) {
 				log: logtest.NewLogger(t),
 			}
 			got, err := driver.NewSession(tt.give)
-			td.CmpNoError(t, err)
-			td.Cmp(t, got, blob)
+			require.NoError(t, err)
+			assert.Equal(t, blob, got)
 		})
 	}
 }
@@ -126,8 +127,8 @@ func TestCapturePaneArgs(t *testing.T) {
 				log: logtest.NewLogger(t),
 			}
 			got, err := driver.CapturePane(tt.give)
-			td.CmpNoError(t, err)
-			td.Cmp(t, got, blob)
+			require.NoError(t, err)
+			assert.Equal(t, blob, got)
 		})
 	}
 }
@@ -172,8 +173,8 @@ func TestDisplayMessageArgs(t *testing.T) {
 				log: logtest.NewLogger(t),
 			}
 			got, err := driver.DisplayMessage(tt.give)
-			td.CmpNoError(t, err)
-			td.Cmp(t, got, blob)
+			require.NoError(t, err)
+			assert.Equal(t, blob, got)
 		})
 	}
 }
@@ -216,7 +217,7 @@ func TestSwapPaneArgs(t *testing.T) {
 				log: logtest.NewLogger(t),
 			}
 			err := driver.SwapPane(tt.give)
-			td.CmpNoError(t, err)
+			assert.NoError(t, err)
 		})
 	}
 }
@@ -249,7 +250,7 @@ func TestWaitForSignalArgs(t *testing.T) {
 				log: logtest.NewLogger(t),
 			}
 			err := driver.WaitForSignal(tt.give)
-			td.CmpNoError(t, err)
+			assert.NoError(t, err)
 		})
 	}
 }
@@ -282,7 +283,7 @@ func TestSendSignalArgs(t *testing.T) {
 				log: logtest.NewLogger(t),
 			}
 			err := driver.SendSignal(tt.give)
-			td.CmpNoError(t, err)
+			assert.NoError(t, err)
 		})
 	}
 }
@@ -329,7 +330,7 @@ func TestResizeWindow(t *testing.T) {
 				log: logtest.NewLogger(t),
 			}
 			err := driver.ResizeWindow(tt.give)
-			td.CmpNoError(t, err)
+			assert.NoError(t, err)
 		})
 	}
 }
@@ -369,8 +370,8 @@ func TestShowOptionsArgs(t *testing.T) {
 				log: logtest.NewLogger(t),
 			}
 			got, err := driver.ShowOptions(tt.give)
-			td.CmpNoError(t, err)
-			td.Cmp(t, got, blob)
+			require.NoError(t, err)
+			assert.Equal(t, blob, got)
 		})
 	}
 }
