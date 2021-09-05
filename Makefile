@@ -12,7 +12,8 @@ STATICCHECK = $(BIN)/staticcheck
 EXTRACT_CHANGELOG = $(BIN)/extract-changelog
 TOOLS = $(GOLINT) $(STATICCHECK) $(MOCKGEN) $(EXTRACT_CHANGELOG)
 
-export GOBIN ?= $(shell pwd)/$(BIN)
+PROJECT_ROOT = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+export GOBIN ?= $(PROJECT_ROOT)/$(BIN)
 
 .PHONY: all
 all: build lint test
