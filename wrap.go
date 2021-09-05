@@ -15,7 +15,6 @@ import (
 
 const (
 	_parentPIDEnv = "TMUX_FASTCOPY_WRAPPED_BY"
-	_logfileEnv   = "TMUX_FASTCOPY_LOG_FILE"
 	_signalPrefix = "TMUX_FASTCOPY_WRAPPER_"
 )
 
@@ -81,6 +80,7 @@ func (w *wrapper) Run(cfg *config) (err error) {
 		return fmt.Errorf("load options: %v", err)
 	}
 
+	cfg.LogFile = tmpLog.Name()
 	cfg.FillFrom(&tmuxCfg)
 
 	parent := strconv.Itoa(w.Getpid())
@@ -90,7 +90,6 @@ func (w *wrapper) Run(cfg *config) (err error) {
 		Detached: true,
 		Env: []string{
 			fmt.Sprintf("%v=%v", _parentPIDEnv, w.Getpid()),
-			fmt.Sprintf("%v=%v", _logfileEnv, tmpLog.Name()),
 		},
 		Command: append([]string{exe}, cfg.Flags()...),
 	}

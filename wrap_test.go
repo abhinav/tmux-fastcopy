@@ -73,6 +73,12 @@ func TestWrapper(t *testing.T) {
 					gotConfig.RegisterFlags(fset)
 
 					require.NoError(t, fset.Parse(req.Command[1:]))
+
+					// zero out log file for comparison.
+					if assert.NotEmpty(t, gotConfig.LogFile, "log file must be specified") {
+						gotConfig.LogFile = ""
+					}
+
 					assert.Equal(t, tt.wantConfig, gotConfig)
 				})
 

@@ -88,6 +88,7 @@ type config struct {
 	Alphabet alphabet
 	Verbose  bool
 	Regexes  regexes
+	LogFile  string
 }
 
 func (c *config) RegisterFlags(flag *flag.FlagSet) {
@@ -97,6 +98,7 @@ func (c *config) RegisterFlags(flag *flag.FlagSet) {
 	flag.Var(&c.Alphabet, "alphabet", "")
 	flag.Var(&c.Regexes, "regex", "")
 	flag.BoolVar(&c.Verbose, "verbose", false, "")
+	flag.StringVar(&c.LogFile, "log", "", "")
 }
 
 func (c *config) RegisterOptions(load *tmuxopt.Loader) {
@@ -116,6 +118,9 @@ func (c *config) FillFrom(o *config) {
 	}
 	if len(c.Alphabet) == 0 {
 		c.Alphabet = o.Alphabet
+	}
+	if len(c.LogFile) == 0 {
+		c.LogFile = o.LogFile
 	}
 	c.Regexes.FillFrom(o.Regexes)
 	c.Verbose = c.Verbose || o.Verbose
@@ -137,6 +142,9 @@ func (c *config) Flags() []string {
 	args = append(args, c.Regexes.Flags()...)
 	if c.Verbose {
 		args = append(args, "-verbose")
+	}
+	if len(c.LogFile) > 0 {
+		args = append(args, "-log", c.LogFile)
 	}
 	return args
 }

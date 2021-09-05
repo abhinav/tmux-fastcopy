@@ -23,10 +23,37 @@ func main() {
 		Getenv:     os.Getenv,
 		Getpid:     os.Getpid,
 	}
-	if err := cmd.Run(os.Args[1:]); err != nil && err != flag.ErrHelp {
+
+	if err := run(&cmd, os.Args[1:]); err != nil && err != flag.ErrHelp {
 		fmt.Fprintln(cmd.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+func run(cmd *mainCmd, args []string) (err error) {
+	var cfg config
+	flag := flag.NewFlagSet(_name, flag.ContinueOnError)
+	flag.SetOutput(cmd.Stderr)
+	flag.Usage = func() {
+		name := flag.Name()
+		fmt.Fprintf(flag.Output(), _usage, name)
+	}
+	cfg.RegisterFlags(flag)
+	version := flag.Bool("version", false, "")
+	if err := flag.Parse(args); err != nil {
+		return err
+	}
+
+	if *version {
+		fmt.Fprintf(cmd.Stdout, "tmux-fastcopy version %v\n", _version)
+		return nil
+	}
+
+	if args := flag.Args(); len(args) > 0 {
+		return fmt.Errorf("unexpected arguments %q", args)
+	}
+
+	return cmd.Run(&cfg)
 }
 
 type mainCmd struct {
@@ -37,7 +64,7 @@ type mainCmd struct {
 	Getenv     func(string) string    // == os.Getenv
 	Getpid     func() int
 
-	newTmuxDriver func() tmuxShellDriver
+	newTmuxDriver func(string) tmuxShellDriver
 	runTarget     runTargetFunc
 }
 
@@ -89,8 +116,8 @@ The following flags are available:
 
 func (cmd *mainCmd) init() {
 	if cmd.newTmuxDriver == nil {
-		cmd.newTmuxDriver = func() tmuxShellDriver {
-			return new(tmux.ShellDriver)
+		cmd.newTmuxDriver = func(path string) tmuxShellDriver {
+			return &tmux.ShellDriver{Path: path}
 		}
 	}
 
@@ -99,12 +126,10 @@ func (cmd *mainCmd) init() {
 	}
 }
 
-func (cmd *mainCmd) Run(args []string) (err error) {
+func (cmd *mainCmd) Run(cfg *config) (err error) {
 	cmd.init()
 
-	tmuxDriver := cmd.newTmuxDriver()
-
-	if file := cmd.Getenv(_logfileEnv); len(file) > 0 {
+	if file := cfg.LogFile; len(file) > 0 {
 		f, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			return fmt.Errorf("open log %q: %v", file, err)
@@ -112,6 +137,8 @@ func (cmd *mainCmd) Run(args []string) (err error) {
 		defer multierr.AppendInvoke(&err, multierr.Close(f))
 		cmd.Stderr = f
 	}
+
+	tmuxDriver := cmd.newTmuxDriver("tmux") // TODO cfg.Tmux
 
 	// If we're wrapped, wait to send the done signal *after* writing the
 	// panic.
@@ -121,30 +148,7 @@ func (cmd *mainCmd) Run(args []string) (err error) {
 			err = multierr.Append(err, tmuxDriver.SendSignal(signal))
 		}(_signalPrefix + parent)
 	}
-
 	defer paniclog.Recover(&err, cmd.Stderr)
-
-	var cfg config
-	flag := flag.NewFlagSet(_name, flag.ContinueOnError)
-	flag.SetOutput(cmd.Stderr)
-	flag.Usage = func() {
-		name := flag.Name()
-		fmt.Fprintf(flag.Output(), _usage, name)
-	}
-	cfg.RegisterFlags(flag)
-	version := flag.Bool("version", false, "")
-	if err := flag.Parse(args); err != nil {
-		return err
-	}
-
-	if *version {
-		fmt.Fprintf(cmd.Stdout, "tmux-fastcopy version %v\n", _version)
-		return nil
-	}
-
-	if args := flag.Args(); len(args) > 0 {
-		return fmt.Errorf("unexpected arguments %q", args)
-	}
 
 	logger := log.New(cmd.Stderr)
 	if cfg.Verbose {
@@ -172,7 +176,7 @@ func (cmd *mainCmd) Run(args []string) (err error) {
 		}
 	}
 
-	return cmd.runTarget(target, &cfg)
+	return cmd.runTarget(target, cfg)
 }
 
 type tmuxShellDriver interface {

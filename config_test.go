@@ -201,6 +201,11 @@ func TestConfigFlags(t *testing.T) {
 			give:    []string{"-regex", "foo"},
 			wantErr: `must be in the form NAME:REGEX`,
 		},
+		{
+			desc: "log",
+			give: []string{"-log", "foo.txt"},
+			want: config{LogFile: "foo.txt"},
+		},
 	}
 
 	for _, tt := range tests {
@@ -323,6 +328,7 @@ func TestConfigMerge(t *testing.T) {
 					Action:   "bar",
 					Alphabet: "abc",
 					Verbose:  true,
+					LogFile:  "foo.txt",
 					Regexes: regexes{
 						"foo": "bar",
 					},
@@ -331,6 +337,7 @@ func TestConfigMerge(t *testing.T) {
 					Pane:     "ignored",
 					Action:   "ignored",
 					Alphabet: "ignored",
+					LogFile:  "ignored.txt",
 					Regexes: regexes{
 						"foo": "ignored",
 						"bar": "baz",
@@ -342,6 +349,7 @@ func TestConfigMerge(t *testing.T) {
 				Action:   "bar",
 				Alphabet: "abc",
 				Verbose:  true,
+				LogFile:  "foo.txt",
 				Regexes: regexes{
 					"foo": "bar",
 					"bar": "baz",
@@ -359,6 +367,7 @@ func TestConfigMerge(t *testing.T) {
 				{Regexes: regexes{"bar": "baz"}},
 				{Regexes: regexes{"foo": "ignored"}},
 				{Regexes: regexes{"bar": "ignored"}},
+				{LogFile: "foo.txt"},
 			},
 			want: config{
 				Pane:     "foo",
@@ -369,6 +378,7 @@ func TestConfigMerge(t *testing.T) {
 					"foo": "bar",
 					"bar": "baz",
 				},
+				LogFile: "foo.txt",
 			},
 		},
 	}
@@ -460,6 +470,7 @@ func generateConfig(t testing.TB, rand *rand.Rand) config {
 		Alphabet: generateAlphabet(t, rand),
 		Verbose:  generateValue(t, rand, _typeBool, "verbose").(bool),
 		Regexes:  generateRegexes(t, rand),
+		LogFile:  generateString(t, rand, 0, "generate logFile"),
 	}
 }
 
