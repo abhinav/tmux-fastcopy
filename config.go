@@ -21,12 +21,6 @@ var _defaultRegexes = map[string]string{
 	"isodate":  `\d{4}-\d{2}-\d{2}`,
 }
 
-var _defaultConfig = config{
-	Action:   _defaultAction,
-	Alphabet: _defaultAlphabet,
-	Regexes:  _defaultRegexes,
-}
-
 // regexes is a map from regex name to body. If body is empty, this regex
 // should be skipped.
 type regexes map[string]string
@@ -88,7 +82,17 @@ type config struct {
 	Alphabet alphabet
 	Verbose  bool
 	Regexes  regexes
+	Tmux     string
 	LogFile  string
+}
+
+// Generates a new default configuration.
+func defaultConfig(cfg *config) *config {
+	return &config{
+		Action:   fmt.Sprintf("%v set-buffer -w -- {}", cfg.Tmux),
+		Alphabet: _defaultAlphabet,
+		Regexes:  _defaultRegexes,
+	}
 }
 
 func (c *config) RegisterFlags(flag *flag.FlagSet) {
@@ -99,6 +103,7 @@ func (c *config) RegisterFlags(flag *flag.FlagSet) {
 	flag.Var(&c.Regexes, "regex", "")
 	flag.BoolVar(&c.Verbose, "verbose", false, "")
 	flag.StringVar(&c.LogFile, "log", "", "")
+	flag.StringVar(&c.Tmux, "tmux", "tmux", "")
 }
 
 func (c *config) RegisterOptions(load *tmuxopt.Loader) {
@@ -121,6 +126,9 @@ func (c *config) FillFrom(o *config) {
 	}
 	if len(c.LogFile) == 0 {
 		c.LogFile = o.LogFile
+	}
+	if len(c.Tmux) == 0 {
+		c.Tmux = o.Tmux
 	}
 	c.Regexes.FillFrom(o.Regexes)
 	c.Verbose = c.Verbose || o.Verbose
@@ -145,6 +153,9 @@ func (c *config) Flags() []string {
 	}
 	if len(c.LogFile) > 0 {
 		args = append(args, "-log", c.LogFile)
+	}
+	if len(c.Tmux) > 0 {
+		args = append(args, "-tmux", c.Tmux)
 	}
 	return args
 }

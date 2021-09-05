@@ -37,6 +37,7 @@ func TestWrapper(t *testing.T) {
 			},
 			wantConfig: config{
 				Pane: "%1",
+				Tmux: "tmux",
 			},
 		},
 		{
@@ -54,6 +55,7 @@ func TestWrapper(t *testing.T) {
 				Pane:     "%3",
 				Action:   "pbcopy",
 				Alphabet: alphabet("asdfghjkl"),
+				Tmux:     "tmux",
 			},
 		},
 	}

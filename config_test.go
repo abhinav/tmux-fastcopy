@@ -133,26 +133,29 @@ func TestConfigFlags(t *testing.T) {
 		want    config
 		wantErr string
 	}{
-		{desc: "no args"}, // zero values
+		{
+			desc: "no args",
+			want: config{Tmux: "tmux"},
+		},
 		{
 			desc: "pane",
 			give: []string{"--pane", "42"},
-			want: config{Pane: "42"},
+			want: config{Pane: "42", Tmux: "tmux"},
 		},
 		{
 			desc: "verbose",
 			give: []string{"--verbose"},
-			want: config{Verbose: true},
+			want: config{Verbose: true, Tmux: "tmux"},
 		},
 		{
 			desc: "action",
 			give: []string{"-action", "pbcopy"},
-			want: config{Action: "pbcopy"},
+			want: config{Action: "pbcopy", Tmux: "tmux"},
 		},
 		{
 			desc: "alphabet",
 			give: []string{"-alphabet", "0123456789"},
-			want: config{Alphabet: "0123456789"},
+			want: config{Alphabet: "0123456789", Tmux: "tmux"},
 		},
 		{
 			desc:    "alphabet/too small",
@@ -169,6 +172,7 @@ func TestConfigFlags(t *testing.T) {
 			give: []string{"-regex", "foo:bar"},
 			want: config{
 				Regexes: regexes{"foo": "bar"},
+				Tmux:    "tmux",
 			},
 		},
 		{
@@ -182,6 +186,7 @@ func TestConfigFlags(t *testing.T) {
 					"foo": "bar",
 					"baz": "qux",
 				},
+				Tmux: "tmux",
 			},
 		},
 		{
@@ -194,6 +199,7 @@ func TestConfigFlags(t *testing.T) {
 			give: []string{"-regex", "bar:"},
 			want: config{
 				Regexes: regexes{"bar": ""},
+				Tmux:    "tmux",
 			},
 		},
 		{
@@ -204,7 +210,12 @@ func TestConfigFlags(t *testing.T) {
 		{
 			desc: "log",
 			give: []string{"-log", "foo.txt"},
-			want: config{LogFile: "foo.txt"},
+			want: config{LogFile: "foo.txt", Tmux: "tmux"},
+		},
+		{
+			desc: "tmux",
+			give: []string{"-tmux", "/usr/bin/tmux"},
+			want: config{Tmux: "/usr/bin/tmux"},
 		},
 	}
 
@@ -338,6 +349,7 @@ func TestConfigMerge(t *testing.T) {
 					Action:   "ignored",
 					Alphabet: "ignored",
 					LogFile:  "ignored.txt",
+					Tmux:     "/usr/bin/tmux",
 					Regexes: regexes{
 						"foo": "ignored",
 						"bar": "baz",
@@ -350,6 +362,7 @@ func TestConfigMerge(t *testing.T) {
 				Alphabet: "abc",
 				Verbose:  true,
 				LogFile:  "foo.txt",
+				Tmux:     "/usr/bin/tmux",
 				Regexes: regexes{
 					"foo": "bar",
 					"bar": "baz",
@@ -368,6 +381,7 @@ func TestConfigMerge(t *testing.T) {
 				{Regexes: regexes{"foo": "ignored"}},
 				{Regexes: regexes{"bar": "ignored"}},
 				{LogFile: "foo.txt"},
+				{Tmux: "/usr/local/bin/tmux"},
 			},
 			want: config{
 				Pane:     "foo",
@@ -379,6 +393,7 @@ func TestConfigMerge(t *testing.T) {
 					"bar": "baz",
 				},
 				LogFile: "foo.txt",
+				Tmux:    "/usr/local/bin/tmux",
 			},
 		},
 	}
@@ -471,6 +486,7 @@ func generateConfig(t testing.TB, rand *rand.Rand) config {
 		Verbose:  generateValue(t, rand, _typeBool, "verbose").(bool),
 		Regexes:  generateRegexes(t, rand),
 		LogFile:  generateString(t, rand, 0, "generate logFile"),
+		Tmux:     generateString(t, rand, 1, "generate tmux"),
 	}
 }
 

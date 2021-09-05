@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Add back `-log` flag. Use this flag to specify the destination for log
   messages.
+- Add `-tmux` flag to specify the location of the tmux executable.
 
 ### Fixed
 - The default action `tmux set-buffer` now includes the `-w` flag which makes

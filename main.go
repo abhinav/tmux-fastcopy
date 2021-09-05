@@ -105,6 +105,10 @@ The following flags are available:
 		characters used to generate labels.
 			-alphabet "asdfghjkl;"  # qwerty home row
 		Uses the English alphabet by default.
+	-tmux PATH
+		path to tmux executable.
+			-tmux /usr/bin/tmux
+		Searches $PATH for tmux by default.
 	-log FILE
 		file to write logs to.
 		Uses stderr by default.
@@ -138,7 +142,7 @@ func (cmd *mainCmd) Run(cfg *config) (err error) {
 		cmd.Stderr = f
 	}
 
-	tmuxDriver := cmd.newTmuxDriver("tmux") // TODO cfg.Tmux
+	tmuxDriver := cmd.newTmuxDriver(cfg.Tmux)
 
 	// If we're wrapped, wait to send the done signal *after* writing the
 	// panic.
