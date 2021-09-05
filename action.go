@@ -9,10 +9,7 @@ import (
 	shellwords "github.com/mattn/go-shellwords"
 )
 
-const (
-	_placeholderArg = "{}"
-	_defaultAction  = "tmux set-buffer -w -- {}"
-)
+const _placeholderArg = "{}"
 
 type actionFactory struct {
 	Log *log.Logger

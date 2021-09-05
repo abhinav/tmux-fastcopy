@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"flag"
 	"io"
 	"os"
 	"path/filepath"
@@ -24,35 +23,13 @@ func TestVersion(t *testing.T) {
 	defer func() {
 		assert.Empty(t, stderr.String(), "stderr should be empty")
 	}()
-	err := (&mainCmd{
+	err := run(&mainCmd{
 		Stdout: &stdout,
 		Stderr: &stderr,
 		Getenv: envtest.Empty.Getenv,
-	}).Run([]string{"-version"})
+	}, []string{"-version"})
 	require.NoError(t, err)
 	assert.Contains(t, stdout.String(), _version)
-}
-
-func TestMainLogOverride(t *testing.T) {
-	t.Parallel()
-
-	logfile := filepath.Join(t.TempDir(), "log.txt")
-	var stdout, stderr bytes.Buffer
-	defer func() {
-		assert.Empty(t, stdout.String(), "stdout must be empty")
-		assert.Empty(t, stderr.String(), "stderr must be empty")
-	}()
-
-	err := (&mainCmd{
-		Getenv: envtest.MustPairs(_logfileEnv, logfile).Getenv,
-		Stdout: &stdout,
-		Stderr: &stderr,
-	}).Run([]string{"--help"})
-	assert.Equal(t, flag.ErrHelp, err)
-
-	body, err := os.ReadFile(logfile)
-	require.NoError(t, err)
-	assert.Contains(t, string(body), "The following flags are available:")
 }
 
 type fakeTmux struct{ tmux.Driver }
@@ -79,10 +56,13 @@ func TestMainParentSignal(t *testing.T) {
 		Stdout: io.Discard,
 		Stderr: &stderr,
 		Getenv: envtest.MustPairs(_parentPIDEnv, "42").Getenv,
-		newTmuxDriver: func() tmuxShellDriver {
+		newTmuxDriver: func(string) tmuxShellDriver {
 			return fakeTmux{mockTmux}
 		},
-	}).Run([]string{"--version"})
+		runTarget: func(interface{ Run(*config) error }, *config) error {
+			return nil
+		},
+	}).Run(&config{})
 	assert.NoError(t, err)
 }
 
@@ -111,15 +91,15 @@ func TestMainTargetPanicWithLog(t *testing.T) {
 	err := (&mainCmd{
 		Stdout: &stdout,
 		Stderr: &stderr,
-		Getenv: envtest.MustPairs(
-			_logfileEnv, logfile,
-		).Getenv,
+		Getenv: envtest.Empty.Getenv,
 		Getpid: func() int { return 42 },
-		newTmuxDriver: func() tmuxShellDriver {
+		newTmuxDriver: func(string) tmuxShellDriver {
 			return fakeTmux{mockTmux}
 		},
 		runTarget: runTarget,
-	}).Run(nil)
+	}).Run(&config{
+		LogFile: logfile,
+	})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "great sadness")
 

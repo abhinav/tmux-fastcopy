@@ -22,7 +22,7 @@ type app struct {
 
 // Run runs the application with the provided configuration.
 func (app *app) Run(cfg *config) error {
-	cfg.FillFrom(&_defaultConfig)
+	cfg.FillFrom(defaultConfig(cfg))
 
 	matcher := make(matcher, 0, len(cfg.Regexes))
 	for name, reg := range cfg.Regexes {

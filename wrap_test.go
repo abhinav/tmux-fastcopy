@@ -37,6 +37,7 @@ func TestWrapper(t *testing.T) {
 			},
 			wantConfig: config{
 				Pane: "%1",
+				Tmux: "tmux",
 			},
 		},
 		{
@@ -54,6 +55,7 @@ func TestWrapper(t *testing.T) {
 				Pane:     "%3",
 				Action:   "pbcopy",
 				Alphabet: alphabet("asdfghjkl"),
+				Tmux:     "tmux",
 			},
 		},
 	}
@@ -73,6 +75,12 @@ func TestWrapper(t *testing.T) {
 					gotConfig.RegisterFlags(fset)
 
 					require.NoError(t, fset.Parse(req.Command[1:]))
+
+					// zero out log file for comparison.
+					if assert.NotEmpty(t, gotConfig.LogFile, "log file must be specified") {
+						gotConfig.LogFile = ""
+					}
+
 					assert.Equal(t, tt.wantConfig, gotConfig)
 				})
 
