@@ -11,7 +11,7 @@ import (
 
 const (
 	_placeholderArg = "{}"
-	_defaultAction  = "tmux set-buffer -- {}"
+	_defaultAction  = "tmux set-buffer -w -- {}"
 )
 
 type actionFactory struct {

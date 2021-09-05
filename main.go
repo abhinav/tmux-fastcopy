@@ -58,10 +58,10 @@ The following flags are available:
 	-action COMMAND
 		command and arguments that handle the selection.
 		The first '{}' in the argument list is the selected text.
-			-action 'tmux set-buffer -- {}'  # default
+			-action 'tmux set-buffer -w -- {}'  # default
 		If there is no '{}', the selected text is sent over stdin.
 			-action pbcopy
-		Uses 'tmux set-buffer' by default.
+		Uses 'tmux set-buffer -w' by default.
 	-regex NAME:PATTERN
 		regular expressions to search for.
 		Name identifies the pattern. Add this option any number of
