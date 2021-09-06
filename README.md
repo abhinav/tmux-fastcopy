@@ -34,6 +34,14 @@ can use to copy them.
 
 ## Installation
 
+Before you install, make sure you are running a supported version of tmux.
+
+```
+$ tmux -V
+```
+
+Supported versions: >= 3.2
+
 The following methods of installation are available:
 
 - via [Tmux Plugin Manager](#tmux-plugin-manager)
