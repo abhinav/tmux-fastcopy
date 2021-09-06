@@ -199,11 +199,6 @@ func TestSwapPaneArgs(t *testing.T) {
 			give: SwapPaneRequest{Source: "%43", Destination: "%42"},
 			want: []string{"swap-pane", "-t", "%42", "-s", "%43"},
 		},
-		{
-			desc: "zoom",
-			give: SwapPaneRequest{Destination: "%42", MaintainZoom: true},
-			want: []string{"swap-pane", "-t", "%42", "-Z"},
-		},
 	}
 
 	for _, tt := range tests {
@@ -219,6 +214,44 @@ func TestSwapPaneArgs(t *testing.T) {
 				log: logtest.NewLogger(t),
 			}
 			err := driver.SwapPane(tt.give)
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestResizePaneArgs(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		desc string
+		give ResizePaneRequest
+		want []string
+	}{
+		{
+			desc: "minimal",
+			give: ResizePaneRequest{Target: "%42"},
+			want: []string{"resize-pane", "-t", "%42"},
+		},
+		{
+			desc: "source",
+			give: ResizePaneRequest{Target: "%43", ToggleZoom: true},
+			want: []string{"resize-pane", "-t", "%43", "-Z"},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.desc, func(t *testing.T) {
+			t.Parallel()
+
+			r := newFakeRunner(t)
+			r.ExpectOutput("tmux", tt.want...)
+
+			driver := ShellDriver{
+				run: r.Runner(),
+				log: logtest.NewLogger(t),
+			}
+			err := driver.ResizePane(tt.give)
 			assert.NoError(t, err)
 		})
 	}

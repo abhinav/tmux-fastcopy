@@ -19,6 +19,9 @@ type Driver interface {
 	// SwapPane runs the tmux swap-pane command.
 	SwapPane(SwapPaneRequest) error
 
+	// ResizePane runs the tmux resize-pane command.
+	ResizePane(ResizePaneRequest) error
+
 	// ResizeWindow runs the tmux resize-window command.
 	ResizeWindow(ResizeWindowRequest) error
 
@@ -112,17 +115,12 @@ type SwapPaneRequest struct {
 
 	// Destination pane to swap the source with.
 	Destination string
-
-	// MaintainZoom specifies that if the window was zoomed, it should
-	// remain zoomed.
-	MaintainZoom bool
 }
 
 func (r SwapPaneRequest) String() string {
 	var b stringobj.Builder
 	b.Put("source", r.Source)
 	b.Put("destination", r.Destination)
-	b.Put("maintainZoom", r.MaintainZoom)
 	return b.String()
 }
 
@@ -148,5 +146,18 @@ type ShowOptionsRequest struct {
 func (r ShowOptionsRequest) String() string {
 	var b stringobj.Builder
 	b.Put("global", r.Global)
+	return b.String()
+}
+
+// ResizePaneRequest specifies the parameters for a resize-pane command.
+type ResizePaneRequest struct {
+	Target     string // target pane
+	ToggleZoom bool   // whether to toggle zoom
+}
+
+func (r ResizePaneRequest) String() string {
+	var b stringobj.Builder
+	b.Put("target", r.Target)
+	b.Put("toggleZoom", r.ToggleZoom)
 	return b.String()
 }
