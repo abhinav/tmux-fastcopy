@@ -142,7 +142,7 @@ Change how text is copied with this action.
 
 **Default**:
 
-    set-option -g @fastcopy-action 'tmux set-buffer -w -- {}'
+    set-option -g @fastcopy-action 'tmux set-buffer -- {}'
 
 The string specifies the command to run with the selection, as well as the
 arguments for the command. The special argument `{}` acts as a placeholder for

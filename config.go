@@ -89,7 +89,7 @@ type config struct {
 // Generates a new default configuration.
 func defaultConfig(cfg *config) *config {
 	return &config{
-		Action:   fmt.Sprintf("%v set-buffer -w -- {}", cfg.Tmux),
+		Action:   fmt.Sprintf("%v set-buffer -- {}", cfg.Tmux),
 		Alphabet: _defaultAlphabet,
 		Regexes:  _defaultRegexes,
 	}
