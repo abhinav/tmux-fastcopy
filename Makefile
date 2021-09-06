@@ -57,6 +57,8 @@ gofmt:
 .PHONY: golint
 golint: $(GOLINT)
 	$(GOLINT) ./...
+	cd tools && ../$(GOLINT) ./...
+	cd integration && ../$(GOLINT) ./...
 
 $(GOLINT): tools/go.mod
 	cd tools && go install golang.org/x/lint/golint
@@ -64,6 +66,8 @@ $(GOLINT): tools/go.mod
 .PHONY: staticcheck
 staticcheck: $(STATICCHECK)
 	$(STATICCHECK) ./...
+	cd tools && ../$(STATICCHECK) ./...
+	cd integration && ../$(STATICCHECK) ./...
 
 $(STATICCHECK): tools/go.mod
 	cd tools && go install honnef.co/go/tools/cmd/staticcheck
@@ -75,6 +79,7 @@ $(EXTRACT_CHANGELOG): tools/go.mod $(TOOLS_GO_FILES)
 gomodtidy: go.mod go.sum tools/go.mod tools/go.sum
 	go mod tidy
 	cd tools && go mod tidy
+	cd integration && go mod tidy
 	@if ! git diff --quiet $^; then \
 		echo "go mod tidy changed files:" && \
 		git status --porcelain $^ && \
