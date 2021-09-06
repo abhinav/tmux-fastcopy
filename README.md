@@ -40,7 +40,7 @@ Before you install, make sure you are running a supported version of tmux.
 $ tmux -V
 ```
 
-Supported versions: >= 3.2
+Supported versions: >= 3.1
 
 The following methods of installation are available:
 
@@ -142,7 +142,7 @@ Change how text is copied with this action.
 
 **Default**:
 
-    set-option -g @fastcopy-action 'tmux set-buffer -w -- {}'
+    set-option -g @fastcopy-action 'tmux set-buffer -- {}'
 
 The string specifies the command to run with the selection, as well as the
 arguments for the command. The special argument `{}` acts as a placeholder for

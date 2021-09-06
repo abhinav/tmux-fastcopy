@@ -92,7 +92,7 @@ func Test(t *testing.T) {
 		break
 	}
 
-	require.NotEmpty(t, got, "file %q not found after 5 seconds")
+	require.NotEmpty(t, got, "file %q not found after 5 seconds", gotFile)
 
 	t.Logf("got %q", got)
 	assert.Contains(t, []string{
@@ -121,7 +121,7 @@ func newFakeEnv(t testing.TB) *fakeEnv {
 	require.NoError(t, os.Mkdir(tmpDir, 01755), "set up tmpDir")
 
 	logFile := filepath.Join(root, "log.txt")
-	defer func() {
+	t.Cleanup(func() {
 		if !t.Failed() {
 			return
 		}
@@ -132,7 +132,7 @@ func newFakeEnv(t testing.TB) *fakeEnv {
 		} else {
 			t.Logf("tmux-fastcopy log:\n%s", got)
 		}
-	}()
+	})
 
 	tmux, err := exec.LookPath("tmux")
 	require.NoError(t, err, "find tmux")

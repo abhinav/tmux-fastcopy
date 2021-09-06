@@ -11,9 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   messages.
 - Add `-tmux` flag to specify the location of the tmux executable.
 
-### Fixed
-- The default action `tmux set-buffer` now includes the `-w` flag which makes
-  tmux write to the client's clipboard.
+### Changed
+- Support Tmux 3.1. Previously, tmux-fastcopy required at least Tmux 3.2.
 
 ## 0.3.1 - 2021-08-23
 ### Fixed

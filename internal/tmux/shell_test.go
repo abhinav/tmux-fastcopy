@@ -54,9 +54,11 @@ func TestNewSessionArgs(t *testing.T) {
 		{
 			desc: "env",
 			give: NewSessionRequest{
-				Env: []string{"FOO=bar", "BAZ=qux"},
+				Env:     []string{"FOO=bar", "BAZ=qux"},
+				Command: []string{"/bin/bash"},
 			},
-			want: []string{"new-session", "-e", "FOO=bar", "-e", "BAZ=qux"},
+			want: []string{"new-session",
+				"/usr/bin/env", "FOO=bar", "BAZ=qux", "/bin/bash"},
 		},
 	}
 
