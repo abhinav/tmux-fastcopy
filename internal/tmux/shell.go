@@ -1,6 +1,7 @@
 package tmux
 
 import (
+	"errors"
 	"io"
 	"os/exec"
 	"strconv"
@@ -9,7 +10,10 @@ import (
 	"github.com/abhinav/tmux-fastcopy/internal/log"
 )
 
-const _defaultTmux = "tmux"
+const (
+	_defaultTmux = "tmux"
+	_defaultEnv  = "/usr/bin/env"
+)
 
 // minimal hook to change how exec.Cmd are run. Tests will provide a different
 // implementation.
@@ -29,6 +33,9 @@ type ShellDriver struct {
 	// Path to the tmux executable. Defaults to "tmux".
 	Path string
 
+	// Path to the env command. Defaults to /usr/bin/env.
+	Env string
+
 	log  *log.Logger
 	run  *runner
 	once sync.Once
@@ -44,6 +51,10 @@ func (s *ShellDriver) init() {
 
 		if s.Path == "" {
 			s.Path = _defaultTmux
+		}
+
+		if s.Env == "" {
+			s.Env = _defaultEnv
 		}
 
 		if s.run == nil {
@@ -96,8 +107,19 @@ func (s *ShellDriver) NewSession(req NewSessionRequest) ([]byte, error) {
 	if req.Detached {
 		args = append(args, "-d")
 	}
-	for _, env := range req.Env {
-		args = append(args, "-e", env)
+
+	// We could use the -e flg to set the environment variables, but that
+	// was added in tmux 3.2. Instead, use,
+	//
+	//   /usr/bin/env K1=V1 K2=V2 cmd "$1" "$2" ...
+	if len(req.Env) > 0 {
+		if len(req.Command) == 0 {
+			return nil, errors.New("env can be set only if command is set")
+		}
+		setenv := make([]string, len(req.Env)+1)
+		setenv[0] = s.Env
+		copy(setenv[1:], req.Env)
+		args = append(args, setenv...)
 	}
 
 	args = append(args, req.Command...)
