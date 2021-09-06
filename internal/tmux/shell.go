@@ -176,14 +176,27 @@ func (s *ShellDriver) SwapPane(req SwapPaneRequest) error {
 	if s := req.Source; len(s) > 0 {
 		args = append(args, "-s", s)
 	}
-	if req.MaintainZoom {
+
+	cmd := s.cmd(args...)
+	defer s.errorWriter(&cmd.Stdout, &cmd.Stderr)()
+
+	s.log.Debugf("swap pane: %v", req)
+	return s.run.Run(cmd)
+}
+
+// ResizePane runs the resize-pane command.
+func (s *ShellDriver) ResizePane(req ResizePaneRequest) error {
+	s.init()
+
+	args := []string{"resize-pane", "-t", req.Target}
+	if req.ToggleZoom {
 		args = append(args, "-Z")
 	}
 
 	cmd := s.cmd(args...)
 	defer s.errorWriter(&cmd.Stdout, &cmd.Stderr)()
 
-	s.log.Debugf("swap pane: %v", req)
+	s.log.Debugf("resize pane: %v", req)
 	return s.run.Run(cmd)
 }
 

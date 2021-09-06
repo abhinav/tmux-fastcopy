@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `-tmux` flag to specify the location of the tmux executable.
 
 ### Changed
-- Support Tmux 3.1. Previously, tmux-fastcopy required at least Tmux 3.2.
+- Support Tmux 3.0. Previously, tmux-fastcopy required at least Tmux 3.2.
 
 ## 0.3.1 - 2021-08-23
 ### Fixed

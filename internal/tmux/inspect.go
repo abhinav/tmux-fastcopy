@@ -25,6 +25,7 @@ type PaneInfo struct {
 	Width, Height  int
 	Mode           PaneMode
 	ScrollPosition int
+	WindowZoomed   bool
 }
 
 func (i *PaneInfo) String() string {
@@ -57,7 +58,8 @@ var (
 		Then: tmuxfmt.Var("scroll_position"),
 		Else: tmuxfmt.Int(0),
 	}
-	_windowID = tmuxfmt.Var("window_id")
+	_windowID     = tmuxfmt.Var("window_id")
+	_windowZoomed = tmuxfmt.Var("window_zoomed_flag")
 )
 
 // InspectPane inspects a tmux pane and reports information about it. The
@@ -74,6 +76,7 @@ func InspectPane(driver Driver, identifier string) (*PaneInfo, error) {
 	fc.IntVar(&info.Height, _paneHeight)
 	fc.StringVar((*string)(&info.Mode), _paneMode)
 	fc.IntVar(&info.ScrollPosition, _paneScrollPosition)
+	fc.BoolVar(&info.WindowZoomed, _windowZoomed)
 
 	msg, parse := fc.Prepare()
 	out, err := driver.DisplayMessage(DisplayMessageRequest{

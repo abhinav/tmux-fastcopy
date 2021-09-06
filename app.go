@@ -96,19 +96,31 @@ func (app *app) Run(cfg *config) error {
 	ctrl.Init()
 
 	if err := app.Tmux.SwapPane(tmux.SwapPaneRequest{
-		Source:       targetPane.ID,
-		Destination:  myPane.ID,
-		MaintainZoom: true,
+		Source:      targetPane.ID,
+		Destination: myPane.ID,
 	}); err != nil {
 		return err
 	}
-	defer func() {
-		app.Tmux.SwapPane(tmux.SwapPaneRequest{
-			Destination:  targetPane.ID,
-			Source:       myPane.ID,
-			MaintainZoom: true,
+
+	// If the window was zoomed, zoom the swapped pane as well. In Tmux 3.1
+	// or newer, we can use the '-Z' flag of swap-pane, but that's not
+	// available in older versions.
+	if targetPane.WindowZoomed {
+		_ = app.Tmux.ResizePane(tmux.ResizePaneRequest{
+			Target:     myPane.ID,
+			ToggleZoom: true,
 		})
-	}()
+
+		defer app.Tmux.ResizePane(tmux.ResizePaneRequest{
+			Target:     targetPane.ID,
+			ToggleZoom: true,
+		})
+	}
+
+	defer app.Tmux.SwapPane(tmux.SwapPaneRequest{
+		Destination: targetPane.ID,
+		Source:      myPane.ID,
+	})
 
 	selection, err := ctrl.Wait()
 	if err != nil {

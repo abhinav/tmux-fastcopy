@@ -79,6 +79,20 @@ func (mr *MockDriverMockRecorder) NewSession(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewSession", reflect.TypeOf((*MockDriver)(nil).NewSession), arg0)
 }
 
+// ResizePane mocks base method.
+func (m *MockDriver) ResizePane(arg0 tmux.ResizePaneRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResizePane", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ResizePane indicates an expected call of ResizePane.
+func (mr *MockDriverMockRecorder) ResizePane(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResizePane", reflect.TypeOf((*MockDriver)(nil).ResizePane), arg0)
+}
+
 // ResizeWindow mocks base method.
 func (m *MockDriver) ResizeWindow(arg0 tmux.ResizeWindowRequest) error {
 	m.ctrl.T.Helper()

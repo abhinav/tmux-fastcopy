@@ -13,7 +13,7 @@ jobs:
 
     strategy:
       matrix:
-        tmux-version: ["3.2a", "3.1c"]
+        tmux-version: ["3.2a", "3.1c", "3.0a"]
 
     name: Integration Test / Tmux ${{ matrix.tmux-version }}
 

@@ -40,7 +40,7 @@ Before you install, make sure you are running a supported version of tmux.
 $ tmux -V
 ```
 
-Supported versions: >= 3.1
+Supported versions: >= 3.0
 
 The following methods of installation are available:
 
