@@ -272,8 +272,8 @@ func TestConfigTmuxOptions(t *testing.T) {
 		},
 		{
 			desc: "action quoted",
-			give: `@fastcopy-action "tmux set-buffer -- {}"`,
-			want: config{Action: "tmux set-buffer -- {}"},
+			give: `@fastcopy-action "tmux load-buffer -"`,
+			want: config{Action: "tmux load-buffer -"},
 		},
 		{
 			desc: "alphabet",
