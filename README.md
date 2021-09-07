@@ -111,7 +111,7 @@ If you'd like to copy the text to your system clipboard, and you're using
 tmux >= 3.2, add the following to your .tmux.conf:
 
     set-option -g set-clipboard on
-    set-option -g @fastcopy-action 'tmux set-buffer -w -- {}'
+    set-option -g @fastcopy-action 'tmux load-buffer -'
 
 See [How do I copy text to my clipboard?](#clipboard) for older versions of
 tmux.
@@ -145,7 +145,7 @@ Change how text is copied with this action.
 
 **Default**:
 
-    set-option -g @fastcopy-action 'tmux set-buffer -- {}'
+    set-option -g @fastcopy-action 'tmux load-buffer -'
 
 The string specifies the command to run with the selection, as well as the
 arguments for the command. The special argument `{}` acts as a placeholder for
@@ -245,15 +245,15 @@ them to a blank string.
 ### <a id="clipboard"></a> How do I copy text to my clipboard?
 
 To copy text to your system clipboard, you can use tmux's `set-clipboard`
-option and change the action to `tmux set-buffer -w` if you're using
+option and change the action to `tmux load-buffer -w -` if you're using
 at least tmux 3.2.
 
     set-option -g set-clipboard on
-    set-option -g @fastcopy-action 'tmux set-buffer -w -- {}'
+    set-option -g @fastcopy-action 'tmux load-buffer -w -'
 
-With this option set, and the `-w` flag for `set-buffer`, tmux will use the OSC52
-escape sequence to directly set the clipboard for your terminal emulator--it
-should work even through an SSH session. Check out
+With this option set, and the `-w` flag for `load-buffer`, tmux will use the
+OSC52 escape sequence to directly set the clipboard for your terminal
+emulator--it should work even through an SSH session. Check out
 [A guide on how to copy text from anywhere][osc52] to read more about OSC52.
 
   [osc52]: https://old.reddit.com/r/vim/comments/k1ydpn/a_guide_on_how_to_copy_text_from_anywhere/
