@@ -111,7 +111,7 @@ If you'd like to copy the text to your system clipboard, and you're using
 tmux >= 3.2, add the following to your .tmux.conf:
 
     set-option -g set-clipboard on
-    set-option -g @fastcopy-action 'tmux load-buffer -'
+    set-option -g @fastcopy-action 'tmux load-buffer -w -'
 
 See [How do I copy text to my clipboard?](#clipboard) for older versions of
 tmux.
