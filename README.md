@@ -107,11 +107,14 @@ For example,
 By default, the copied text will be placed in your tmux buffer. Paste it by
 pressing `<prefix> + ]`.
 
-If you'd like to copy the text to your system clipboard, use the tmux
-`set-clipboard` option. See [How do I copy text to my clipboard?](#clipboard)
-for more information.
+If you'd like to copy the text to your system clipboard, and you're using
+tmux >= 3.2, add the following to your .tmux.conf:
 
     set-option -g set-clipboard on
+    set-option -g @fastcopy-action 'tmux set-buffer -w -- {}'
+
+See [How do I copy text to my clipboard?](#clipboard) for older versions of
+tmux.
 
 ## Customization
 
@@ -242,19 +245,22 @@ them to a blank string.
 ### <a id="clipboard"></a> How do I copy text to my clipboard?
 
 To copy text to your system clipboard, you can use tmux's `set-clipboard`
-option.
+option and change the action to `tmux set-buffer -w` if you're using
+at least tmux 3.2.
 
     set-option -g set-clipboard on
+    set-option -g @fastcopy-action 'tmux set-buffer -w -- {}'
 
-With this option set, tmux will make use of the OSC52 escape sequence to
-directly set the clipboard for your terminal emulator--it should work even
-through an SSH session. Also check out [A guide on how to copy text from anywhere][osc52]
-to read more about OSC52.
+With this option set, and the `-w` flag for `set-buffer`, tmux will use the OSC52
+escape sequence to directly set the clipboard for your terminal emulator--it
+should work even through an SSH session. Check out
+[A guide on how to copy text from anywhere][osc52] to read more about OSC52.
 
   [osc52]: https://old.reddit.com/r/vim/comments/k1ydpn/a_guide_on_how_to_copy_text_from_anywhere/
 
-If your terminal emulator does not support OSC52, you can configure
-`@fastcopy-action` to have tmux-fastcopy send the text elsewhere. For example,
+If you're using an older version of tmux or your terminal emulator does not
+support OSC52,  you can configure `@fastcopy-action` to have tmux-fastcopy
+send the text elsewhere. For example,
 
     # On macOS:
     set-option -g @fastcopy-action pbcopy
