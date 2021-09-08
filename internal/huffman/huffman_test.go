@@ -72,6 +72,15 @@ func TestLabel(t *testing.T) {
 	}{
 		{
 			alphabet: _ab,
+		},
+		{
+			alphabet: _ab,
+			items: []item{
+				{1, "a"},
+			},
+		},
+		{
+			alphabet: _ab,
 			items: []item{
 				{1, "aa"},
 				{1, "bbb"},
@@ -149,6 +158,10 @@ func assertLabelInvariants(t *testing.T, numItems int, labels []string) bool {
 	// 2) There must be no duplicates.
 	var seen []string
 	for _, label := range labels {
+		if !assert.NotEmpty(t, label, "label with %d items must not be empty", numItems) {
+			return false
+		}
+
 		if !assert.NotContains(t, seen, label, "duplicate label %q", label) {
 			return false
 		}
