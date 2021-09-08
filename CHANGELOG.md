@@ -11,9 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   hitting ARG_MAX with `set-buffer`--however unlikely that was.
 
 ### Fixed
-- ([#38]): Fix infinite loop when there's a single match.
+- [(#38)]: Fix infinite loop when there's a single match.
 
-  ([#38]): https://github.com/abhinav/tmux-fastcopy/issues/38
+  [(#38)]: https://github.com/abhinav/tmux-fastcopy/issues/38
 
 ## 0.4.0 - 2021-09-06
 Highlight: The minimum required version of Tmux was lowered to 3.0.
