@@ -25,8 +25,13 @@ func Label(alphabetSize int, freqs []int) (labels [][]int) {
 		panic("alphabet must have at least two elements")
 	}
 
-	if len(freqs) == 0 {
+	switch len(freqs) {
+	case 0:
 		return nil
+	case 1:
+		// special-case: If there's only one item, create a single
+		// letter alabel.
+		return [][]int{{0}}
 	}
 
 	// Fill the heap with leaf nodes for the user-provided elements.
