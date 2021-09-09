@@ -85,9 +85,9 @@ func (t *Tee) run() {
 	defer ticker.Stop()
 
 	for {
-		_, err := io.CopyBuffer(t.W, t.R, t.buffer)
-		if err == nil {
-			// If the write succeded, copy the next chunk.
+		n, err := io.CopyBuffer(t.W, t.R, t.buffer)
+		if err == nil && n > 0 {
+			// There are more bytes still to read.
 			continue
 		}
 
@@ -96,9 +96,9 @@ func (t *Tee) run() {
 			// File is closed. No new logs are expected.
 			return
 
-		case errors.Is(err, io.EOF):
-			// Wait for quit or up to the specified delay and try
-			// again.
+		case err == nil || errors.Is(err, io.EOF):
+			// There were no more bytes left to copy. Wait for quit
+			// or up to the specified delay and try again.
 			select {
 			case <-t.quit:
 				return
