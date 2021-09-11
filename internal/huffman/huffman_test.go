@@ -60,7 +60,17 @@ var (
 	}
 )
 
+func TestLabelAlphabetTooSmall(t *testing.T) {
+	t.Parallel()
+
+	assert.Panics(t, func() {
+		Label(1, []int{1, 2, 3})
+	})
+}
+
 func TestLabel(t *testing.T) {
+	t.Parallel()
+
 	type item struct {
 		Freq  int
 		Label string

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/abhinav/tmux-fastcopy/internal/fastcopy"
 	"github.com/abhinav/tmux-fastcopy/internal/log"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux"
 	"github.com/abhinav/tmux-fastcopy/internal/ui"
@@ -142,7 +143,7 @@ type ctrl struct {
 	Text     string
 	Matcher  matcher
 
-	w   *Widget
+	w   *fastcopy.Widget
 	ui  *ui.App
 	sel string
 }
@@ -152,19 +153,19 @@ func (c *ctrl) Init() {
 		Background(tcell.ColorBlack).
 		Foreground(tcell.ColorWhite)
 
-	c.w = New(Config{
+	c.w = (&fastcopy.WidgetConfig{
 		Text:         c.Text,
 		Matches:      c.Matcher.Match(c.Text),
 		Handler:      c,
 		HintAlphabet: c.Alphabet,
-		Style: Style{
+		Style: fastcopy.Style{
 			Normal:         base,
 			Match:          base.Foreground(tcell.ColorGreen),
 			SkippedMatch:   base.Foreground(tcell.ColorGray),
 			HintLabel:      base.Foreground(tcell.ColorRed),
 			HintLabelInput: base.Foreground(tcell.ColorYellow),
 		},
-	})
+	}).Build()
 
 	c.ui = &ui.App{
 		Root:   c.w,

@@ -4,18 +4,20 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
+
+	"github.com/abhinav/tmux-fastcopy/internal/fastcopy"
 )
 
 type matcher []*regexpMatcher
 
-func (rms matcher) Match(s string) []Range {
+func (rms matcher) Match(s string) []fastcopy.Range {
 	var ms []match
 	for _, m := range rms {
 		ms = m.AppendMatches(s, ms)
 	}
 	ms = rms.removeOverlaps(ms)
 
-	rs := make([]Range, len(ms))
+	rs := make([]fastcopy.Range, len(ms))
 	for i, m := range ms {
 		rs[i] = m.Sel
 	}
@@ -94,10 +96,10 @@ func (rm *regexpMatcher) String() string {
 
 type match struct {
 	// Full matched area.
-	Full Range
+	Full fastcopy.Range
 
 	// Selected portion that will be copied.
-	Sel Range
+	Sel fastcopy.Range
 }
 
 func (rm *regexpMatcher) AppendMatches(s string, ms []match) []match {
@@ -106,8 +108,8 @@ func (rm *regexpMatcher) AppendMatches(s string, ms []match) []match {
 	}
 	for _, m := range rm.regex.FindAllStringSubmatchIndex(s, -1) {
 		ms = append(ms, match{
-			Full: Range{Start: m[0], End: m[1]},
-			Sel:  Range{Start: m[2*rm.subexp], End: m[2*rm.subexp+1]},
+			Full: fastcopy.Range{Start: m[0], End: m[1]},
+			Sel:  fastcopy.Range{Start: m[2*rm.subexp], End: m[2*rm.subexp+1]},
 		})
 	}
 	return ms

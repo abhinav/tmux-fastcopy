@@ -95,11 +95,13 @@ func TestFormatting(t *testing.T) {
 	log.Debugf("level = %v", Debug)
 	log.Infof("level = %v", Info)
 	log.Errorf("level = %v", Error)
+	log.Errorf("level = %v", discard)
 
 	assert.Equal(t, unlines(
 		"level = debug",
 		"level = info",
 		"level = error",
+		"level = 2",
 	), buff.String())
 }
 
