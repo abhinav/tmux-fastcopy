@@ -19,7 +19,7 @@ func (r Range) String() string {
 }
 
 // Len reports the length of this range.
-func (r *Range) Len() int {
+func (r Range) Len() int {
 	return r.End - r.Start
 }
 
@@ -40,6 +40,8 @@ type Handler interface {
 	HandleSelection(hintLabel, text string)
 }
 
+//go:generate mockgen -destination mock_handler_test.go -package fastcopy github.com/abhinav/tmux-fastcopy/internal/fastcopy Handler
+
 // WidgetConfig configures the fastcopy widget.
 type WidgetConfig struct {
 	// Text to display on the widget.
@@ -56,6 +58,9 @@ type WidgetConfig struct {
 	Handler Handler
 
 	Style Style
+
+	// Internal override for generateHints.
+	generateHints func([]rune, string, []Range) []hint
 }
 
 // Widget is the main fastcopy widget. It displays some fixed text with zero or
@@ -77,6 +82,11 @@ type Widget struct {
 
 // Build builds a new Fastcopy widget using the provided configuration.
 func (cfg *WidgetConfig) Build() *Widget {
+	generateHints := generateHints
+	if cfg.generateHints != nil {
+		generateHints = cfg.generateHints
+	}
+
 	hints := generateHints(cfg.HintAlphabet, cfg.Text, cfg.Matches)
 	byLabel := make(map[string]int, len(hints))
 
@@ -101,6 +111,14 @@ func (cfg *WidgetConfig) Build() *Widget {
 // Draw draws the widget onto the provided view.
 func (w *Widget) Draw(view views.View) {
 	w.textw.Draw(view)
+}
+
+// Input reports the text input into the label so far to partially select a
+// label.
+func (w *Widget) Input() string {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	return w.input
 }
 
 // HandleEvent handles input for the widget. This only responds to text input,
