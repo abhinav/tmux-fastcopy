@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/abhinav/tmux-fastcopy/internal/ui"
-	tcell "github.com/gdamore/tcell/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -108,13 +107,7 @@ func TestGenerateHints(t *testing.T) {
 func TestHintAnnotations(t *testing.T) {
 	t.Parallel()
 
-	style := Style{
-		Normal:         tcell.StyleDefault,
-		Match:          tcell.StyleDefault.Foreground(tcell.ColorGreen),
-		SkippedMatch:   tcell.StyleDefault.Foreground(tcell.ColorGray),
-		HintLabel:      tcell.StyleDefault.Foreground(tcell.ColorRed),
-		HintLabelInput: tcell.StyleDefault.Foreground(tcell.ColorYellow),
-	}
+	style := sampleStyle()
 
 	tests := []struct {
 		desc  string
