@@ -1,9 +1,11 @@
 project_name: tmux-fastcopy
+
 before:
   hooks:
     # Verify that the version number in the install.sh matches the planned
     # version.
     - ./install.sh -c {{.Version}}
+
 builds:
   - env:
       - CGO_ENABLED=0
@@ -12,6 +14,7 @@ builds:
       - windows
       - darwin
     ldflags: '-s -w -X main._version={{.Version}}'
+
 archives:
   - replacements:
       darwin: Darwin
@@ -19,10 +22,31 @@ archives:
       windows: Windows
       386: i386
       amd64: x86_64
+
+brews:
+  - tap:
+      owner: abhinav
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    commit_msg_template: "{{ .ProjectName }}: Update formula to {{ .Tag }}"
+    commit_author:
+      name: Abhinav Gupta
+      email: 41730+abhinav@users.noreply.github.com
+    homepage: https://github.com/abhinav/tmux-fastcopy
+    description: "easymotion-style text copying for tmux."
+    license: "MIT"
+    skip_upload: auto
+    dependencies:
+      - name: tmux
+    test: |
+      system "#{bin}/tmux-fastcopy -version"
+
 checksum:
   name_template: 'checksums.txt'
+
 snapshot:
   name_template: "{{ incminor .Tag }}-dev"
+
 changelog:
   # A commit log is not a changelog.
   skip: true
