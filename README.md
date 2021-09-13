@@ -83,7 +83,12 @@ Alternatively, instead of installing tmux-fastcopy as a tmux plugin, you can
 install it as an independent binary.
 
 1. Download a pre-built binary from the [releases page][] and place it on your
-   `$PATH`.
+   `$PATH`, or if you're using Homebrew/Linuxbrew, run:
+
+    ```bash
+    brew install abhinav/tap/tmux-fastcopy
+    ```
+
 2. Add the following to your `.tmux.conf`.
 
     ```
