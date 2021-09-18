@@ -79,23 +79,45 @@ Refresh your tmux server if it's already running.
 
 ### Binary installation
 
-Alternatively, instead of installing tmux-fastcopy as a tmux plugin, you can
-install it as an independent binary.
+Instead of installing tmux-fastcopy as a tmux plugin,
+you can install it as an independent binary.
 
-1. Download a pre-built binary from the [releases page][] and place it on your
-   `$PATH`, or if you're using Homebrew/Linuxbrew, run:
+Use one of the following to install the binary.
+
+- If you're using **Homebrew**/Linuxbrew, run:
 
     ```bash
     brew install abhinav/tap/tmux-fastcopy
     ```
 
-2. Add the following to your `.tmux.conf`.
+- If you're using **ArchLinux**, install it from [AUR](https://aur.archlinux.org/packages/tmux-fastcopy/).
 
-    ```
-    bind-key f run-shell -b tmux-fastcopy
+    ```bash
+    git clone https://aur.archlinux.org/tmux-fastcopy.git
+    cd tmux-fastcopy
+    makepkg -si
     ```
 
-  [releases page]: https://github.com/abhinav/tmux-fastcopy/releases
+  Alternatively, with an AUR helper like [yay](https://github.com/Jguer/yay), run:
+
+    ```bash
+    yay -S tmux-fastcopy
+    ```
+
+- Download a **pre-built binary** from the [releases page](https://github.com/abhinav/tmux-fastcopy/releases)
+  and place it on your `$PATH`.
+
+- Build it from source with Go.
+
+    ```bash
+    go install github.com/abhinav/tmux-fastcopy@latest
+    ```
+
+Once you have the binary installed, add the following to your `.tmux.conf`.
+
+```
+bind-key f run-shell -b tmux-fastcopy
+```
 
 ## Usage
 
