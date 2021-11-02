@@ -3,7 +3,7 @@ module github.com/abhinav/tmux-fastcopy
 go 1.17
 
 require (
-	github.com/benbjohnson/clock v1.1.0
+	github.com/benbjohnson/clock v1.2.0
 	github.com/gdamore/tcell/v2 v2.4.0
 	github.com/golang/mock v1.6.0
 	github.com/mattn/go-runewidth v0.0.13
