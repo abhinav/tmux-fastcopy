@@ -141,16 +141,33 @@ func (v *stringValue) Set(s string) error {
 	return nil
 }
 
-func readValue(v []byte) string {
-	value := string(v)
-	if len(value) > 0 {
-		// Try to unquote but don't fail if it doesn't work.
-		switch value[0] {
-		case '"', '\'':
-			if o, err := strconv.Unquote(value); err == nil {
-				value = o
-			}
+func readValue(v []byte) (value string) {
+	if len(v) == 0 {
+		return ""
+	}
+
+	value = string(v)
+	// Try to unquote but don't fail if it doesn't work.
+	switch value[0] {
+	case '\'':
+		// strconv.Unquote does not like single-quoted strings with
+		// multiple characters. Invert the quotes to let
+		// strconv.Unquote do the heavy-lifting and invert back.
+		value = invertQuotes(value)
+		defer func() {
+			value = invertQuotes(value)
+		}()
+		fallthrough
+	case '"':
+		if o, err := strconv.Unquote(value); err == nil {
+			value = o
 		}
 	}
 	return value
+}
+
+var _quoteInverter = strings.NewReplacer("'", `"`, `"`, "'")
+
+func invertQuotes(s string) string {
+	return _quoteInverter.Replace(s)
 }

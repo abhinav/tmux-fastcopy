@@ -26,6 +26,14 @@ func TestLoaderStrings(t *testing.T) {
 			want: []string{},
 		},
 		{
+			desc: "empty value",
+			give: unlines(
+				"foo ",
+			),
+			options: []string{"foo"},
+			want:    []string{""},
+		},
+		{
 			desc: "simple values",
 			give: unlines(
 				"foo bar",
@@ -55,6 +63,14 @@ func TestLoaderStrings(t *testing.T) {
 			want:    []string{" "},
 		},
 		{
+			desc: "unquote/single quote/multiple characters",
+			give: unlines(
+				"prefix 'a b c'",
+			),
+			options: []string{"prefix"},
+			want:    []string{"a b c"},
+		},
+		{
 			desc: "unquote/double quote",
 			give: unlines(
 				`command "tmux set-buffer -- {}"`,
@@ -69,6 +85,29 @@ func TestLoaderStrings(t *testing.T) {
 			),
 			options: []string{"foo"},
 			want:    []string{`bar " baz`},
+		},
+		{
+			desc: "unquote/escape/single-quoted",
+			give: unlines(
+				`foo 'foo \\" bar'`,
+				// == set-option -g foo 'foo \" bar'
+			),
+			options: []string{"foo"},
+			want:    []string{`foo \" bar`},
+		},
+		{
+			// For
+			// https://github.com/abhinav/tmux-fastcopy/issues/48.
+			// Adding either of the following to your tmux.conf
+			// results in '"hello"' in the output.
+			//   set-option -g @fastcopy-regex-test1 "\"hello\""
+			//   set-option -g @fastcopy-regex-test1 '"hello"'
+			desc: "issue48",
+			give: unlines(
+				`@fastcopy-regex-test1 '"hello"'`,
+			),
+			options: []string{"@fastcopy-regex-test1"},
+			want:    []string{`"hello"`},
 		},
 	}
 
