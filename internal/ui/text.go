@@ -30,19 +30,19 @@ func DrawText(s string, style tcell.Style, view views.View, pos Pos) Pos {
 			combc = r[1:]
 		}
 
-		switch s := g.Str(); s {
-		case "\n":
+		s := g.Str()
+		if pos.X >= w || s == "\n" {
 			pos.Y++
 			pos.X = 0
-			if pos.Y >= h {
-				return pos
-			}
+		}
 
-		default:
-			if pos.X < w {
-				view.SetContent(pos.X, pos.Y, mainc, combc, style)
-				pos.X += runewidth.StringWidth(s)
-			}
+		if pos.Y >= h {
+			return pos
+		}
+
+		if s != "\n" {
+			view.SetContent(pos.X, pos.Y, mainc, combc, style)
+			pos.X += runewidth.StringWidth(s)
 		}
 	}
 

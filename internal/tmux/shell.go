@@ -134,7 +134,7 @@ func (s *ShellDriver) NewSession(req NewSessionRequest) ([]byte, error) {
 func (s *ShellDriver) CapturePane(req CapturePaneRequest) ([]byte, error) {
 	s.init()
 
-	args := []string{"capture-pane", "-p"}
+	args := []string{"capture-pane", "-p", "-J"}
 	if len(req.Pane) > 0 {
 		args = append(args, "-t", string(req.Pane))
 	}

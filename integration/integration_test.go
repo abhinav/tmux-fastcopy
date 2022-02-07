@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -22,23 +21,27 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const _testFile = `
+const _giveText = `
 IP address: 127.0.0.1
 UUID: 95471085-9665-403E-BD95-217C7237F83D
 Git SHA: 64b9df0bd2e2709fdd95d4b58ecaf2a1d9e943a7
+A line that wraps to the next line: 123456789012345678901234567890123456789012345678901234567890
 --EOF--
 `
 
-func Test(t *testing.T) {
-	seed := time.Now().UnixNano()
-	t.Logf("random seed %v", seed)
-	rand := rand.New(rand.NewSource(seed))
+var _wantMatches = []string{
+	"127.0.0.1",
+	"95471085-9665-403E-BD95-217C7237F83D",
+	"64b9df0bd2e2709fdd95d4b58ecaf2a1d9e943a7",
+	"123456789012345678901234567890123456789012345678901234567890",
+}
 
+func Test(t *testing.T) {
 	env := newFakeEnv(t)
 
 	testFile := filepath.Join(env.Root, "give.txt")
 	require.NoError(t,
-		os.WriteFile(testFile, []byte(_testFile), 0644),
+		os.WriteFile(testFile, []byte(_giveText), 0644),
 		"write test file")
 
 	tmux := (&vTmuxConfig{
@@ -57,49 +60,33 @@ func Test(t *testing.T) {
 		t.Fatalf("could not find EOF in %q", tmux.Lines())
 	}
 
-	tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
-	time.Sleep(500 * time.Millisecond)
-	tmux.WaitUntilContains("--EOF--", 3*time.Second)
+	var matches []string
+	for i := 0; i < len(_wantMatches); i++ {
+		tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
+		time.Sleep(500 * time.Millisecond)
+		tmux.WaitUntilContains("--EOF--", 3*time.Second)
 
-	hints := tmux.Matches(func(_ rune, f vt100.Format) bool {
-		return f.Fg == vt100.Red
-	})
-	t.Logf("got hints %q", hints)
-	if !assert.Len(t, hints, 3) {
-		t.Errorf("expected 3 hints in %q", tmux.Lines())
-		tmux.Write([]byte{0x03}) // ctrl-c
-		return
-	}
-	hint := hints[rand.Intn(len(hints))]
-	t.Logf("selecting %q", hint)
-	io.WriteString(tmux, hint)
-	time.Sleep(100 * time.Millisecond)
-
-	gotFile := filepath.Join(env.Root, "got.txt")
-	fmt.Fprintln(tmux, env.Tmux, "save-buffer", gotFile)
-
-	var got string
-	now := time.Now()
-	for time.Since(now) < 5*time.Second {
-		if _, err := os.Stat(gotFile); err != nil {
-			time.Sleep(200 * time.Millisecond)
-			continue
+		hints := tmux.Matches(func(_ rune, f vt100.Format) bool {
+			return f.Fg == vt100.Red
+		})
+		t.Logf("got hints %q", hints)
+		if !assert.Len(t, hints, len(_wantMatches)) {
+			t.Fatalf("expected %d hints in %q", len(_wantMatches), tmux.Lines())
 		}
 
-		b, err := os.ReadFile(gotFile)
+		hint := hints[i]
+		t.Logf("selecting %q", hint)
+		io.WriteString(tmux, hint)
+		time.Sleep(100 * time.Millisecond)
+
+		got, err := tmux.Command("show-buffer").Output()
 		require.NoError(t, err)
-		got = string(b)
-		break
+
+		t.Logf("got %q", got)
+		matches = append(matches, string(got))
 	}
 
-	require.NotEmpty(t, got, "file %q not found after 5 seconds", gotFile)
-
-	t.Logf("got %q", got)
-	assert.Contains(t, []string{
-		"127.0.0.1",
-		"95471085-9665-403E-BD95-217C7237F83D",
-		"64b9df0bd2e2709fdd95d4b58ecaf2a1d9e943a7",
-	}, string(got), "unexpected selection")
+	assert.ElementsMatch(t, _wantMatches, matches)
 }
 
 type fakeEnv struct {
@@ -179,6 +166,8 @@ func (e *fakeEnv) Environ() []string {
 
 // Virtual controllable tmux.
 type vTmux struct {
+	tmux string
+	env  []string
 	w, h int
 	pty  *os.File
 	mu   sync.RWMutex // guards vt
@@ -202,21 +191,26 @@ func (cfg *vTmuxConfig) Build(t testing.TB) *vTmux {
 	})
 	require.NoError(t, err, "start tmux")
 
+	vt := &vTmux{
+		w:    int(cfg.Width),
+		h:    int(cfg.Height),
+		tmux: cfg.Tmux,
+		env:  cfg.Env,
+		vt:   vt100.NewVT100(int(cfg.Height), int(cfg.Width)),
+		pty:  pty,
+	}
 	t.Cleanup(func() {
-		pty.Write([]byte{4})     // Ctrl-D (EOT)
-		io.Copy(io.Discard, pty) // drain unconsumed output
-		assert.NoError(t, pty.Close(), "close pty")
-		assert.NoError(t, cmd.Wait(), "wait for tmux")
+		vt.Command("kill-server").Run()
 	})
 
-	vt := &vTmux{
-		w:   int(cfg.Width),
-		h:   int(cfg.Height),
-		vt:  vt100.NewVT100(int(cfg.Height), int(cfg.Width)),
-		pty: pty,
-	}
 	go vt.start(t, bufio.NewReader(pty))
 	return vt
+}
+
+func (vt *vTmux) Command(args ...string) *exec.Cmd {
+	cmd := exec.Command(vt.tmux, args...)
+	cmd.Env = vt.env
+	return cmd
 }
 
 func (vt *vTmux) start(t testing.TB, vr *bufio.Reader) {

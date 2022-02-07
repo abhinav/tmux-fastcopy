@@ -41,7 +41,7 @@ func TestDrawText(t *testing.T) {
 			desc: "out of bounds/x",
 			w:    4,
 			text: "hello",
-			want: Pos{4, 0},
+			want: Pos{1, 1},
 		},
 		{
 			desc: "out of bounds/y",
