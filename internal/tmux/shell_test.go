@@ -94,22 +94,22 @@ func TestCapturePaneArgs(t *testing.T) {
 	}{
 		{
 			desc: "empty",
-			want: []string{"capture-pane", "-p"},
+			want: []string{"capture-pane", "-p", "-J"},
 		},
 		{
 			desc: "pane",
 			give: CapturePaneRequest{Pane: "%42"},
-			want: []string{"capture-pane", "-p", "-t", "%42"},
+			want: []string{"capture-pane", "-p", "-J", "-t", "%42"},
 		},
 		{
 			desc: "start line",
 			give: CapturePaneRequest{StartLine: 42},
-			want: []string{"capture-pane", "-p", "-S", "42"},
+			want: []string{"capture-pane", "-p", "-J", "-S", "42"},
 		},
 		{
 			desc: "end line",
 			give: CapturePaneRequest{EndLine: 42},
-			want: []string{"capture-pane", "-p", "-E", "42"},
+			want: []string{"capture-pane", "-p", "-J", "-E", "42"},
 		},
 	}
 
