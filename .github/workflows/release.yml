@@ -51,5 +51,6 @@ jobs:
         args: release --rm-dist --release-notes changes.${{ env.VERSION }}.txt
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        AUR_KEY: ${{ secrets.AUR_KEY }}
         HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
         GORELEASER_CURRENT_TAG: ${{ env.VERSION }}

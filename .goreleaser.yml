@@ -33,6 +33,23 @@ archives:
       386: i386
       amd64: x86_64
 
+aurs:
+  - name: tmux-fastcopy-bin
+    homepage: https://github.com/abhinav/tmux-fastcopy
+    description: "easymotion-style text copying for tmux."
+    maintainers:
+      - 'Abhinav Gupta <mail@abhinavg.net>'
+    license: "MIT"
+    git_url: "ssh://aur@aur.archlinux.org/tmux-fastcopy-bin.git"
+    skip_upload: auto
+    private_key: '{{ .Env.AUR_KEY }}'
+    package: |-
+      install -Dm755 "./tmux-fastcopy" "${pkgdir}/usr/bin/tmux-fastcopy"
+      install -Dm755 "./LICENSE" "${pkgdir}/usr/share/licenses/tmux-fastcopy/LICENSE"
+    commit_author:
+      name: Abhinav Gupta
+      email: mail@abhinavg.net
+
 brews:
   - tap:
       owner: abhinav
@@ -41,7 +58,7 @@ brews:
     commit_msg_template: "{{ .ProjectName }}: Update formula to {{ .Tag }}"
     commit_author:
       name: Abhinav Gupta
-      email: 41730+abhinav@users.noreply.github.com
+      email: mail@abhinavg.net
     homepage: https://github.com/abhinav/tmux-fastcopy
     description: "easymotion-style text copying for tmux."
     license: "MIT"
