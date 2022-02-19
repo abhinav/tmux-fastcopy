@@ -9,10 +9,20 @@ before:
 builds:
   - env:
       - CGO_ENABLED=0
+    goarch:
+      - 386
+      - amd64
+      - arm
+      - arm64
     goos:
       - linux
       - windows
       - darwin
+    ignore:
+      - goos: windows
+        goarch: arm
+      - goos: darwin
+        goarch: arm
     ldflags: '-s -w -X main._version={{.Version}}'
 
 archives:
