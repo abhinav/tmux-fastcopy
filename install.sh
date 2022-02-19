@@ -8,7 +8,7 @@ IFS=$'\n\t'
 
 IMPORTPATH=github.com/abhinav/tmux-fastcopy
 NAME=tmux-fastcopy
-VERSION=0.7.1
+VERSION=0.7.2
 
 while getopts 'c:' opt; do
 	case "$opt" in
