@@ -90,7 +90,8 @@ Use one of the following to install the binary.
     brew install abhinav/tap/tmux-fastcopy
     ```
 
-- If you're using **ArchLinux**, install it from [AUR](https://aur.archlinux.org/packages/tmux-fastcopy/).
+- If you're using **ArchLinux**, install it from AUR using the [tmux-fastcopy](https://aur.archlinux.org/packages/tmux-fastcopy/) package,
+  or the [tmux-fastcopy-bin](https://aur.archlinux.org/packages/tmux-fastcopy-bin/) package if you don't want to build it from source.
 
     ```bash
     git clone https://aur.archlinux.org/tmux-fastcopy.git
@@ -98,10 +99,12 @@ Use one of the following to install the binary.
     makepkg -si
     ```
 
-  Alternatively, with an AUR helper like [yay](https://github.com/Jguer/yay), run:
+  With an AUR helper like [yay](https://github.com/Jguer/yay), run:
 
     ```bash
     yay -S tmux-fastcopy
+    # or
+    yay -S tmux-fastcopy-bin
     ```
 
 - Download a **pre-built binary** from the [releases page](https://github.com/abhinav/tmux-fastcopy/releases)
