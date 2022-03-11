@@ -124,6 +124,26 @@ func TestMatcherDefaultRegexes(t *testing.T) {
 	}
 }
 
+func TestConfigDefaults(t *testing.T) {
+	t.Parallel()
+
+	cfg := config{
+		Tmux: "tmux",
+		Regexes: regexes{
+			"prompt": "^% (.+)$",
+		},
+	}
+	cfg.FillFrom(defaultConfig(&cfg))
+
+	assert.Equal(t, "tmux load-buffer -", cfg.Action)
+	assert.Equal(t, _defaultAlphabet, cfg.Alphabet)
+
+	for k, v := range _defaultRegexes {
+		assert.Equal(t, v, cfg.Regexes[k], "regex %q", k)
+	}
+	assert.Equal(t, "^% (.+)$", cfg.Regexes["prompt"])
+}
+
 func TestConfigFlags(t *testing.T) {
 	t.Parallel()
 

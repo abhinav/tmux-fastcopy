@@ -33,7 +33,7 @@ func (i *PaneInfo) String() string {
 	b.Put("id", i.ID)
 	b.Put("windowID", i.WindowID)
 	b.Put("width", i.Width)
-	b.Put("width", i.Height)
+	b.Put("height", i.Height)
 	b.Put("mode", i.Mode)
 	b.Put("scrollPosition", i.ScrollPosition)
 	return b.String()

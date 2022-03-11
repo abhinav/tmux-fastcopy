@@ -32,4 +32,16 @@ func TestInspectPane(t *testing.T) {
 		Mode:           tmux.CopyMode,
 		ScrollPosition: 40,
 	}, got)
+
+	t.Run("String", func(t *testing.T) {
+		t.Parallel()
+
+		s := got.String()
+		assert.Contains(t, s, "id: %42")
+		assert.Contains(t, s, "windowID: @123")
+		assert.Contains(t, s, "width: 80")
+		assert.Contains(t, s, "height: 40")
+		assert.Contains(t, s, "mode: copy-mode")
+		assert.Contains(t, s, "scrollPosition: 40")
+	})
 }
