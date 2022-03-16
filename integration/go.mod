@@ -1,6 +1,6 @@
 module github.com/abhinav/tmux-fastcopy/integration
 
-go 1.17
+go 1.18
 
 require (
 	github.com/abhinav/tmux-fastcopy v0.6.2

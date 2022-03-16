@@ -88,8 +88,10 @@ func (at *AnnotatedText) Draw(view views.View) {
 
 		pos = DrawText(at.Text[lastIdx:ann.offset()], at.Style, view, pos)
 
-		style := at.Style
-		var text string
+		var (
+			style tcell.Style
+			text  string
+		)
 		switch ann := ann.(type) {
 		case StyleTextAnnotation:
 			style = ann.Style
