@@ -14,17 +14,12 @@ import (
 // Index based test cases are difficult to read. Set up some machinery to write
 // more readable test cases.
 type alphabet struct {
-	items   []rune
-	reverse map[rune]int // index into items
+	items []rune
 }
 
 func newAlphabet(chars string) *alphabet {
 	items := []rune(chars)
-	reverse := make(map[rune]int, len(items))
-	for i, r := range items {
-		reverse[r] = i
-	}
-	return &alphabet{items: items, reverse: reverse}
+	return &alphabet{items: items}
 }
 
 func (a *alphabet) String() string {
