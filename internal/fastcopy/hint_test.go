@@ -15,7 +15,7 @@ func TestGenerateHints(t *testing.T) {
 	tests := []struct {
 		desc    string
 		text    string
-		matches []Range
+		matches []Match
 		want    []hint
 	}{
 		{
@@ -26,15 +26,15 @@ func TestGenerateHints(t *testing.T) {
 		{
 			desc: "single match",
 			text: "foo bar",
-			matches: []Range{
-				{1, 3}, // f(oo)
+			matches: []Match{
+				{"name", Range{1, 3}}, // f(oo)
 			},
 			want: []hint{
 				{
 					Label: "a",
 					Text:  "oo",
-					Matches: []Range{
-						{1, 3}, // f(oo)
+					Matches: []Match{
+						{"name", Range{1, 3}}, // f(oo)
 					},
 				},
 			},
@@ -42,17 +42,17 @@ func TestGenerateHints(t *testing.T) {
 		{
 			desc: "duplicated match",
 			text: "foo bar baz qux",
-			matches: []Range{
-				{4, 6},  // (ba)r
-				{8, 10}, // (ba)z
+			matches: []Match{
+				{"name1", Range{4, 6}},  // (ba)r
+				{"name2", Range{8, 10}}, // (ba)z
 			},
 			want: []hint{
 				{
 					Label: "a",
 					Text:  "ba",
-					Matches: []Range{
-						{4, 6},  // (ba)r
-						{8, 10}, // (ba)z
+					Matches: []Match{
+						{"name1", Range{4, 6}},  // (ba)r
+						{"name2", Range{8, 10}}, // (ba)z
 					},
 				},
 			},
@@ -60,33 +60,33 @@ func TestGenerateHints(t *testing.T) {
 		{
 			desc: "multiple matches",
 			text: "foo bar baz qux",
-			matches: []Range{
-				{0, 3},   // (foo)
-				{4, 6},   // (ba)r
-				{8, 10},  // (ba)z
-				{13, 15}, // q(ux)
+			matches: []Match{
+				{"p", Range{0, 3}},   // (foo)
+				{"q", Range{4, 6}},   // (ba)r
+				{"r", Range{8, 10}},  // (ba)z
+				{"s", Range{13, 15}}, // q(ux)
 			},
 			want: []hint{
 				{
 					Label: "c",
 					Text:  "ba",
-					Matches: []Range{
-						{4, 6},  // (ba)r
-						{8, 10}, // (ba)z
+					Matches: []Match{
+						{"q", Range{4, 6}},  // (ba)r
+						{"r", Range{8, 10}}, // (ba)z
 					},
 				},
 				{
 					Label: "a",
 					Text:  "foo",
-					Matches: []Range{
-						{0, 3}, // (foo)
+					Matches: []Match{
+						{"p", Range{0, 3}}, // (foo)
 					},
 				},
 				{
 					Label: "b",
 					Text:  "ux",
-					Matches: []Range{
-						{13, 15}, // q(ux)
+					Matches: []Match{
+						{"s", Range{13, 15}}, // q(ux)
 					},
 				},
 			},
@@ -120,9 +120,9 @@ func TestHintAnnotations(t *testing.T) {
 			give: hint{
 				Label: "a",
 				Text:  "foo",
-				Matches: []Range{
-					{0, 3},
-					{7, 10},
+				Matches: []Match{
+					{"x", Range{0, 3}},
+					{"y", Range{7, 10}},
 				},
 			},
 			// [a]oo
@@ -154,8 +154,8 @@ func TestHintAnnotations(t *testing.T) {
 			give: hint{
 				Label: "a",
 				Text:  "foo",
-				Matches: []Range{
-					{0, 3},
+				Matches: []Match{
+					{"x", Range{0, 3}},
 				},
 			},
 			input: "a",
@@ -177,8 +177,8 @@ func TestHintAnnotations(t *testing.T) {
 			give: hint{
 				Label: "ab",
 				Text:  "foobar",
-				Matches: []Range{
-					{1, 7},
+				Matches: []Match{
+					{"x", Range{1, 7}},
 				},
 			},
 			want: []ui.TextAnnotation{
@@ -199,8 +199,8 @@ func TestHintAnnotations(t *testing.T) {
 			give: hint{
 				Label: "ab",
 				Text:  "foobar",
-				Matches: []Range{
-					{1, 7},
+				Matches: []Match{
+					{"x", Range{1, 7}},
 				},
 			},
 			input: "a",
@@ -227,8 +227,8 @@ func TestHintAnnotations(t *testing.T) {
 			give: hint{
 				Label: "ab",
 				Text:  "foobar",
-				Matches: []Range{
-					{1, 7},
+				Matches: []Match{
+					{"x", Range{1, 7}},
 				},
 			},
 			input: "x",
@@ -245,8 +245,8 @@ func TestHintAnnotations(t *testing.T) {
 			give: hint{
 				Label: "abcd",
 				Text:  "foo",
-				Matches: []Range{
-					{0, 3},
+				Matches: []Match{
+					{"x", Range{0, 3}},
 				},
 			},
 			want: []ui.TextAnnotation{

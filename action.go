@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/abhinav/tmux-fastcopy/internal/fastcopy"
 	"github.com/abhinav/tmux-fastcopy/internal/log"
 	shellwords "github.com/mattn/go-shellwords"
 )
@@ -51,7 +52,9 @@ func (f *actionFactory) New(action string) (action, error) {
 }
 
 // action specifies how to handle the user's selection.
-type action interface{ Run(selection string) error }
+type action interface {
+	Run(fastcopy.Selection) error
+}
 
 type stdinAction struct {
 	Cmd  string
@@ -59,14 +62,14 @@ type stdinAction struct {
 	Log  *log.Logger
 }
 
-func (h *stdinAction) Run(text string) error {
+func (h *stdinAction) Run(sel fastcopy.Selection) error {
 	logw := &log.Writer{
 		Log: h.Log.WithName(h.Cmd),
 	}
 	defer logw.Close()
 
 	cmd := exec.Command(h.Cmd, h.Args...)
-	cmd.Stdin = strings.NewReader(text)
+	cmd.Stdin = strings.NewReader(sel.Text)
 	cmd.Stdout = logw
 	cmd.Stderr = logw
 	return cmd.Run()
@@ -78,7 +81,7 @@ type argAction struct {
 	Log                   *log.Logger
 }
 
-func (h *argAction) Run(text string) error {
+func (h *argAction) Run(sel fastcopy.Selection) error {
 	logw := &log.Writer{
 		Log: h.Log.WithName(h.Cmd),
 	}
@@ -86,7 +89,7 @@ func (h *argAction) Run(text string) error {
 
 	args := make([]string, 0, len(h.BeforeArgs)+len(h.AfterArgs)+1)
 	args = append(args, h.BeforeArgs...)
-	args = append(args, text)
+	args = append(args, sel.Text)
 	args = append(args, h.AfterArgs...)
 
 	cmd := exec.Command(h.Cmd, args...)

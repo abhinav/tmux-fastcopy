@@ -34,13 +34,13 @@ func (m *MockHandler) EXPECT() *MockHandlerMockRecorder {
 }
 
 // HandleSelection mocks base method.
-func (m *MockHandler) HandleSelection(arg0, arg1 string) {
+func (m *MockHandler) HandleSelection(arg0 Selection) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "HandleSelection", arg0, arg1)
+	m.ctrl.Call(m, "HandleSelection", arg0)
 }
 
 // HandleSelection indicates an expected call of HandleSelection.
-func (mr *MockHandlerMockRecorder) HandleSelection(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockHandlerMockRecorder) HandleSelection(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleSelection", reflect.TypeOf((*MockHandler)(nil).HandleSelection), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleSelection", reflect.TypeOf((*MockHandler)(nil).HandleSelection), arg0)
 }

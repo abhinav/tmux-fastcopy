@@ -10,16 +10,19 @@ import (
 
 type matcher []*regexpMatcher
 
-func (rms matcher) Match(s string) []fastcopy.Range {
+func (rms matcher) Match(s string) []fastcopy.Match {
 	var ms []match
 	for _, m := range rms {
 		ms = m.AppendMatches(s, ms)
 	}
 	ms = rms.removeOverlaps(ms)
 
-	rs := make([]fastcopy.Range, len(ms))
+	rs := make([]fastcopy.Match, len(ms))
 	for i, m := range ms {
-		rs[i] = m.Sel
+		rs[i] = fastcopy.Match{
+			Matcher: m.Matcher,
+			Range:   m.Sel,
+		}
 	}
 	return rs
 }
@@ -95,6 +98,9 @@ func (rm *regexpMatcher) String() string {
 }
 
 type match struct {
+	// Name of the matcher that found this match.
+	Matcher string
+
 	// Full matched area.
 	Full fastcopy.Range
 
@@ -108,8 +114,9 @@ func (rm *regexpMatcher) AppendMatches(s string, ms []match) []match {
 	}
 	for _, m := range rm.regex.FindAllStringSubmatchIndex(s, -1) {
 		ms = append(ms, match{
-			Full: fastcopy.Range{Start: m[0], End: m[1]},
-			Sel:  fastcopy.Range{Start: m[2*rm.subexp], End: m[2*rm.subexp+1]},
+			Matcher: rm.Name(),
+			Full:    fastcopy.Range{Start: m[0], End: m[1]},
+			Sel:     fastcopy.Range{Start: m[2*rm.subexp], End: m[2*rm.subexp+1]},
 		})
 	}
 	return ms

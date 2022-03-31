@@ -61,21 +61,21 @@ func TestWidget(t *testing.T) {
 	// 12 [(q u)x ] \n
 	w := (&WidgetConfig{
 		Text: "foo\nbar\nbaz\nqux",
-		Matches: []Range{
-			{0, 2},   // (fo)
-			{5, 7},   // (ar)
-			{9, 11},  // (az)
-			{12, 14}, // (qu)
+		Matches: []Match{
+			{"p", Range{0, 2}},   // (fo)
+			{"q", Range{5, 7}},   // (ar)
+			{"r", Range{9, 11}},  // (az)
+			{"s", Range{12, 14}}, // (qu)
 		},
 		HintAlphabet: []rune("ab"),
 		Handler:      handler,
 		Style:        style,
-		generateHints: func([]rune, string, []Range) []hint {
+		generateHints: func([]rune, string, []Match) []hint {
 			return []hint{
-				{Label: "aa", Text: "fo", Matches: []Range{{0, 2}}},   // (fo)
-				{Label: "bb", Text: "ar", Matches: []Range{{5, 7}}},   // (ar)
-				{Label: "ba", Text: "az", Matches: []Range{{9, 11}}},  // (az)
-				{Label: "ab", Text: "qu", Matches: []Range{{12, 14}}}, // (qu)
+				{Label: "aa", Text: "fo", Matches: []Match{{"p", Range{0, 2}}}},   // (fo)
+				{Label: "bb", Text: "ar", Matches: []Match{{"q", Range{5, 7}}}},   // (ar)
+				{Label: "ba", Text: "az", Matches: []Match{{"r", Range{9, 11}}}},  // (az)
+				{Label: "ab", Text: "qu", Matches: []Match{{"p", Range{12, 14}}}}, // (qu)
 			}
 		},
 	}).Build()
@@ -107,7 +107,7 @@ func TestWidget(t *testing.T) {
 
 	t.Run("select", func(t *testing.T) {
 		handler.EXPECT().
-			HandleSelection("ba", "az")
+			HandleSelection(Selection{Text: "az", Matchers: []string{"r"}})
 
 		assert.True(t,
 			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, 'b', 0)))

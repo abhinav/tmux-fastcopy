@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/abhinav/tmux-fastcopy/internal/fastcopy"
 	"github.com/abhinav/tmux-fastcopy/internal/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -84,7 +85,10 @@ func TestStdinAction(t *testing.T) {
 		Cmd: "cat",
 		Log: log.New(&buff),
 	}
-	require.NoError(t, action.Run("foo"))
+	require.NoError(t, action.Run(fastcopy.Selection{
+		Text:     "foo",
+		Matchers: []string{"x"},
+	}))
 	assert.Equal(t, "[cat] foo\n", buff.String())
 }
 
@@ -98,6 +102,9 @@ func TestArgAction(t *testing.T) {
 		AfterArgs:  []string{"3", "4"},
 		Log:        log.New(&buff),
 	}
-	require.NoError(t, action.Run("foo"))
+	require.NoError(t, action.Run(fastcopy.Selection{
+		Text:     "foo",
+		Matchers: []string{"x"},
+	}))
 	assert.Equal(t, "[echo] 1 2 foo 3 4\n", buff.String())
 }
