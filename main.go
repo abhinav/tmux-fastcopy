@@ -21,6 +21,7 @@ func main() {
 		Stderr:     os.Stderr,
 		Executable: os.Executable,
 		Getenv:     os.Getenv,
+		Environ:    os.Environ,
 		Getpid:     os.Getpid,
 	}
 
@@ -62,6 +63,7 @@ type mainCmd struct {
 
 	Executable func() (string, error) // == os.Executable
 	Getenv     func(string) string    // == os.Getenv
+	Environ    func() []string        // == os.Environ
 	Getpid     func() int
 
 	newTmuxDriver func(string) tmuxShellDriver
@@ -167,7 +169,8 @@ func (cmd *mainCmd) Run(cfg *config) (err error) {
 			Tmux:      tmuxDriver,
 			NewScreen: tcell.NewScreen,
 			NewAction: (&actionFactory{
-				Log: logger,
+				Log:     logger,
+				Environ: cmd.Environ,
 			}).New,
 		}
 	} else {
