@@ -1,4 +1,4 @@
-package integration
+package main
 
 import (
 	"bufio"
@@ -21,6 +21,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestMain(m *testing.M) {
+	if filepath.Base(os.Args[0]) == "tmux-fastcopy" {
+		main()
+		os.Exit(0)
+	}
+
+	os.Exit(m.Run())
+}
+
 const _giveText = `
 IP address: 127.0.0.1
 UUID: 95471085-9665-403E-BD95-217C7237F83D
@@ -36,7 +45,7 @@ var _wantMatches = []string{
 	"123456789012345678901234567890123456789012345678901234567890",
 }
 
-func Test(t *testing.T) {
+func TestIntegration(t *testing.T) {
 	env := newFakeEnv(t)
 
 	testFile := filepath.Join(env.Root, "give.txt")
@@ -105,7 +114,17 @@ func newFakeEnv(t testing.TB) *fakeEnv {
 	require.NoError(t, os.Mkdir(home, 01755), "set up home")
 
 	tmpDir := filepath.Join(root, "tmp")
-	require.NoError(t, os.Mkdir(tmpDir, 01755), "set up tmpDir")
+	require.NoError(t, os.Mkdir(tmpDir, 01755), "set up tmp")
+
+	binDir := filepath.Join(root, "bin")
+	require.NoError(t, os.Mkdir(binDir, 01755), "set up bin")
+
+	testExe, err := os.Executable()
+	require.NoError(t, err, "determine test executable")
+
+	tmuxFastcopy := filepath.Join(binDir, "tmux-fastcopy")
+	require.NoError(t, copyFile(tmuxFastcopy, testExe), "copy test executable")
+	require.NoError(t, os.Chmod(tmuxFastcopy, 0755), "mark tmux-fastcopy as executable")
 
 	logFile := filepath.Join(root, "log.txt")
 	t.Cleanup(func() {
@@ -123,9 +142,6 @@ func newFakeEnv(t testing.TB) *fakeEnv {
 
 	tmux, err := exec.LookPath("tmux")
 	require.NoError(t, err, "find tmux")
-
-	tmuxFastcopy, err := exec.LookPath("tmux-fastcopy")
-	require.NoError(t, err, "find tmux-fastcopy")
 
 	bash, err := exec.LookPath("bash")
 	require.NoError(t, err, "find bash")
@@ -334,4 +350,21 @@ func writeLines(t testing.TB, path string, lines ...string) {
 	for _, line := range lines {
 		fmt.Fprintln(f, line)
 	}
+}
+
+func copyFile(dst, src string) error {
+	i, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("open source: %w", err)
+	}
+	defer i.Close()
+
+	o, err := os.Create(dst)
+	if err != nil {
+		return fmt.Errorf("open destination: %w", err)
+	}
+	defer o.Close()
+
+	_, err = io.Copy(o, i)
+	return err
 }
