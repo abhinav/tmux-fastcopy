@@ -1,4 +1,4 @@
-package integration
+package main
 
 import (
 	"bufio"
@@ -36,7 +36,7 @@ var _wantMatches = []string{
 	"123456789012345678901234567890123456789012345678901234567890",
 }
 
-func Test(t *testing.T) {
+func TestIntegration(t *testing.T) {
 	env := newFakeEnv(t)
 
 	testFile := filepath.Join(env.Root, "give.txt")

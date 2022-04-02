@@ -10,8 +10,23 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        tmux-version: ["3.2a", "3.1c", "3.0a", "2.9a", "2.8", "2.7"]
+
+    name: Test / Tmux ${{ matrix.tmux-version }}
+
     steps:
+
     - uses: actions/checkout@v2
+
+    - name: Checkout Tmux
+      uses: actions/checkout@v2
+      with:
+        repository: tmux/tmux
+        ref: ${{ matrix.tmux-version }}
+        path: src/tmux
 
     - name: Set up Go
       uses: actions/setup-go@v2
@@ -24,17 +39,36 @@ jobs:
         path: ~/go/pkg/mod
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
 
-    - name: Download dependencies
-      run: go mod download
+    - name: Load cached Tmux
+      uses: actions/cache@v2
+      with:
+        path: ~/.local
+        key: ${{ runner.os }}-tmux-${{ matrix.tmux-version }}
 
-    - name: Build
+    - name: Download and install dependencies
+      run: |
+        go mod download
+        sudo apt-get install -y libevent-dev libncurses-dev
+
+    - name: Install Tmux
+      working-directory: src/tmux
+      run: |
+        if [[ ! -x "$HOME/.local/bin/tmux" ]]; then
+          sh autogen.sh
+          ./configure --prefix=$HOME/.local
+          make install
+        else
+          echo "Using cached tmux"
+        fi
+
+    - name: Build tmux-fastcopy
       run: make build
 
     - name: Lint
       run: make lint
 
     - name: Test
-      run: make cover
+      run: PATH="$HOME/.local/bin:$PATH" make cover
 
     - name: Coverage
       uses: codecov/codecov-action@v2
