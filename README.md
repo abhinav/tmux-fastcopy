@@ -187,6 +187,37 @@ If `{}` is absent from the command, tmux-fastcopy will pass the selected text
 to the command over stdin. For example,
 
     set-option -g @fastcopy-action pbcopy  # for macOS
+    
+#### Accessing the regex name
+    
+tmux-fastcopy executes the action with the `FASTCOPY_REGEX_NAME` environment
+variable set. This holds the [name of the regex](#regex-names) that matched the
+selected string.
+If multiple different regexes matched the string, `FASTCOPY_REGEX_NAME` holds a
+space-separated list of them.
+
+You can use this to customize the action on a per-regex basis.
+
+For example, the following will copy most strings to the tmux buffer as usual.
+However, if the string is matched by the "path" regular expression and it
+represents an existing directory, this will open that directory in the file
+browser.
+
+```bash
+#!/usr/bin/env bash
+
+# Place this inside a file like "fastcopy.sh",
+# mark it executable (chmod +x fastcopy.sh),
+# and set the @fastcopy-action setting to:
+#   '/path/to/fastcopy.sh {}'
+
+if [ "$FASTCOPY_REGEX_NAME" == path ] && [ -d "$1" ]; then
+    xdg-open "$1"  # on macOS, use "open" instead
+    exit 0
+fi
+
+tmux set-buffer -w "$1"
+```
 
 ### `@fastcopy-alphabet`
 
@@ -271,6 +302,10 @@ You can delete previously defined or default regular expressions by setting
 them to a blank string.
 
     set-option -g @fastcopy-regex-isodate ""
+
+The name of the regular expression that matched the selection is available to
+the [`@fastcopy-action`][] via the `FASTCOPY_REGEX_NAME` environment variable.
+See [Accessing the regex name](#accessing-the-regex-name) for more details.
 
 ## FAQ
 
@@ -360,6 +395,15 @@ value to delete it.
 For example, the following deletes the `isodate` regular expression.
 
     set-option -g @fastcopy-regex-isodate ""
+
+### Can I have different actions for different regexes?
+
+The `FASTCOPY_REGEX_NAME` environment variable holds the name of the regex that
+matched your selection.
+You can run different actions on a per-regex basis by inspecting the
+`FASTCOPY_REGEX_NAME` environment variable in your [`@fastcopy-action`][].
+
+See [Accessing the regex name](#accessing-the-regex-name) for more details.
 
 ## Credits
 

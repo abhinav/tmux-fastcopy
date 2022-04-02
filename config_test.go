@@ -29,25 +29,33 @@ func TestMatcherDefaultRegexes(t *testing.T) {
 		matcher = append(matcher, m)
 	}
 
+	type match struct{ Matcher, Value string }
+
 	tests := []struct {
 		desc string
 		give string
-		want []string
+		want []match
 	}{
 		{
 			desc: "ipv4",
 			give: "there's no place like 127.0.0.1",
-			want: []string{"127.0.0.1"},
+			want: []match{
+				{"ipv4", "127.0.0.1"},
+			},
 		},
 		{
 			desc: "gitsha/short",
 			give: "commit 016ca97 (origin/main, main)",
-			want: []string{"016ca97"},
+			want: []match{
+				{"gitsha", "016ca97"},
+			},
 		},
 		{
 			desc: "gitsha/long",
 			give: "This reverts commit dbf2bb40bf8711e5d854c22d8bf19fc58da38cf2.",
-			want: []string{"dbf2bb40bf8711e5d854c22d8bf19fc58da38cf2"},
+			want: []match{
+				{"gitsha", "dbf2bb40bf8711e5d854c22d8bf19fc58da38cf2"},
+			},
 		},
 		{
 			desc: "panic", // numbers, addresses, paths
@@ -56,32 +64,40 @@ func TestMatcherDefaultRegexes(t *testing.T) {
 				"testing.tRunner.func1.2(0x1265c60, 0x13052c8)",
 				"        /usr/local/Cellar/go/1.16.6/libexec/src/testing/testing.go:1143 +0x332",
 			),
-			want: []string{
-				"0x1265c60", "0x13052c8", "0x332",
-				"1143",
-				"/usr/local/Cellar/go/1.16.6/libexec/src/testing/testing.go",
+			want: []match{
+				{"hexaddr", "0x1265c60"},
+				{"hexaddr", "0x13052c8"},
+				{"hexaddr", "0x332"},
+				{"int", "1143"},
+				{"path", "/usr/local/Cellar/go/1.16.6/libexec/src/testing/testing.go"},
 			},
 		},
 		{
 			desc: "hexcolor/short",
 			give: "background-color: #eee",
-			want: []string{"#eee"},
+			want: []match{
+				{"hexcolor", "#eee"},
+			},
 		},
 		{
 			desc: "hexcolor/long",
 			give: "background-color: #f8f8f0;",
-			want: []string{"#f8f8f0"},
+			want: []match{
+				{"hexcolor", "#f8f8f0"},
+			},
 		},
 		{
 			desc: "uuid/upper",
 			give: "A13BBDE2-2FAB-40A3-B00C-949AC6EBDD79",
-			want: []string{"A13BBDE2-2FAB-40A3-B00C-949AC6EBDD79"},
+			want: []match{
+				{"uuid", "A13BBDE2-2FAB-40A3-B00C-949AC6EBDD79"},
+			},
 		},
 		{
 			desc: "uuid/lower",
 			give: "425a6a91-58aa-4027-8940-feecaaaece02",
-			want: []string{
-				"425a6a91-58aa-4027-8940-feecaaaece02",
+			want: []match{
+				{"uuid", "425a6a91-58aa-4027-8940-feecaaaece02"},
 				// lower case UUID overlaps with other number
 				// and gitsha:
 				//   "425a6a91" "-4027" "-8940" "feecaaaece02"
@@ -90,22 +106,29 @@ func TestMatcherDefaultRegexes(t *testing.T) {
 		{
 			desc: "date",
 			give: "2021-08-14 12:34 -0700",
-			want: []string{"2021-08-14", "-0700"},
+			want: []match{
+				{"isodate", "2021-08-14"},
+				{"int", "-0700"},
+			},
 		},
 		{
 			desc: "path/url overlap",
 			give: "http://example.com/foo/bar/baz",
-			want: []string{}, // no match
+			want: []match{}, // no match
 		},
 		{
 			desc: "path/start of line",
 			give: "foo/bar/baz",
-			want: []string{"foo/bar/baz"}, // no match
+			want: []match{
+				{"path", "foo/bar/baz"},
+			},
 		},
 		{
 			desc: "path/boundary",
 			give: "path=foo/bar/baz",
-			want: []string{"foo/bar/baz"}, // no match
+			want: []match{
+				{"path", "foo/bar/baz"},
+			},
 		},
 	}
 
@@ -114,9 +137,10 @@ func TestMatcherDefaultRegexes(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			t.Parallel()
 
-			var got []string
+			var got []match
 			for _, m := range matcher.Match(tt.give) {
-				got = append(got, tt.give[m.Start:m.End])
+				r := m.Range
+				got = append(got, match{m.Matcher, tt.give[r.Start:r.End]})
 			}
 
 			assert.ElementsMatch(t, tt.want, got)

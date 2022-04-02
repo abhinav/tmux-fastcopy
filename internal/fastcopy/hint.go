@@ -11,13 +11,13 @@ import (
 type hint struct {
 	Label   string
 	Text    string
-	Matches []Range
+	Matches []Match
 }
 
 // generateHints generates a list of hints for the given text. It uses alphabet
 // to generate unique prefix-free labels for matche sin the text, where matches
 // are defined by the provided ranges.
-func generateHints(alphabet []rune, text string, matches []Range) []hint {
+func generateHints(alphabet []rune, text string, matches []Match) []hint {
 	labelFrom := func(indexes []int) string {
 		label := make([]rune, len(indexes))
 		for i, idx := range indexes {
@@ -27,10 +27,11 @@ func generateHints(alphabet []rune, text string, matches []Range) []hint {
 	}
 
 	// Grouping of match ranges by their matched text.
-	byText := make(map[string][]Range)
-	for _, r := range matches {
+	byText := make(map[string][]Match)
+	for _, m := range matches {
+		r := m.Range
 		match := text[r.Start:r.End]
-		byText[match] = append(byText[match], r)
+		byText[match] = append(byText[match], m)
 	}
 
 	uniqueMatches := make([]string, 0, len(byText))
@@ -56,6 +57,7 @@ func generateHints(alphabet []rune, text string, matches []Range) []hint {
 
 	return hints
 }
+
 func (h *hint) Annotations(input string, style Style) (anns []ui.TextAnnotation) {
 	matched := strings.HasPrefix(h.Label, input)
 
@@ -67,7 +69,8 @@ func (h *hint) Annotations(input string, style Style) (anns []ui.TextAnnotation)
 		matchStyle = style.Match
 	}
 
-	for _, pos := range h.Matches {
+	for _, match := range h.Matches {
+		pos := match.Range
 		// Show the label only if there's no input, or if the input
 		// matches all or part of the label.
 		if matched {

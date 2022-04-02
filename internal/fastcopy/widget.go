@@ -3,12 +3,26 @@ package fastcopy
 
 import (
 	"fmt"
+	"sort"
 	"sync"
 
 	"github.com/abhinav/tmux-fastcopy/internal/ui"
 	tcell "github.com/gdamore/tcell/v2"
 	"github.com/gdamore/tcell/v2/views"
 )
+
+// Match is a single entry matched by fastcopy.
+type Match struct {
+	// Matcher is the name of the matcher that found this match.
+	Matcher string
+
+	// Range identifies the matched area.
+	Range Range
+}
+
+func (m Match) String() string {
+	return fmt.Sprintf("(%q) %v", m.Matcher, m.Range)
+}
 
 // Range specifies a range of offsets in a text, referring to the [start:end)
 // subslice of the text.
@@ -33,11 +47,21 @@ type Style struct {
 	HintLabelInput tcell.Style // typed portion of hints
 }
 
+// Selection is a choice made by the user in the fastcopy UI.
+type Selection struct {
+	// Text is the matched text.
+	Text string
+
+	// Matchers is a list of names of matchers that matched this text.
+	// Invariant: this list contains at least one item.
+	Matchers []string
+}
+
 // Handler handles events from the widget.
 type Handler interface {
 	// HandleSelection reports the hint label and the corresponding matched
 	// text.
-	HandleSelection(hintLabel, text string)
+	HandleSelection(Selection)
 }
 
 //go:generate mockgen -destination mock_handler_test.go -package fastcopy github.com/abhinav/tmux-fastcopy/internal/fastcopy Handler
@@ -48,7 +72,7 @@ type WidgetConfig struct {
 	Text string
 
 	// Matched offsets in text.
-	Matches []Range
+	Matches []Match
 
 	// Alphabet we'll use to generate labels.
 	HintAlphabet []rune
@@ -60,7 +84,7 @@ type WidgetConfig struct {
 	Style Style
 
 	// Internal override for generateHints.
-	generateHints func([]rune, string, []Range) []hint
+	generateHints func([]rune, string, []Match) []hint
 }
 
 // Widget is the main fastcopy widget. It displays some fixed text with zero or
@@ -165,7 +189,18 @@ func (w *Widget) inputChanged() {
 	w.mu.RUnlock()
 
 	if ok && w.handler != nil {
-		w.handler.HandleSelection(h.Label, h.Text)
+		matchers := make(map[string]struct{}, len(h.Matches))
+		for _, m := range h.Matches {
+			matchers[m.Matcher] = struct{}{}
+		}
+
+		sel := Selection{Text: h.Text}
+		for m := range matchers {
+			sel.Matchers = append(sel.Matchers, m)
+		}
+		sort.Strings(sel.Matchers)
+
+		w.handler.HandleSelection(sel)
 	}
 }
 

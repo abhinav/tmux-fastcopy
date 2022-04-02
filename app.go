@@ -145,7 +145,7 @@ type ctrl struct {
 
 	w   *fastcopy.Widget
 	ui  *ui.App
-	sel string
+	sel fastcopy.Selection
 }
 
 func (c *ctrl) Init() {
@@ -176,12 +176,12 @@ func (c *ctrl) Init() {
 	c.ui.Start()
 }
 
-func (c *ctrl) Wait() (string, error) {
+func (c *ctrl) Wait() (fastcopy.Selection, error) {
 	err := c.ui.Wait()
 	return c.sel, err
 }
 
-func (c *ctrl) HandleSelection(_ string, text string) {
-	c.sel = text
+func (c *ctrl) HandleSelection(sel fastcopy.Selection) {
+	c.sel = sel
 	c.ui.Stop()
 }
