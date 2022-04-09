@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 	"testing"
 	"time"
 
@@ -243,7 +244,9 @@ func (vt *vTmux) start(t testing.TB, vr *bufio.Reader) {
 			// ignore unsupported operations
 			continue
 
-		case errors.Is(err, io.EOF), errors.Is(err, fs.ErrClosed):
+		case errors.Is(err, io.EOF),
+			errors.Is(err, fs.ErrClosed),
+			errors.Is(err, syscall.EIO):
 			return
 
 		default:
