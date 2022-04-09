@@ -3,9 +3,11 @@ package main
 import (
 	"bufio"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"io/fs"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,6 +17,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/abhinav/tmux-fastcopy/internal/coverage"
 	"github.com/abhinav/tmux-fastcopy/internal/iotest"
 	"github.com/creack/pty"
 	"github.com/jaguilar/vt100"
@@ -24,11 +27,40 @@ import (
 
 func TestMain(m *testing.M) {
 	if filepath.Base(os.Args[0]) == "tmux-fastcopy" {
-		main()
-		os.Exit(0)
+		os.Exit(fakeMain())
+	} else {
+		os.Exit(m.Run())
+	}
+}
+
+const _integrationTestCoverDirKey = "TMUX_FASTCOPY_INTEGRATION_TEST_COVER_DIR"
+
+func fakeMain() (exitCode int) {
+	if coverDir := os.Getenv(_integrationTestCoverDirKey); len(coverDir) > 0 {
+		f, err := os.CreateTemp(coverDir, "tmux-fastcopy-cover")
+		if err != nil {
+			log.Printf("cannot create coverage file: %v", err)
+			return 1
+		}
+		if err := f.Close(); err != nil {
+			log.Printf("cannot close file: %v", err)
+			return 1
+		}
+
+		defer func() {
+			if err := coverage.Report(f.Name()); err != nil {
+				log.Printf("cannot report coverage: %v", err)
+				exitCode = 1
+			}
+		}()
 	}
 
-	os.Exit(m.Run())
+	err := run(&_main, os.Args[1:])
+	if err != nil && err != flag.ErrHelp {
+		fmt.Fprintln(_main.Stderr, err)
+		return 1
+	}
+	return 0
 }
 
 const _giveText = `
@@ -104,6 +136,8 @@ type fakeEnv struct {
 	Home   string
 	TmpDir string
 	Tmux   string // path to tmux
+
+	coverDir string
 }
 
 func newFakeEnv(t testing.TB) *fakeEnv {
@@ -126,6 +160,12 @@ func newFakeEnv(t testing.TB) *fakeEnv {
 	tmuxFastcopy := filepath.Join(binDir, "tmux-fastcopy")
 	require.NoError(t, copyFile(tmuxFastcopy, testExe), "copy test executable")
 	require.NoError(t, os.Chmod(tmuxFastcopy, 0755), "mark tmux-fastcopy as executable")
+
+	coverBucket, err := coverage.NewBucket(testing.CoverMode())
+	require.NoError(t, err, "failed to set up coverage bucket")
+	t.Cleanup(func() {
+		assert.NoError(t, coverBucket.Finalize(), "could not finalize coverage")
+	})
 
 	logFile := filepath.Join(root, "log.txt")
 	t.Cleanup(func() {
@@ -166,10 +206,11 @@ func newFakeEnv(t testing.TB) *fakeEnv {
 	t.Logf("using %s", out)
 
 	return &fakeEnv{
-		Root:   root,
-		Home:   home,
-		TmpDir: tmpDir,
-		Tmux:   tmux,
+		Root:     root,
+		Home:     home,
+		TmpDir:   tmpDir,
+		Tmux:     tmux,
+		coverDir: coverBucket.Dir(),
 	}
 }
 
@@ -178,6 +219,7 @@ func (e *fakeEnv) Environ() []string {
 		"HOME=" + e.Home,
 		"TERM=xterm-256color",
 		"TMUX_TMPDIR=" + e.TmpDir,
+		_integrationTestCoverDirKey + "=" + e.coverDir,
 	}
 }
 
