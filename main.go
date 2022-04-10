@@ -15,18 +15,18 @@ import (
 
 var _version = "dev"
 
-func main() {
-	cmd := mainCmd{
-		Stdout:     os.Stdout,
-		Stderr:     os.Stderr,
-		Executable: os.Executable,
-		Getenv:     os.Getenv,
-		Environ:    os.Environ,
-		Getpid:     os.Getpid,
-	}
+var _main = mainCmd{
+	Stdout:     os.Stdout,
+	Stderr:     os.Stderr,
+	Executable: os.Executable,
+	Getenv:     os.Getenv,
+	Environ:    os.Environ,
+	Getpid:     os.Getpid,
+}
 
-	if err := run(&cmd, os.Args[1:]); err != nil && err != flag.ErrHelp {
-		fmt.Fprintln(cmd.Stderr, err)
+func main() {
+	if err := run(&_main, os.Args[1:]); err != nil && err != flag.ErrHelp {
+		fmt.Fprintln(_main.Stderr, err)
 		os.Exit(1)
 	}
 }
