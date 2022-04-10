@@ -1,4 +1,4 @@
-# tmux-fastcopy [![Go](https://github.com/abhinav/tmux-fastcopy/actions/workflows/go.yml/badge.svg)](https://github.com/abhinav/tmux-fastcopy/actions/workflows/go.yml)
+# tmux-fastcopy [![Go](https://github.com/abhinav/tmux-fastcopy/actions/workflows/go.yml/badge.svg)](https://github.com/abhinav/tmux-fastcopy/actions/workflows/go.yml) [![codecov](https://codecov.io/gh/abhinav/tmux-fastcopy/branch/main/graph/badge.svg?token=WJGAZQH4PI)](https://codecov.io/gh/abhinav/tmux-fastcopy)
 
 tmux-fastcopy aids in copying of text in a tmux pane with ease.
 
