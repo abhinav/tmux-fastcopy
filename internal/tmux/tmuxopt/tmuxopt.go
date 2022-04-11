@@ -25,7 +25,7 @@ type MapValue interface {
 
 var _ Value = flag.Value(nil) // interface matching
 
-// Loader loads tmux options inot user-specified variables.
+// Loader loads tmux options into user-specified variables.
 type Loader struct {
 	Tmux tmux.Driver
 
