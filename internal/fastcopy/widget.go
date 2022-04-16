@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"sync"
+	"unicode"
 
 	"github.com/abhinav/tmux-fastcopy/internal/ui"
 	tcell "github.com/gdamore/tcell/v2"
@@ -55,6 +56,10 @@ type Selection struct {
 	// Matchers is a list of names of matchers that matched this text.
 	// Invariant: this list contains at least one item.
 	Matchers []string
+
+	// Shift reports whether shift was pressed when this value was
+	// selected.
+	Shift bool
 }
 
 // Handler handles events from the widget.
@@ -100,8 +105,9 @@ type Widget struct {
 
 	// Mutable attributes:
 
-	mu    sync.RWMutex
-	input string // text input so far
+	mu        sync.RWMutex
+	input     string // text input so far
+	shiftDown bool   // whether shift was pressed
 }
 
 // Build builds a new Fastcopy widget using the provided configuration.
@@ -166,7 +172,18 @@ func (w *Widget) HandleEvent(ev tcell.Event) (handled bool) {
 	case tcell.KeyRune:
 		handled = true
 		w.mu.Lock()
-		w.input += string(ek.Rune())
+
+		r := ek.Rune()
+		// Per the documentation of EventKey, it may report the rune
+		// 'A' without the ModShift modifier set.
+		if unicode.IsUpper(r) {
+			r = unicode.ToLower(r)
+			w.shiftDown = true
+		} else {
+			w.shiftDown = ek.Modifiers()&tcell.ModShift != 0
+		}
+
+		w.input += string(r)
 		defer w.inputChanged()
 		w.mu.Unlock()
 	}
@@ -181,27 +198,33 @@ func (w *Widget) inputChanged() {
 
 	var h hint
 
-	w.mu.RLock()
+	w.mu.Lock()
 	idx, ok := w.hintsByLabel[w.input]
 	if ok {
 		h = w.hints[idx]
+		w.input = ""
 	}
-	w.mu.RUnlock()
+	w.mu.Unlock()
 
-	if ok && w.handler != nil {
-		matchers := make(map[string]struct{}, len(h.Matches))
-		for _, m := range h.Matches {
-			matchers[m.Matcher] = struct{}{}
-		}
-
-		sel := Selection{Text: h.Text}
-		for m := range matchers {
-			sel.Matchers = append(sel.Matchers, m)
-		}
-		sort.Strings(sel.Matchers)
-
-		w.handler.HandleSelection(sel)
+	if !ok || w.handler == nil {
+		return
 	}
+
+	matchers := make(map[string]struct{}, len(h.Matches))
+	for _, m := range h.Matches {
+		matchers[m.Matcher] = struct{}{}
+	}
+
+	sel := Selection{
+		Text:  h.Text,
+		Shift: w.shiftDown,
+	}
+	for m := range matchers {
+		sel.Matchers = append(sel.Matchers, m)
+	}
+	sort.Strings(sel.Matchers)
+
+	w.handler.HandleSelection(sel)
 }
 
 func (w *Widget) annotateText() {

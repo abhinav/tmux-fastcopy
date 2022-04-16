@@ -77,13 +77,14 @@ func (m *regexes) FillFrom(o regexes) {
 }
 
 type config struct {
-	Pane     string
-	Action   string
-	Alphabet alphabet
-	Verbose  bool
-	Regexes  regexes
-	Tmux     string
-	LogFile  string
+	Pane        string
+	Action      string
+	ShiftAction string
+	Alphabet    alphabet
+	Verbose     bool
+	Regexes     regexes
+	Tmux        string
+	LogFile     string
 }
 
 // Generates a new default configuration.
@@ -99,6 +100,7 @@ func (c *config) RegisterFlags(flag *flag.FlagSet) {
 	// No help here because we put it all in _usage.
 	flag.StringVar(&c.Pane, "pane", "", "")
 	flag.StringVar(&c.Action, "action", "", "")
+	flag.StringVar(&c.ShiftAction, "shift-action", "", "")
 	flag.Var(&c.Alphabet, "alphabet", "")
 	flag.Var(&c.Regexes, "regex", "")
 	flag.BoolVar(&c.Verbose, "verbose", false, "")
@@ -108,6 +110,7 @@ func (c *config) RegisterFlags(flag *flag.FlagSet) {
 
 func (c *config) RegisterOptions(load *tmuxopt.Loader) {
 	load.StringVar(&c.Action, "@fastcopy-action")
+	load.StringVar(&c.ShiftAction, "@fastcopy-shift-action")
 	load.Var(&c.Alphabet, "@fastcopy-alphabet")
 	load.MapVar(&c.Regexes, "@fastcopy-regex-")
 }
@@ -120,6 +123,9 @@ func (c *config) FillFrom(o *config) {
 	}
 	if len(c.Action) == 0 {
 		c.Action = o.Action
+	}
+	if len(c.ShiftAction) == 0 {
+		c.ShiftAction = o.ShiftAction
 	}
 	if len(c.Alphabet) == 0 {
 		c.Alphabet = o.Alphabet
@@ -143,6 +149,9 @@ func (c *config) Flags() []string {
 	}
 	if len(c.Action) > 0 {
 		args = append(args, "-action", c.Action)
+	}
+	if len(c.ShiftAction) > 0 {
+		args = append(args, "-shift-action", c.ShiftAction)
 	}
 	if len(c.Alphabet) > 0 {
 		args = append(args, "-alphabet", c.Alphabet.String())

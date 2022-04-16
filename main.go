@@ -85,12 +85,16 @@ The following flags are available:
 		pane identifier.
 		Uses the current pane if unspecified.
 	-action COMMAND
+	-shift-action COMMAND
 		command and arguments that handle the selection.
+		'action' specifies the default selection action, and
+		'shift-action' specifies the action with the Shift key pressed.
 		The first '{}' in the argument list is the selected text.
 		If there is no '{}', the selected text is sent over stdin.
 			-action 'tmux load-buffer -'  # default
-			-action pbcopy
-		Uses 'tmux load-buffer' by default.
+			-action pbcopy -shift-action open
+		Uses 'tmux load-buffer' by default for 'action' and no-op for
+		'shift-action'.
 	-regex NAME:PATTERN
 		regular expressions to search for.
 		Name identifies the pattern. Add this option any number of
@@ -101,6 +105,8 @@ The following flags are available:
 		Capture groups in the regex indicate the text to be copied,
 		defaulting to the whole string if there are no capture groups.
 			-regex 'gitsha:([0-9a-f]{7})[0-9a-f]{,33}'
+		Actions receive the name of the matching regex in the
+		FASTCOPY_REGEX_NAME environment variable.
 		Default set includes: ipv4, gitsha, hexaddr, hexcolor, int,
 		path, uuid.
 	-alphabet STRING

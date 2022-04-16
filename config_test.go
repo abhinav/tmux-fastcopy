@@ -160,6 +160,7 @@ func TestConfigDefaults(t *testing.T) {
 	cfg.FillFrom(defaultConfig(&cfg))
 
 	assert.Equal(t, "tmux load-buffer -", cfg.Action)
+	assert.Empty(t, cfg.ShiftAction)
 	assert.Equal(t, _defaultAlphabet, cfg.Alphabet)
 
 	for k, v := range _defaultRegexes {
@@ -195,6 +196,11 @@ func TestConfigFlags(t *testing.T) {
 			desc: "action",
 			give: []string{"-action", "pbcopy"},
 			want: config{Action: "pbcopy", Tmux: "tmux"},
+		},
+		{
+			desc: "shift action",
+			give: []string{"-shift-action", "open"},
+			want: config{ShiftAction: "open", Tmux: "tmux"},
 		},
 		{
 			desc: "alphabet",
@@ -320,6 +326,11 @@ func TestConfigTmuxOptions(t *testing.T) {
 			want: config{Action: "tmux load-buffer -"},
 		},
 		{
+			desc: "shift-action",
+			give: "@fastcopy-shift-action open",
+			want: config{ShiftAction: "open"},
+		},
+		{
 			desc: "alphabet",
 			give: "@fastcopy-alphabet abc",
 			want: config{Alphabet: "abc"},
@@ -389,11 +400,12 @@ func TestConfigMerge(t *testing.T) {
 					},
 				},
 				{
-					Pane:     "ignored",
-					Action:   "ignored",
-					Alphabet: "ignored",
-					LogFile:  "ignored.txt",
-					Tmux:     "/usr/bin/tmux",
+					Pane:        "ignored",
+					Action:      "ignored",
+					ShiftAction: "open",
+					Alphabet:    "ignored",
+					LogFile:     "ignored.txt",
+					Tmux:        "/usr/bin/tmux",
 					Regexes: regexes{
 						"foo": "ignored",
 						"bar": "baz",
@@ -401,12 +413,13 @@ func TestConfigMerge(t *testing.T) {
 				},
 			},
 			want: config{
-				Pane:     "foo",
-				Action:   "bar",
-				Alphabet: "abc",
-				Verbose:  true,
-				LogFile:  "foo.txt",
-				Tmux:     "/usr/bin/tmux",
+				Pane:        "foo",
+				Action:      "bar",
+				ShiftAction: "open",
+				Alphabet:    "abc",
+				Verbose:     true,
+				LogFile:     "foo.txt",
+				Tmux:        "/usr/bin/tmux",
 				Regexes: regexes{
 					"foo": "bar",
 					"bar": "baz",
@@ -426,12 +439,14 @@ func TestConfigMerge(t *testing.T) {
 				{Regexes: regexes{"bar": "ignored"}},
 				{LogFile: "foo.txt"},
 				{Tmux: "/usr/local/bin/tmux"},
+				{ShiftAction: "open"},
 			},
 			want: config{
-				Pane:     "foo",
-				Action:   "bar",
-				Alphabet: "abc",
-				Verbose:  true,
+				Pane:        "foo",
+				Action:      "bar",
+				ShiftAction: "open",
+				Alphabet:    "abc",
+				Verbose:     true,
 				Regexes: regexes{
 					"foo": "bar",
 					"bar": "baz",
@@ -514,7 +529,6 @@ func TestUsageHasAllConfigFlags(t *testing.T) {
 		assert.Contains(t, _usage, "\t-"+f.Name,
 			"flag %q should be documented", f.Name)
 	})
-
 }
 
 var (
@@ -524,13 +538,14 @@ var (
 
 func generateConfig(t testing.TB, rand *rand.Rand) config {
 	return config{
-		Pane:     generateString(t, rand, 0, "generate pane"),
-		Action:   generateString(t, rand, 0, "generate action"),
-		Alphabet: generateAlphabet(t, rand),
-		Verbose:  generateValue(t, rand, _typeBool, "verbose").(bool),
-		Regexes:  generateRegexes(t, rand),
-		LogFile:  generateString(t, rand, 0, "generate logFile"),
-		Tmux:     generateString(t, rand, 1, "generate tmux"),
+		Pane:        generateString(t, rand, 0, "generate pane"),
+		Action:      generateString(t, rand, 0, "generate action"),
+		ShiftAction: generateString(t, rand, 0, "generate shift action"),
+		Alphabet:    generateAlphabet(t, rand),
+		Verbose:     generateValue(t, rand, _typeBool, "verbose").(bool),
+		Regexes:     generateRegexes(t, rand),
+		LogFile:     generateString(t, rand, 0, "generate logFile"),
+		Tmux:        generateString(t, rand, 1, "generate tmux"),
 	}
 }
 

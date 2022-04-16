@@ -152,11 +152,13 @@ Use the following tmux options to configure the behavior of tmux-fastcopy.
 
 - [`@fastcopy-key`][] invokes tmux-fastcopy with the tmux prefix
 - [`@fastcopy-action`][] copies the selected text
+- [`@fastcopy-shift-action`][] specifies an alternative action
 - [`@fastcopy-alphabet`][] specifies the letters used to generate labels
 - [`@fastcopy-regex-*`][] specify the regular expressions for matching text
 
   [`@fastcopy-key`]: #fastcopy-key
   [`@fastcopy-action`]: #fastcopy-action
+  [`@fastcopy-shift-action`]: #fastcopy-shift-action
   [`@fastcopy-alphabet`]: #fastcopy-alphabet
   [`@fastcopy-regex-*`]: #fastcopy-regex-
 
@@ -187,9 +189,9 @@ If `{}` is absent from the command, tmux-fastcopy will pass the selected text
 to the command over stdin. For example,
 
     set-option -g @fastcopy-action pbcopy  # for macOS
-    
+
 #### Accessing the regex name
-    
+
 tmux-fastcopy executes the action with the `FASTCOPY_REGEX_NAME` environment
 variable set. This holds the [name of the regex](#regex-names) that matched the
 selected string.
@@ -218,6 +220,26 @@ fi
 
 tmux set-buffer -w "$1"
 ```
+
+### `@fastcopy-shift-action`
+
+An alternative action when you select a label while pressing shift.
+Nothing happens if this is unset.
+
+**Default**:
+
+    set-option -g @fastcopy-shift-action ''
+
+Similarly to [`@fastcopy-action`], the string specifies a command and its
+arguments, and the special argument `{}` (if any) is a placeholder for the
+selected text.
+
+    set-option -g @fastcopy-shift-action "fastcopy-shift.sh {}"
+
+As with `@fastcopy-action`, tmux-fastcopy will set `FASTCOPY_REGEX_NAME` to the
+name of the regular expression that matched when running the
+`@fastcopy-shift-action`.
+See [Accessing the regex name](#accessing-the-regex-name) for more details.
 
 ### `@fastcopy-alphabet`
 
@@ -279,7 +301,7 @@ This also means that to use `(...)` in regular expressions that should copy the
 whole string, you should add the `?:` prefix to the start of the capturing
 group to ignore it. For example,
 
-    # Matches commands suggested by 'git status' 
+    # Matches commands suggested by 'git status'
     set-option -g @fastcopy-regex-git-rebase "git rebase --(?:continue|abort)"
 
 #### Regex names

@@ -128,9 +128,18 @@ func (app *app) Run(cfg *config) error {
 		return err
 	}
 
-	action, err := app.NewAction(cfg.Action)
+	actionStr := cfg.Action
+	if selection.Shift {
+		actionStr = cfg.ShiftAction
+	}
+
+	if len(actionStr) == 0 {
+		return nil
+	}
+
+	action, err := app.NewAction(actionStr)
 	if err != nil {
-		return fmt.Errorf("load action %q: %v", cfg.Action, err)
+		return fmt.Errorf("load action %q: %v", actionStr, err)
 	}
 
 	return action.Run(selection)
