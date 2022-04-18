@@ -11,8 +11,8 @@ github.com/facebookgo/httpdown v0.0.0-20180706035922-5979d39b15c2/go.mod h1:TUV/
 github.com/facebookgo/stats v0.0.0-20151006221625-1b76add642e4/go.mod h1:vsJz7uE339KUCpBXx3JAJzSRH7Uk4iGGyJzR529qDIA=
 github.com/gdamore/encoding v1.0.0 h1:+7OoQ1Bc6eTm5niUzBa0Ctsh6JbMW6Ra+YNuAtDBdko=
 github.com/gdamore/encoding v1.0.0/go.mod h1:alR0ol34c49FCSBLjhosxzcPHQbf2trDkoo5dl+VrEg=
-github.com/gdamore/tcell/v2 v2.5.0 h1:/LA5f/wqTP5mWT79czngibKVVx5wOgdFTIXPQ68fMO8=
-github.com/gdamore/tcell/v2 v2.5.0/go.mod h1:wSkrPaXoiIWZqW/g7Px4xc79di6FTcpB8tvaKJ6uGBo=
+github.com/gdamore/tcell/v2 v2.5.1 h1:zc3LPdpK184lBW7syF2a5C6MV827KmErk9jGVnmsl/I=
+github.com/gdamore/tcell/v2 v2.5.1/go.mod h1:wSkrPaXoiIWZqW/g7Px4xc79di6FTcpB8tvaKJ6uGBo=
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b/go.mod h1:SBH7ygxi8pfUlaOkMMuAQtPIUF8ecWP5IEl/CR7VP2Q=
 github.com/golang/mock v1.6.0 h1:ErTB+efbowRARo13NNdxyJji2egdxLGQhRaY+DUumQc=
 github.com/golang/mock v1.6.0/go.mod h1:p6yTPP+5HYm5mzsMV8JkE6ZKdX+/wYM6Hr+LicevLPs=
