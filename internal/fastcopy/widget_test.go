@@ -114,4 +114,18 @@ func TestWidget(t *testing.T) {
 		assert.True(t,
 			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, 'a', 0)))
 	})
+
+	t.Run("shift select", func(t *testing.T) {
+		handler.EXPECT().
+			HandleSelection(Selection{
+				Text:     "qu",
+				Matchers: []string{"p"},
+				Shift:    true,
+			})
+
+		assert.True(t,
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, 'a', 0)))
+		assert.True(t,
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, 'B', 0)))
+	})
 }
