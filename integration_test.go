@@ -28,20 +28,41 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var _behaviors = map[string]func() (exitCode int){
+	"tmux-fastcopy": fakeTmuxFastcopy,
+
+	// Places a JSON report of the regex name and the hint in the buffer.
+	"json-report": jsonReportAction,
+
+	// Prints the environment to stderr and exits.
+	"unexpected": unexpectedAction,
+}
+
 func TestMain(m *testing.M) {
-	switch filepath.Base(os.Args[0]) {
-	case "tmux-fastcopy":
-		os.Exit(fakeMain())
-	case "test-action":
-		os.Exit(fakeAction())
-	default:
-		os.Exit(m.Run())
+	if b, ok := _behaviors[filepath.Base(os.Args[0])]; ok {
+		os.Exit(b())
 	}
+	os.Exit(m.Run())
+}
+
+func behaviorBinary(t testing.TB, name string) string {
+	t.Helper()
+
+	_, ok := _behaviors[name]
+	require.True(t, ok, "unknown behavior %q", name)
+
+	exe, err := os.Executable()
+	require.NoError(t, err, "determine test executable")
+
+	behavior := filepath.Join(t.TempDir(), name)
+	require.NoError(t, copyFile(behavior, exe), "copy test executable")
+	require.NoError(t, os.Chmod(behavior, 0o755), "mark file executable")
+	return behavior
 }
 
 const _integrationTestCoverDirKey = "TMUX_FASTCOPY_INTEGRATION_TEST_COVER_DIR"
 
-func fakeMain() (exitCode int) {
+func fakeTmuxFastcopy() (exitCode int) {
 	if coverDir := os.Getenv(_integrationTestCoverDirKey); len(coverDir) > 0 {
 		f, err := os.CreateTemp(coverDir, "tmux-fastcopy-cover")
 		if err != nil {
@@ -69,23 +90,20 @@ func fakeMain() (exitCode int) {
 	return 0
 }
 
-func fakeAction() (exitCode int) {
+func jsonReportAction() (exitCode int) {
 	var state struct {
 		RegexName string
-		Shift     bool
 		Text      string
 	}
 
-	flag.BoolVar(&state.Shift, "shift", false, "whether shift is pressed")
-	flag.Parse()
-
-	if flag.NArg() == 0 {
-		log.Print("expected match as an argument")
+	txt, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		log.Printf("unable to read stdin: %v", err)
 		return 1
 	}
 
 	state.RegexName = os.Getenv("FASTCOPY_REGEX_NAME")
-	state.Text = flag.Arg(0)
+	state.Text = string(txt)
 
 	tmuxExe := os.Getenv("TMUX_EXE")
 	if len(tmuxExe) == 0 {
@@ -109,11 +127,21 @@ func fakeAction() (exitCode int) {
 	return 0
 }
 
+func unexpectedAction() (exitCode int) {
+	log.Print("UNEXPECTED CALL")
+	log.Print("  Environment:")
+	for _, env := range os.Environ() {
+		log.Printf("    %v", env)
+	}
+	return 1
+}
+
 const _giveText = `
 IP address: 127.0.0.1
 UUID: 95471085-9665-403E-BD95-217C7237F83D
 Git SHA: 64b9df0bd2e2709fdd95d4b58ecaf2a1d9e943a7
 A line that wraps to the next line: 123456789012345678901234567890123456789012345678901234567890
+Phabricator diff: D1234567
 --EOF--
 `
 
@@ -127,10 +155,29 @@ var _wantMatches = []matchInfo{
 	{Regex: "uuid", Text: "95471085-9665-403E-BD95-217C7237F83D"},
 	{Regex: "gitsha", Text: "64b9df0bd2e2709fdd95d4b58ecaf2a1d9e943a7"},
 	{Regex: "int", Text: "123456789012345678901234567890123456789012345678901234567890"},
+	{Regex: "phab-diff", Text: "D1234567"},
 }
 
-func TestIntegration(t *testing.T) {
-	env := newFakeEnv(t)
+func TestIntegration_SelectMatches(t *testing.T) {
+	t.Run("default action", func(t *testing.T) {
+		testIntegration_SelectMatches(t, false)
+	})
+
+	t.Run("shift action", func(t *testing.T) {
+		testIntegration_SelectMatches(t, true)
+	})
+}
+
+func testIntegration_SelectMatches(t *testing.T, shift bool) {
+	var envConfig fakeEnvConfig
+	if shift {
+		envConfig.Action = "unexpected"
+		envConfig.ShiftAction = "json-report"
+	} else {
+		envConfig.Action = "json-report"
+		envConfig.ShiftAction = "unexpected"
+	}
+	env := envConfig.Build(t)
 
 	testFile := filepath.Join(env.Root, "give.txt")
 	require.NoError(t,
@@ -169,7 +216,11 @@ func TestIntegration(t *testing.T) {
 
 		hint := hints[i]
 		t.Logf("selecting %q", hint)
-		io.WriteString(tmux, hint)
+		if shift {
+			io.WriteString(tmux, strings.ToUpper(hint))
+		} else {
+			io.WriteString(tmux, hint)
+		}
 		time.Sleep(100 * time.Millisecond)
 
 		got, err := tmux.Command("show-buffer").Output()
@@ -177,13 +228,11 @@ func TestIntegration(t *testing.T) {
 
 		var state struct {
 			RegexName string
-			Shift     bool
 			Text      string
 		}
 		require.NoError(t, json.Unmarshal([]byte(got), &state))
 
 		t.Logf("got %+v", state)
-		assert.False(t, state.Shift, "shift must not be pressed for %v", state)
 		matches = append(matches, matchInfo{
 			Regex: state.RegexName,
 			Text:  state.Text,
@@ -191,34 +240,56 @@ func TestIntegration(t *testing.T) {
 	}
 
 	assert.ElementsMatch(t, _wantMatches, matches)
+}
 
-	t.Run("shift", func(t *testing.T) {
-		tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
-		time.Sleep(500 * time.Millisecond)
-		tmux.WaitUntilContains("--EOF--", 3*time.Second)
+func TestIntegration_ShiftNoop(t *testing.T) {
+	env := (&fakeEnvConfig{
+		Action: "unexpected",
+	}).Build(t)
 
-		hints := tmux.Matches(func(_ rune, f vt100.Format) bool {
-			return f.Fg == vt100.Red
-		})
-		t.Logf("got hints %q", hints)
+	testFile := filepath.Join(env.Root, "give.txt")
+	require.NoError(t,
+		os.WriteFile(testFile, []byte(_giveText), 0o644),
+		"write test file")
 
-		hint := hints[rand.Intn(len(hints))]
-		t.Logf("selecting %q", hint)
-		io.WriteString(tmux, strings.ToUpper(hint))
-		time.Sleep(100 * time.Millisecond)
+	tmux := (&vTmuxConfig{
+		Tmux:   env.Tmux,
+		Width:  80,
+		Height: 40,
+		Env:    env.Environ(),
+	}).Build(t)
 
-		got, err := tmux.Command("show-buffer").Output()
-		require.NoError(t, err)
+	time.Sleep(time.Second)
 
-		var state struct {
-			RegexName string
-			Shift     bool
-			Text      string
-		}
-		require.NoError(t, json.Unmarshal([]byte(got), &state))
-		t.Logf("got %+v", state)
-		assert.True(t, state.Shift, "shift must be pressed for %v", state)
+	require.NoError(t, tmux.Command("set-buffer", "").Run(),
+		"clear tmux buffer")
+
+	// Clear to ensure the "cat /path/to/whatever" isn't part of the
+	// matched text.
+	fmt.Fprintln(tmux, "clear && cat", testFile)
+	if !assert.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second)) {
+		t.Fatalf("could not find EOF in %q", tmux.Lines())
+	}
+
+	tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
+	time.Sleep(500 * time.Millisecond)
+	require.NoError(t, tmux.WaitUntilContains("--EOF--", 3*time.Second))
+
+	hints := tmux.Matches(func(_ rune, f vt100.Format) bool {
+		return f.Fg == vt100.Red
 	})
+	t.Logf("got hints %q", hints)
+
+	hint := hints[rand.Intn(len(hints))]
+	t.Logf("selecting %q", hint)
+	io.WriteString(tmux, strings.ToUpper(hint))
+	time.Sleep(100 * time.Millisecond)
+
+	got, err := tmux.Command("show-buffer").Output()
+	if err == nil {
+		// The oepration may fail because there are no buffers.
+		assert.Empty(t, string(got), "buffer must be empty")
+	}
 }
 
 type fakeEnv struct {
@@ -230,7 +301,12 @@ type fakeEnv struct {
 	coverDir string
 }
 
-func newFakeEnv(t testing.TB) *fakeEnv {
+type fakeEnvConfig struct {
+	Action      string // name of the behavior
+	ShiftAction string // name of the behavior
+}
+
+func (cfg *fakeEnvConfig) Build(t testing.TB) *fakeEnv {
 	t.Helper()
 
 	root := t.TempDir()
@@ -244,16 +320,7 @@ func newFakeEnv(t testing.TB) *fakeEnv {
 	binDir := filepath.Join(root, "bin")
 	require.NoError(t, os.Mkdir(binDir, 0o1755), "set up bin")
 
-	testExe, err := os.Executable()
-	require.NoError(t, err, "determine test executable")
-
-	tmuxFastcopy := filepath.Join(binDir, "tmux-fastcopy")
-	require.NoError(t, copyFile(tmuxFastcopy, testExe), "copy test executable")
-	require.NoError(t, os.Chmod(tmuxFastcopy, 0o755), "mark tmux-fastcopy as executable")
-
-	fakeAction := filepath.Join(binDir, "test-action")
-	require.NoError(t, copyFile(fakeAction, testExe), "copy action executable")
-	require.NoError(t, os.Chmod(fakeAction, 0o755), "mark action as executable")
+	tmuxFastcopy := behaviorBinary(t, "tmux-fastcopy")
 
 	coverBucket, err := coverage.NewBucket(testing.CoverMode())
 	require.NoError(t, err, "failed to set up coverage bucket")
@@ -284,15 +351,23 @@ func newFakeEnv(t testing.TB) *fakeEnv {
 	fastcopyCmd := fmt.Sprintf("%v --verbose --log %v --tmux %v",
 		tmuxFastcopy, logFile, tmux)
 
-	writeLines(t, filepath.Join(home, ".tmux.conf"),
+	cfgLines := []string{
 		"set -g prefix C-a",
 		"set -g status off",
 		fmt.Sprintf("set -g default-shell %v", bash),
 		fmt.Sprintf("bind-key f run-shell -b %q", fastcopyCmd),
-		fmt.Sprintf("set -g @fastcopy-action '%v {}'", fakeAction),
-		fmt.Sprintf("set -g @fastcopy-shift-action '%v -shift {}'", fakeAction),
-	)
+		`set -g @fastcopy-regex-phab-diff '\bD\d{3,}\b'`, // custom regex
+	}
+	if len(cfg.Action) > 0 {
+		exe := behaviorBinary(t, cfg.Action)
+		cfgLines = append(cfgLines, fmt.Sprintf("set -g @fastcopy-action %q", exe))
+	}
+	if len(cfg.ShiftAction) > 0 {
+		exe := behaviorBinary(t, cfg.ShiftAction)
+		cfgLines = append(cfgLines, fmt.Sprintf("set -g @fastcopy-shift-action %q", exe))
+	}
 
+	writeLines(t, filepath.Join(home, ".tmux.conf"), cfgLines...)
 	writeLines(t, filepath.Join(home, ".bash_profile"),
 		`export PS1="$ "`, // minimal prompt
 	)
