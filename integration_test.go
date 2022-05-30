@@ -160,15 +160,15 @@ var _wantMatches = []matchInfo{
 
 func TestIntegration_SelectMatches(t *testing.T) {
 	t.Run("default action", func(t *testing.T) {
-		testIntegration_SelectMatches(t, false)
+		testIntegrationSelectMatches(t, false)
 	})
 
 	t.Run("shift action", func(t *testing.T) {
-		testIntegration_SelectMatches(t, true)
+		testIntegrationSelectMatches(t, true)
 	})
 }
 
-func testIntegration_SelectMatches(t *testing.T, shift bool) {
+func testIntegrationSelectMatches(t *testing.T, shift bool) {
 	var envConfig fakeEnvConfig
 	if shift {
 		envConfig.Action = "unexpected"
