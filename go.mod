@@ -10,7 +10,7 @@ require (
 	github.com/jaguilar/vt100 v0.0.0-20201024211400-81de19cb81a4
 	github.com/mattn/go-runewidth v0.0.13
 	github.com/mattn/go-shellwords v1.0.12
-	github.com/rivo/uniseg v0.3.0
+	github.com/rivo/uniseg v0.3.1
 	github.com/stretchr/testify v1.8.0
 	go.uber.org/multierr v1.8.0
 	golang.org/x/tools v0.1.12
