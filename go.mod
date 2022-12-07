@@ -13,7 +13,7 @@ require (
 	github.com/rivo/uniseg v0.4.3
 	github.com/stretchr/testify v1.8.1
 	go.uber.org/multierr v1.8.0
-	golang.org/x/tools v0.3.0
+	golang.org/x/tools v0.4.0
 )
 
 require (
@@ -22,7 +22,7 @@ require (
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
-	golang.org/x/sys v0.2.0 // indirect
+	golang.org/x/sys v0.3.0 // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
