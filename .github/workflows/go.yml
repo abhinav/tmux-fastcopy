@@ -71,4 +71,4 @@ jobs:
       run: PATH="$HOME/.local/bin:$PATH" make cover
 
     - name: Coverage
-      uses: codecov/codecov-action@v2
+      uses: codecov/codecov-action@v3
