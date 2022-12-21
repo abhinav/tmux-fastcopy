@@ -35,7 +35,7 @@ jobs:
         cache: true
 
     - name: Load cached Tmux
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/.local
         key: ${{ runner.os }}-tmux-${{ matrix.tmux-version }}
