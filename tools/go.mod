@@ -4,15 +4,24 @@ go 1.17
 
 require (
 	github.com/golang/mock v1.6.0
-	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616
+	github.com/mgechev/revive v1.2.5
 	honnef.co/go/tools v0.3.0
 )
 
 require (
-	github.com/BurntSushi/toml v1.0.0 // indirect
-	golang.org/x/exp/typeparams v0.0.0-20220218215828-6cf2b201936e // indirect
-	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3 // indirect
-	golang.org/x/sys v0.0.0-20220204135822-1c1b9b1eba6a // indirect
-	golang.org/x/tools v0.1.11-0.20220316014157-77aa08bb151a // indirect
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
+	github.com/BurntSushi/toml v1.2.1 // indirect
+	github.com/chavacava/garif v0.0.0-20221024190013-b3ef35877348 // indirect
+	github.com/fatih/color v1.14.1 // indirect
+	github.com/fatih/structtag v1.2.0 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mattn/go-runewidth v0.0.9 // indirect
+	github.com/mgechev/dots v0.0.0-20210922191527-e955255bf517 // indirect
+	github.com/mitchellh/go-homedir v1.1.0 // indirect
+	github.com/olekukonko/tablewriter v0.0.5 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
+	golang.org/x/exp/typeparams v0.0.0-20221208152030-732eee02a75a // indirect
+	golang.org/x/mod v0.7.0 // indirect
+	golang.org/x/sys v0.4.0 // indirect
+	golang.org/x/tools v0.5.0 // indirect
 )

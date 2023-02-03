@@ -61,11 +61,7 @@ func (m *regexes) Set(v string) error {
 		return errors.New("regex flags must be in the form NAME:REGEX")
 	}
 
-	if err := m.Put(v[:idx], v[idx+1:]); err != nil {
-		return err
-	}
-
-	return nil
+	return m.Put(v[:idx], v[idx+1:])
 }
 
 func (m *regexes) FillFrom(o regexes) {
