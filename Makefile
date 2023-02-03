@@ -6,10 +6,10 @@ TOOLS_GO_FILES = $(shell find tools -type f -a -name '*.go')
 
 TMUX_FASTCOPY = $(BIN)/tmux-fastcopy
 
-GOLINT = $(BIN)/golint
+REVIVE = bin/revive
 MOCKGEN = $(BIN)/mockgen
 STATICCHECK = $(BIN)/staticcheck
-TOOLS = $(GOLINT) $(STATICCHECK) $(MOCKGEN)
+TOOLS = $(REVIVE) $(STATICCHECK) $(MOCKGEN)
 
 PROJECT_ROOT = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 export GOBIN ?= $(PROJECT_ROOT)/$(BIN)
@@ -43,7 +43,7 @@ cover: $(GO_FILES)
 	go tool cover -html=cover.out -o cover.html
 
 .PHONY: lint
-lint: gofmt golint staticcheck gomodtidy nogenerate
+lint: gofmt revive staticcheck gomodtidy nogenerate
 
 .PHONY: gofmt
 gofmt:
@@ -53,13 +53,13 @@ gofmt:
 		(echo "gofmt failed. Please reformat the following files:" | \
 		cat - $(FMT_LOG) && false)
 
-.PHONY: golint
-golint: $(GOLINT)
-	$(GOLINT) ./...
-	cd tools && ../$(GOLINT) ./...
+.PHONY: revive
+revive: $(REVIVE)
+	$(REVIVE) -config revive.toml ./...
+	cd tools && ../$(REVIVE) -config ../revive.toml ./...
 
-$(GOLINT): tools/go.mod
-	cd tools && go install golang.org/x/lint/golint
+$(REVIVE): tools/go.mod
+	cd tools && go install github.com/mgechev/revive
 
 .PHONY: staticcheck
 staticcheck: $(STATICCHECK)
