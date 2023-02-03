@@ -9,8 +9,7 @@ TMUX_FASTCOPY = $(BIN)/tmux-fastcopy
 GOLINT = $(BIN)/golint
 MOCKGEN = $(BIN)/mockgen
 STATICCHECK = $(BIN)/staticcheck
-EXTRACT_CHANGELOG = $(BIN)/extract-changelog
-TOOLS = $(GOLINT) $(STATICCHECK) $(MOCKGEN) $(EXTRACT_CHANGELOG)
+TOOLS = $(GOLINT) $(STATICCHECK) $(MOCKGEN)
 
 PROJECT_ROOT = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 export GOBIN ?= $(PROJECT_ROOT)/$(BIN)
@@ -69,9 +68,6 @@ staticcheck: $(STATICCHECK)
 
 $(STATICCHECK): tools/go.mod
 	cd tools && go install honnef.co/go/tools/cmd/staticcheck
-
-$(EXTRACT_CHANGELOG): tools/go.mod $(TOOLS_GO_FILES)
-	cd tools && go install github.com/abhinav/tmux-fastcopy/tools/cmd/extract-changelog
 
 .PHONY: gomodtidy
 gomodtidy: go.mod go.sum tools/go.mod tools/go.sum
