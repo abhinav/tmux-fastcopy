@@ -23,17 +23,21 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Install parse-changelog
+      uses: taiki-e/install-action@v2
+      with:
+        tool: parse-changelog@0.5.1
+
     - name: Prepare release
       run: |
         set -eou pipefail
-        make bin/extract-changelog
         VERSION=${{ github.ref }}
         VERSION="${VERSION#refs/tags/}"
         echo "VERSION=$VERSION" >> $GITHUB_ENV
         echo "Releasing $VERSION"
         echo "Release notes:"
         echo "----"
-        bin/extract-changelog $VERSION | tee changes.$VERSION.txt
+        parse-changelog CHANGELOG.md "${VERSION#v}" | tee changes.$VERSION.txt
         echo "----"
 
     - name: Release
