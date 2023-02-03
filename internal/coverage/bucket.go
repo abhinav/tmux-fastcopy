@@ -20,12 +20,12 @@ import (
 // Roughly, the ingtegration test uses the usual TestMain hijacking method to
 // allow control of the binary spawned by tmux. When running in coverage mode,
 //
-//  - the test sets up a bucket to place coverage data in, and communicates the
-//    path to this bucket to the spawned binary with an environment variable
-//  - the spanwed binary, if this environment variable is set, generates a
-//    coverage report into this directory using coverage.Report
-//  - afterwards, the test uses Bucket.Finalize to merge coverage data from the
-//    spawned binary back into the current process
+//   - the test sets up a bucket to place coverage data in, and communicates the
+//     path to this bucket to the spawned binary with an environment variable
+//   - the spanwed binary, if this environment variable is set, generates a
+//     coverage report into this directory using coverage.Report
+//   - afterwards, the test uses Bucket.Finalize to merge coverage data from the
+//     spawned binary back into the current process
 //
 // This is inspired by [go-internal/testscript][1], but instead of replaying
 // the full test machinery, we just invoke or modify a couple private
