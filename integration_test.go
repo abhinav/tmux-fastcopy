@@ -20,7 +20,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/abhinav/tmux-fastcopy/internal/coverage"
 	"github.com/abhinav/tmux-fastcopy/internal/iotest"
 	"github.com/creack/pty"
 	"github.com/jaguilar/vt100"
@@ -60,28 +59,7 @@ func behaviorBinary(t testing.TB, name string) string {
 	return behavior
 }
 
-const _integrationTestCoverDirKey = "TMUX_FASTCOPY_INTEGRATION_TEST_COVER_DIR"
-
 func fakeTmuxFastcopy() (exitCode int) {
-	if coverDir := os.Getenv(_integrationTestCoverDirKey); len(coverDir) > 0 {
-		f, err := os.CreateTemp(coverDir, "tmux-fastcopy-cover")
-		if err != nil {
-			log.Printf("cannot create coverage file: %v", err)
-			return 1
-		}
-		if err := f.Close(); err != nil {
-			log.Printf("cannot close file: %v", err)
-			return 1
-		}
-
-		defer func() {
-			if err := coverage.Report(f.Name()); err != nil {
-				log.Printf("cannot report coverage: %v", err)
-				exitCode = 1
-			}
-		}()
-	}
-
 	err := run(&_main, os.Args[1:])
 	if err != nil && err != flag.ErrHelp {
 		fmt.Fprintln(_main.Stderr, err)
@@ -297,8 +275,6 @@ type fakeEnv struct {
 	Home   string
 	TmpDir string
 	Tmux   string // path to tmux
-
-	coverDir string
 }
 
 type fakeEnvConfig struct {
@@ -321,12 +297,6 @@ func (cfg *fakeEnvConfig) Build(t testing.TB) *fakeEnv {
 	require.NoError(t, os.Mkdir(binDir, 0o1755), "set up bin")
 
 	tmuxFastcopy := behaviorBinary(t, "tmux-fastcopy")
-
-	coverBucket, err := coverage.NewBucket(testing.CoverMode())
-	require.NoError(t, err, "failed to set up coverage bucket")
-	t.Cleanup(func() {
-		assert.NoError(t, coverBucket.Finalize(), "could not finalize coverage")
-	})
 
 	logFile := filepath.Join(root, "log.txt")
 	t.Cleanup(func() {
@@ -377,11 +347,10 @@ func (cfg *fakeEnvConfig) Build(t testing.TB) *fakeEnv {
 	t.Logf("using %s", out)
 
 	return &fakeEnv{
-		Root:     root,
-		Home:     home,
-		TmpDir:   tmpDir,
-		Tmux:     tmux,
-		coverDir: coverBucket.Dir(),
+		Root:   root,
+		Home:   home,
+		TmpDir: tmpDir,
+		Tmux:   tmux,
 	}
 }
 
@@ -390,7 +359,6 @@ func (e *fakeEnv) Environ() []string {
 		"HOME=" + e.Home,
 		"TERM=xterm-256color",
 		"TMUX_TMPDIR=" + e.TmpDir,
-		_integrationTestCoverDirKey + "=" + e.coverDir,
 		"TMUX_EXE=" + e.Tmux,
 	}
 }
