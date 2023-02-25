@@ -74,7 +74,3 @@ checksum:
 
 snapshot:
   name_template: "{{ incminor .Tag }}-dev"
-
-changelog:
-  # A commit log is not a changelog.
-  skip: true
