@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"flag"
 	"fmt"
 	"io"
 	"io/fs"
@@ -28,8 +27,6 @@ import (
 )
 
 var _behaviors = map[string]func() (exitCode int){
-	"tmux-fastcopy": fakeTmuxFastcopy,
-
 	// Places a JSON report of the regex name and the hint in the buffer.
 	"json-report": jsonReportAction,
 
@@ -57,15 +54,6 @@ func behaviorBinary(t testing.TB, name string) string {
 	require.NoError(t, copyFile(behavior, exe), "copy test executable")
 	require.NoError(t, os.Chmod(behavior, 0o755), "mark file executable")
 	return behavior
-}
-
-func fakeTmuxFastcopy() (exitCode int) {
-	err := run(&_main, os.Args[1:])
-	if err != nil && err != flag.ErrHelp {
-		fmt.Fprintln(_main.Stderr, err)
-		return 1
-	}
-	return 0
 }
 
 func jsonReportAction() (exitCode int) {
@@ -275,6 +263,8 @@ type fakeEnv struct {
 	Home   string
 	TmpDir string
 	Tmux   string // path to tmux
+
+	coverDir string // $GOCOVERDIR
 }
 
 type fakeEnvConfig struct {
@@ -296,7 +286,8 @@ func (cfg *fakeEnvConfig) Build(t testing.TB) *fakeEnv {
 	binDir := filepath.Join(root, "bin")
 	require.NoError(t, os.Mkdir(binDir, 0o1755), "set up bin")
 
-	tmuxFastcopy := behaviorBinary(t, "tmux-fastcopy")
+	tmuxFastcopy, err := exec.LookPath("tmux-fastcopy")
+	require.NoError(t, err, "find tmux-fastcopy")
 
 	logFile := filepath.Join(root, "log.txt")
 	t.Cleanup(func() {
@@ -347,10 +338,11 @@ func (cfg *fakeEnvConfig) Build(t testing.TB) *fakeEnv {
 	t.Logf("using %s", out)
 
 	return &fakeEnv{
-		Root:   root,
-		Home:   home,
-		TmpDir: tmpDir,
-		Tmux:   tmux,
+		Root:     root,
+		Home:     home,
+		TmpDir:   tmpDir,
+		Tmux:     tmux,
+		coverDir: os.Getenv("GOCOVERDIR"),
 	}
 }
 
@@ -360,6 +352,7 @@ func (e *fakeEnv) Environ() []string {
 		"TERM=xterm-256color",
 		"TMUX_TMPDIR=" + e.TmpDir,
 		"TMUX_EXE=" + e.Tmux,
+		"GOCOVERDIR=" + e.coverDir,
 	}
 }
 

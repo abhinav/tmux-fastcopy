@@ -34,12 +34,19 @@ $(MOCKGEN): tools/go.mod
 tools: $(TOOLS)
 
 .PHONY: test
-test: $(GO_FILES)
-	go test -v -race ./...
+test: $(GO_FILES) $(TMUX_FASTCOPY)
+	PATH=$(GOBIN):$$PATH go test -v -race ./...
 
 .PHONY: cover
+cover: export GOEXPERIMENT = coverageredesign
 cover: $(GO_FILES)
-	go test -v -race -coverprofile=cover.out -coverpkg=./... ./...
+	$(eval BIN := $(shell mktemp -d))
+	$(eval COVERDIR := $(shell mktemp -d))
+	GOBIN=$(BIN) \
+	      go install -cover -coverpkg=./... github.com/abhinav/tmux-fastcopy
+	GOCOVERDIR=$(COVERDIR) PATH=$(BIN):$$PATH \
+		   go test -v -race -coverprofile=cover.out -coverpkg=./... ./...
+	go tool covdata textfmt -i=$(COVERDIR) -o=cover.integration.out
 	go tool cover -html=cover.out -o cover.html
 
 .PHONY: lint

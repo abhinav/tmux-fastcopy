@@ -13,7 +13,6 @@ require (
 	github.com/rivo/uniseg v0.4.4
 	github.com/stretchr/testify v1.8.1
 	go.uber.org/multierr v1.9.0
-	golang.org/x/tools v0.6.0
 )
 
 require (
