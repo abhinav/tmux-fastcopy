@@ -60,14 +60,13 @@ func (l *Loader) Var(val Value, option string) {
 // For example, if the prefix is, "foo-item-", then given the following
 // options,
 //
-//
-//   foo-item-a x
-//   foo-item-b y
-//   foo-item-c z
+//	foo-item-a x
+//	foo-item-b y
+//	foo-item-c z
 //
 // We'll get the map,
 //
-//   {a: x, b: y, c: z}
+//	{a: x, b: y, c: z}
 func (l *Loader) MapVar(val MapValue, prefix string) {
 	l.init()
 

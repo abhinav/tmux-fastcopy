@@ -11,8 +11,8 @@ import (
 // Returns the new position, after having drawn the text, making it possible to
 // continue drawing at the last written position.
 //
-//   pos = DrawText("foo\nb", style, view, pos)
-//   pos = DrawText("ar", style, view, pos)
+//	pos = DrawText("foo\nb", style, view, pos)
+//	pos = DrawText("ar", style, view, pos)
 //
 // Text that bleeds outside the bounds of the view is ignored.
 func DrawText(s string, style tcell.Style, view views.View, pos Pos) Pos {

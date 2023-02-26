@@ -8,21 +8,21 @@ type Expr interface{ expr() }
 
 // String is a string literal in an expression.
 //
-//   value
+//	value
 type String string // must not contain tabs
 
 func (String) expr() {}
 
 // Int is an integer literal in an expression.
 //
-//   42
+//	42
 type Int int
 
 func (Int) expr() {}
 
 // Var is a reference to a variable.
 //
-//  #{name}
+//	#{name}
 type Var string
 
 func (Var) expr() {}
@@ -31,7 +31,7 @@ func (Var) expr() {}
 // returns either the second or the third expression based on whether it's
 // true.
 //
-//   #{?cond,then,else}
+//	#{?cond,then,else}
 type Ternary struct {
 	Cond Expr
 	Then Expr
@@ -74,7 +74,7 @@ func (op BinaryOp) String() string {
 
 // Binary is a binary expression.
 //
-//  #{op:lhs,rhs}
+//	#{op:lhs,rhs}
 type Binary struct {
 	Op       BinaryOp
 	LHS, RHS Expr

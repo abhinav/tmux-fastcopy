@@ -7,7 +7,7 @@ type Pos struct{ X, Y int }
 
 // Get returns the coordinates as a pair.
 //
-//   x, y = pos.Get()
+//	x, y = pos.Get()
 func (p Pos) Get() (x, y int) {
 	return p.X, p.Y
 }

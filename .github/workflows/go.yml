@@ -32,7 +32,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: 1.18.x
+        go-version: 1.20.x
         cache: true
 
     - name: Load cached Tmux
@@ -51,7 +51,7 @@ jobs:
       run: |
         if [[ ! -x "$HOME/.local/bin/tmux" ]]; then
           sh autogen.sh
-          ./configure --prefix=$HOME/.local
+          ./configure --prefix="$HOME/.local"
           make install
         else
           echo "Using cached tmux"
@@ -68,3 +68,5 @@ jobs:
 
     - name: Coverage
       uses: codecov/codecov-action@v3
+      with:
+        files: ./cover.out,./cover.integration.out

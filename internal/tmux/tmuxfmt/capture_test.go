@@ -64,8 +64,8 @@ func TestCapturer(t *testing.T) {
 		{
 			desc:  "too many results",
 			exprs: []Expr{Var("pane_width")},
-			give: []byte("80	40	10\n"),
-			want: []interface{}{80},
+			give:  []byte("80	40	10\n"),
+			want:  []interface{}{80},
 		},
 	}
 

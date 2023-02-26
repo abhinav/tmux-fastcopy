@@ -77,8 +77,8 @@ func (s *ShellDriver) cmd(args ...string) *exec.Cmd {
 // errorWriter sets the provided io.Writers to the same log.Writer and returns
 // a function to close them.
 //
-//   cmd := s.cmd("some", "cmd")
-//   defer s.errorWriter(&cmd.Stderr)()
+//	cmd := s.cmd("some", "cmd")
+//	defer s.errorWriter(&cmd.Stderr)()
 func (s *ShellDriver) errorWriter(ws ...*io.Writer) (close func()) {
 	writer := &log.Writer{Log: s.log, Level: log.Error}
 	for _, w := range ws {

@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"flag"
 	"fmt"
 	"io"
 	"io/fs"
@@ -20,7 +19,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/abhinav/tmux-fastcopy/internal/coverage"
 	"github.com/abhinav/tmux-fastcopy/internal/iotest"
 	"github.com/creack/pty"
 	"github.com/jaguilar/vt100"
@@ -29,8 +27,6 @@ import (
 )
 
 var _behaviors = map[string]func() (exitCode int){
-	"tmux-fastcopy": fakeTmuxFastcopy,
-
 	// Places a JSON report of the regex name and the hint in the buffer.
 	"json-report": jsonReportAction,
 
@@ -58,36 +54,6 @@ func behaviorBinary(t testing.TB, name string) string {
 	require.NoError(t, copyFile(behavior, exe), "copy test executable")
 	require.NoError(t, os.Chmod(behavior, 0o755), "mark file executable")
 	return behavior
-}
-
-const _integrationTestCoverDirKey = "TMUX_FASTCOPY_INTEGRATION_TEST_COVER_DIR"
-
-func fakeTmuxFastcopy() (exitCode int) {
-	if coverDir := os.Getenv(_integrationTestCoverDirKey); len(coverDir) > 0 {
-		f, err := os.CreateTemp(coverDir, "tmux-fastcopy-cover")
-		if err != nil {
-			log.Printf("cannot create coverage file: %v", err)
-			return 1
-		}
-		if err := f.Close(); err != nil {
-			log.Printf("cannot close file: %v", err)
-			return 1
-		}
-
-		defer func() {
-			if err := coverage.Report(f.Name()); err != nil {
-				log.Printf("cannot report coverage: %v", err)
-				exitCode = 1
-			}
-		}()
-	}
-
-	err := run(&_main, os.Args[1:])
-	if err != nil && err != flag.ErrHelp {
-		fmt.Fprintln(_main.Stderr, err)
-		return 1
-	}
-	return 0
 }
 
 func jsonReportAction() (exitCode int) {
@@ -298,7 +264,7 @@ type fakeEnv struct {
 	TmpDir string
 	Tmux   string // path to tmux
 
-	coverDir string
+	coverDir string // $GOCOVERDIR
 }
 
 type fakeEnvConfig struct {
@@ -320,13 +286,8 @@ func (cfg *fakeEnvConfig) Build(t testing.TB) *fakeEnv {
 	binDir := filepath.Join(root, "bin")
 	require.NoError(t, os.Mkdir(binDir, 0o1755), "set up bin")
 
-	tmuxFastcopy := behaviorBinary(t, "tmux-fastcopy")
-
-	coverBucket, err := coverage.NewBucket(testing.CoverMode())
-	require.NoError(t, err, "failed to set up coverage bucket")
-	t.Cleanup(func() {
-		assert.NoError(t, coverBucket.Finalize(), "could not finalize coverage")
-	})
+	tmuxFastcopy, err := exec.LookPath("tmux-fastcopy")
+	require.NoError(t, err, "find tmux-fastcopy")
 
 	logFile := filepath.Join(root, "log.txt")
 	t.Cleanup(func() {
@@ -381,7 +342,7 @@ func (cfg *fakeEnvConfig) Build(t testing.TB) *fakeEnv {
 		Home:     home,
 		TmpDir:   tmpDir,
 		Tmux:     tmux,
-		coverDir: coverBucket.Dir(),
+		coverDir: os.Getenv("GOCOVERDIR"),
 	}
 }
 
@@ -390,8 +351,8 @@ func (e *fakeEnv) Environ() []string {
 		"HOME=" + e.Home,
 		"TERM=xterm-256color",
 		"TMUX_TMPDIR=" + e.TmpDir,
-		_integrationTestCoverDirKey + "=" + e.coverDir,
 		"TMUX_EXE=" + e.Tmux,
+		"GOCOVERDIR=" + e.coverDir,
 	}
 }
 
