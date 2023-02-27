@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/golang/mock v1.6.0
 	github.com/mgechev/revive v1.2.5
-	honnef.co/go/tools v0.4.0
+	honnef.co/go/tools v0.4.2
 )
 
 require (
