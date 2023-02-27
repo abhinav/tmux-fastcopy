@@ -11,7 +11,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.14
 	github.com/mattn/go-shellwords v1.0.12
 	github.com/rivo/uniseg v0.4.4
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 	go.uber.org/multierr v1.9.0
 )
 
