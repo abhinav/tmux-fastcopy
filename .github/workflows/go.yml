@@ -8,6 +8,21 @@ on:
   workflow_dispatch:
 
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.20.x
+        cache: true
+    - name: Download and install dependencies
+      run: |
+        go mod download
+    - name: Lint
+      run: make lint
 
   build:
     runs-on: ubuntu-latest
@@ -19,7 +34,6 @@ jobs:
     name: Test / Tmux ${{ matrix.tmux-version }}
 
     steps:
-
     - uses: actions/checkout@v3
 
     - name: Checkout Tmux
@@ -60,13 +74,8 @@ jobs:
     - name: Build tmux-fastcopy
       run: make build
 
-    - name: Lint
-      run: make lint
-
     - name: Test
       run: PATH="$HOME/.local/bin:$PATH" make cover
 
     - name: Coverage
       uses: codecov/codecov-action@v3
-      with:
-        files: ./cover.out,./cover.integration.out

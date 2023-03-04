@@ -43,10 +43,12 @@ cover: $(GO_FILES)
 	$(eval BIN := $(shell mktemp -d))
 	$(eval COVERDIR := $(shell mktemp -d))
 	GOBIN=$(BIN) \
-	      go install -cover -coverpkg=./... github.com/abhinav/tmux-fastcopy
+		go install -race -cover -coverpkg=./... github.com/abhinav/tmux-fastcopy
+	go test -cover -race -coverpkg=./... \
+		-c -o $(BIN)/tmux-fastcopy.test
 	GOCOVERDIR=$(COVERDIR) PATH=$(BIN):$$PATH \
-		   go test -v -race -coverprofile=cover.out -coverpkg=./... ./...
-	go tool covdata textfmt -i=$(COVERDIR) -o=cover.integration.out
+		$(BIN)/tmux-fastcopy.test -test.v -test.gocoverdir=$(COVERDIR) ./...
+	go tool covdata textfmt -i=$(COVERDIR) -o=cover.out
 	go tool cover -html=cover.out -o cover.html
 
 .PHONY: lint
