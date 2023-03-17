@@ -2,15 +2,11 @@ package ui
 
 import (
 	"sync"
-	"time"
 
 	"github.com/abhinav/tmux-fastcopy/internal/log"
 	"github.com/abhinav/tmux-fastcopy/internal/paniclog"
-	"github.com/benbjohnson/clock"
 	"github.com/gdamore/tcell/v2"
 )
-
-const _defaultFPS = 25
 
 // App drives the main UI for the application.
 type App struct {
@@ -22,12 +18,6 @@ type App struct {
 
 	// Logger to post messages to. Optional.
 	Log *log.Logger
-
-	// FPS specifies the refresh rate for the UI. Defaults to 25.
-	FPS int
-
-	// Clock is the source of time for the app.
-	Clock clock.Clock
 
 	once   sync.Once
 	err    error // error, if any
@@ -41,14 +31,9 @@ func (app *App) init() {
 			app.Log = log.Discard
 		}
 
-		if app.Clock == nil {
-			app.Clock = clock.New()
-		}
-
 		app.quit = make(chan struct{})
 		app.events = make(chan tcell.Event)
 
-		go app.renderLoop()
 		go app.streamEvents()
 	})
 }
@@ -70,6 +55,10 @@ func (app *App) Wait() error {
 func (app *App) run() {
 	defer app.handlePanic()
 
+	app.Screen.Clear()
+	app.Root.Draw(app.Screen)
+	app.Screen.Show()
+
 	events := app.events
 	for {
 		select {
@@ -79,6 +68,10 @@ func (app *App) run() {
 		case ev, ok := <-events:
 			if ok {
 				app.handleEvent(ev)
+
+				app.Screen.Clear()
+				app.Root.Draw(app.Screen)
+				app.Screen.Show()
 			} else {
 				// don't resolve this channel again
 				events = nil
@@ -135,29 +128,4 @@ func (app *App) streamEvents() {
 	defer app.handlePanic()
 
 	app.Screen.ChannelEvents(app.events, app.quit)
-}
-
-// Renders the root widget at the specified FPS.
-func (app *App) renderLoop() {
-	defer app.handlePanic()
-
-	fps := app.FPS
-	if fps == 0 {
-		fps = _defaultFPS
-	}
-
-	ticker := app.Clock.Ticker(time.Second / time.Duration(fps))
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-app.quit:
-			return
-
-		case <-ticker.C:
-			app.Screen.Clear()
-			app.Root.Draw(app.Screen)
-			app.Screen.Show()
-		}
-	}
 }
