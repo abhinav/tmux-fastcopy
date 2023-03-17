@@ -3,53 +3,20 @@ package ui
 import (
 	"bytes"
 	"testing"
-	"time"
 
 	"github.com/abhinav/tmux-fastcopy/internal/log"
 	"github.com/abhinav/tmux-fastcopy/internal/log/logtest"
-	"github.com/benbjohnson/clock"
 	tcell "github.com/gdamore/tcell/v2"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestAppRender(t *testing.T) {
-	t.Parallel()
-
-	ctrl := gomock.NewController(t)
-	scr := NewTestScreen(t, 80, 40)
-	clock := clock.NewMock()
-	widget := NewMockWidget(ctrl)
-
-	app := App{
-		Root:   widget,
-		Screen: scr,
-		Clock:  clock,
-		Log:    logtest.NewLogger(t),
-		FPS:    1, // keep the math for time below simple
-	}
-	app.Start()
-	defer func() {
-		app.Stop()
-		assert.NoError(t, app.Wait())
-	}()
-
-	// There's a small race condition here, and since we don't have any
-	// hook into things actually getting drawn onto the screen, make it a
-	// bit fuzzy: leave some slack.
-	widget.EXPECT().Draw(gomock.Any()).MinTimes(90).MaxTimes(100)
-	for i := 0; i < 100; i++ {
-		clock.Add(time.Second)
-	}
-}
-
 func TestAppEvents(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
 	scr := NewTestScreen(t, 80, 40)
-	clock := clock.NewMock()
 
 	widget := NewMockWidget(ctrl)
 	widget.EXPECT().Draw(gomock.Any()).AnyTimes()
@@ -57,7 +24,6 @@ func TestAppEvents(t *testing.T) {
 	app := App{
 		Root:   widget,
 		Screen: scr,
-		Clock:  clock,
 		Log:    logtest.NewLogger(t),
 	}
 	app.Start()
