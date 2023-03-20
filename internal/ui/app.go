@@ -67,11 +67,11 @@ func (app *App) run() {
 
 		case ev, ok := <-events:
 			if ok {
-				app.handleEvent(ev)
-
-				app.Screen.Clear()
-				app.Root.Draw(app.Screen)
-				app.Screen.Show()
+				if app.handleEvent(ev) {
+					app.Screen.Clear()
+					app.Root.Draw(app.Screen)
+					app.Screen.Show()
+				}
 			} else {
 				// don't resolve this channel again
 				events = nil
@@ -80,21 +80,22 @@ func (app *App) run() {
 	}
 }
 
-func (app *App) handleEvent(ev tcell.Event) {
+func (app *App) handleEvent(ev tcell.Event) (draw bool) {
 	switch ev := ev.(type) {
 	case *tcell.EventResize:
 		app.Screen.Sync()
-		return
+		return true
 
 	case *tcell.EventKey:
 		switch ev.Key() {
 		case tcell.KeyEscape, tcell.KeyCtrlC:
 			app.Stop()
-			return
+			return false
 		}
 	}
 
 	app.Root.HandleEvent(ev)
+	return true
 }
 
 // Stop informs the application that it's time to stop. This will cause the Run
