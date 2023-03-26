@@ -1,13 +1,10 @@
 package integration_test
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"log"
 	"math/rand"
 	"os"
@@ -15,13 +12,11 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-	"syscall"
 	"testing"
 	"time"
 
 	"github.com/abhinav/tmux-fastcopy/internal/iotest"
 	"github.com/creack/pty"
-	"github.com/jaguilar/vt100"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -150,34 +145,35 @@ func testIntegrationSelectMatches(t *testing.T, shift bool) {
 		os.WriteFile(testFile, []byte(_giveText), 0o644),
 		"write test file")
 
-	tmux := (&vTmuxConfig{
+	tmux := (&virtualTmuxConfig{
 		Tmux:   env.Tmux,
 		Width:  80,
 		Height: 40,
 		Env:    env.Environ(),
 	}).Build(t)
-
-	time.Sleep(time.Second)
+	time.Sleep(250 * time.Millisecond)
+	require.NoError(t, tmux.Command("set-buffer", "").Run(),
+		"clear tmux buffer")
 
 	// Clear to ensure the "cat /path/to/whatever" isn't part of the
 	// matched text.
+	tmux.Clear()
 	fmt.Fprintln(tmux, "clear && cat", testFile)
 	if !assert.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second)) {
-		t.Fatalf("could not find EOF in %q", tmux.Lines())
+		t.Fatalf("could not find EOF in %q", tmux.Contents())
 	}
 
 	var matches []matchInfo
 	for i := 0; i < len(_wantMatches); i++ {
+		tmux.Clear()
 		tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(250 * time.Millisecond)
 		tmux.WaitUntilContains("--EOF--", 3*time.Second)
 
-		hints := tmux.Matches(func(_ rune, f vt100.Format) bool {
-			return f.Fg == vt100.Red
-		})
+		hints := tmux.Hints()
 		t.Logf("got hints %q", hints)
 		if !assert.Len(t, hints, len(_wantMatches)) {
-			t.Fatalf("expected %d hints in %q", len(_wantMatches), tmux.Lines())
+			t.Fatalf("expected %d hints in %q", len(_wantMatches), tmux.Contents())
 		}
 
 		hint := hints[i]
@@ -187,7 +183,7 @@ func testIntegrationSelectMatches(t *testing.T, shift bool) {
 		} else {
 			io.WriteString(tmux, hint)
 		}
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(250 * time.Millisecond)
 
 		got, err := tmux.Command("show-buffer").Output()
 		require.NoError(t, err)
@@ -218,42 +214,41 @@ func TestIntegration_ShiftNoop(t *testing.T) {
 		os.WriteFile(testFile, []byte(_giveText), 0o644),
 		"write test file")
 
-	tmux := (&vTmuxConfig{
+	tmux := (&virtualTmuxConfig{
 		Tmux:   env.Tmux,
 		Width:  80,
 		Height: 40,
 		Env:    env.Environ(),
 	}).Build(t)
-
-	time.Sleep(time.Second)
-
+	time.Sleep(250 * time.Millisecond)
 	require.NoError(t, tmux.Command("set-buffer", "").Run(),
 		"clear tmux buffer")
 
 	// Clear to ensure the "cat /path/to/whatever" isn't part of the
 	// matched text.
+	tmux.Clear()
 	fmt.Fprintln(tmux, "clear && cat", testFile)
 	if !assert.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second)) {
-		t.Fatalf("could not find EOF in %q", tmux.Lines())
+		t.Fatalf("could not find EOF in %q", tmux.Contents())
 	}
 
+	tmux.Clear()
 	tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
-	time.Sleep(500 * time.Millisecond)
-	require.NoError(t, tmux.WaitUntilContains("--EOF--", 3*time.Second))
+	require.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second))
 
-	hints := tmux.Matches(func(_ rune, f vt100.Format) bool {
-		return f.Fg == vt100.Red
-	})
+	hints := tmux.Hints()
 	t.Logf("got hints %q", hints)
+	require.NotEmpty(t, hints, "expected hints in %q", tmux.Contents())
 
 	hint := hints[rand.Intn(len(hints))]
 	t.Logf("selecting %q", hint)
 	io.WriteString(tmux, strings.ToUpper(hint))
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(250 * time.Millisecond)
 
 	got, err := tmux.Command("show-buffer").Output()
 	if err == nil {
-		// The oepration may fail because there are no buffers.
+		// The operation may fail because there are no buffers,
+		// or it will succeed with an empty buffer.
 		assert.Empty(t, string(got), "buffer must be empty")
 	}
 }
@@ -329,6 +324,8 @@ func (cfg *fakeEnvConfig) Build(t testing.TB) *fakeEnv {
 	}
 
 	writeLines(t, filepath.Join(home, ".tmux.conf"), cfgLines...)
+	t.Logf("Using tmux config:\n%s", strings.Join(cfgLines, "\n"))
+
 	writeLines(t, filepath.Join(home, ".bash_profile"),
 		`export PS1="$ "`, // minimal prompt
 	)
@@ -349,171 +346,185 @@ func (cfg *fakeEnvConfig) Build(t testing.TB) *fakeEnv {
 func (e *fakeEnv) Environ() []string {
 	return []string{
 		"HOME=" + e.Home,
-		"TERM=xterm-256color",
+		"TERM=screen",
 		"TMUX_TMPDIR=" + e.TmpDir,
 		"TMUX_EXE=" + e.Tmux,
 		"GOCOVERDIR=" + e.coverDir,
 	}
 }
 
-// Virtual controllable tmux.
-type vTmux struct {
-	tmux string
-	env  []string
-	w, h int
+// virtualTmux is a tmux session that can be used to test tmux-fastcopy.
+type virtualTmux struct {
+	tmux   string
+	env    []string
+	w, h   int
+	stderr io.Writer
+
 	pty  *os.File
-	mu   sync.RWMutex // guards vt
-	vt   *vt100.VT100
+	mu   sync.RWMutex // guards buff
+	buff bytes.Buffer // output
 }
 
-type vTmuxConfig struct {
+type virtualTmuxConfig struct {
 	Tmux          string // path to tmux executable
 	Width, Height uint16
 	Env           []string
 }
 
-func (cfg *vTmuxConfig) Build(t testing.TB) *vTmux {
+func (cfg *virtualTmuxConfig) Build(t testing.TB) *virtualTmux {
+	stderr := iotest.Writer(t)
 	cmd := exec.Command(cfg.Tmux)
 	cmd.Env = cfg.Env
 	cmd.Stderr = iotest.Writer(t)
 
+	t.Logf("Starting tmux with size %dx%d", cfg.Width, cfg.Height)
 	pty, err := pty.StartWithSize(cmd, &pty.Winsize{
 		Rows: cfg.Height,
 		Cols: cfg.Width,
 	})
 	require.NoError(t, err, "start tmux")
 
-	vt := &vTmux{
-		w:    int(cfg.Width),
-		h:    int(cfg.Height),
-		tmux: cfg.Tmux,
-		env:  cfg.Env,
-		vt:   vt100.NewVT100(int(cfg.Height), int(cfg.Width)),
-		pty:  pty,
+	vt := &virtualTmux{
+		w:      int(cfg.Width),
+		h:      int(cfg.Height),
+		tmux:   cfg.Tmux,
+		env:    cfg.Env,
+		pty:    pty,
+		stderr: stderr,
 	}
+
+	readerDone := make(chan struct{})
 	t.Cleanup(func() {
 		vt.Command("kill-server").Run()
+		pty.Close()
+
+		select {
+		case <-readerDone:
+		case <-time.After(10 * time.Second):
+			t.Error("timed out waiting for readLoop to exit")
+		}
 	})
 
-	go vt.start(t, bufio.NewReader(pty))
+	go vt.readLoop(t, pty, readerDone)
 	return vt
 }
 
-func (vt *vTmux) Command(args ...string) *exec.Cmd {
+// Command builds an exec.Command for a tmux subcommand.
+func (vt *virtualTmux) Command(args ...string) *exec.Cmd {
 	cmd := exec.Command(vt.tmux, args...)
 	cmd.Env = vt.env
+	cmd.Stderr = vt.stderr
 	return cmd
 }
 
-func (vt *vTmux) start(t testing.TB, vr *bufio.Reader) {
+func (vt *virtualTmux) readLoop(t testing.TB, r io.Reader, done chan struct{}) {
+	defer close(done)
+
+	bs := make([]byte, 4*1024)
 	for {
-		cmd, err := vt100.Decode(vr)
-		if err == nil {
-			vt.mu.Lock()
-			err = vt.vt.Process(cmd)
-			vt.mu.Unlock()
-		}
-
-		switch {
-		case err == nil, errors.As(err, new(vt100.UnsupportedError)):
-			// ignore unsupported operations
-			continue
-
-		case errors.Is(err, io.EOF),
-			errors.Is(err, fs.ErrClosed),
-			errors.Is(err, syscall.EIO):
-			return
-
-		default:
-			// Not an error because this could be an error from
-			// attempting to read from a file after it's been
-			// cleaned up. Matching on EOF/ErrClosed isn't enough,
-			// apparently.
-			t.Logf("error decoding vt100 command: %v", err)
+		n, err := r.Read(bs)
+		if err != nil {
 			return
 		}
+		vt.mu.Lock()
+		vt.buff.Write(bs[:n])
+		vt.mu.Unlock()
 	}
 }
 
-func (vt *vTmux) Write(b []byte) (int, error) {
+func (vt *virtualTmux) Write(b []byte) (int, error) {
 	return vt.pty.Write(b)
 }
 
-func (vt *vTmux) Contains(s string) bool {
-	rs := []rune(s)
+func (vt *virtualTmux) Clear() {
+	// TODO: Auto clear on escape sequence
+	vt.mu.Lock()
+	vt.buff.Reset()
+	vt.mu.Unlock()
+}
+
+func (vt *virtualTmux) Contains(s string) bool {
+	bs := []byte(s)
 
 	vt.mu.RLock()
 	defer vt.mu.RUnlock()
-
-	for row := 0; row < vt.h; row++ {
-		i := 0
-		for col := 0; col < vt.w; col++ {
-			if vt.vt.Content[row][col] == rs[i] {
-				i++
-			} else {
-				i = 0
-			}
-			if i == len(rs) {
-				return true
-			}
-		}
-	}
-	return false
+	return bytes.Contains(vt.buff.Bytes(), bs)
 }
 
-func (vt *vTmux) Lines() []string {
-	lines := make([]string, 0, vt.h)
-	line := make([]rune, 0, vt.w)
-
+func (vt *virtualTmux) Contents() string {
 	vt.mu.RLock()
 	defer vt.mu.RUnlock()
-	for row := 0; row < vt.h; row++ {
-		line = append(line[:0], vt.vt.Content[row]...)
-		if l := strings.TrimSpace(string(line)); len(l) > 0 {
-			lines = append(lines, l)
-		}
-	}
-
-	return lines
+	return vt.buff.String()
 }
 
-// Find contiguous strings that match this predicate.
-func (vt *vTmux) Matches(want func(rune, vt100.Format) bool) []string {
+var _redText = [][]byte{
+	[]byte("\x1b[91m"),
+	[]byte("\x1b[31m"),
+}
+
+func (vt *virtualTmux) Hints() []string {
 	vt.mu.RLock()
 	defer vt.mu.RUnlock()
 
-	var matches []string
+	bs := vt.buff.Bytes()
+	var hints []string
+	seen := make(map[string]struct{})
+	for {
+		idx := bytes.IndexByte(bs, 0x1b)
+		if idx == -1 {
+			break // no more hints
+		}
+		bs = bs[idx:]
 
-	for row := 0; row < vt.h; row++ {
-		var match []rune
-		for col := 0; col < vt.h; col++ {
-			r := vt.vt.Content[row][col]
-			f := vt.vt.Format[row][col]
-
-			if want(r, f) {
-				match = append(match, r)
-			} else if len(match) > 0 {
-				matches = append(matches, string(match))
-				match = match[:0]
+		found := false
+		for _, red := range _redText {
+			if bytes.HasPrefix(bs, red) {
+				bs = bs[len(red):]
+				found = true
+				break
 			}
 		}
-		if len(match) > 0 {
-			matches = append(matches, string(match))
+		if !found {
+			bs = bs[1:]
+			continue // not red text; skip over the escape
 		}
-	}
 
-	return matches
+		end := bytes.IndexByte(bs, 0x1b)
+		if end == -1 {
+			break
+		}
+		hint := string(bs[:end])
+		if _, ok := seen[hint]; !ok {
+			hints = append(hints, hint)
+			seen[hint] = struct{}{}
+		}
+		bs = bs[end+1:]
+	}
+	return hints
 }
 
-func (vt *vTmux) WaitUntilContains(str string, timeout time.Duration) error {
-	start := time.Now()
-	for time.Since(start) < timeout {
-		if vt.Contains(str) {
+func (vt *virtualTmux) WaitUntilContains(str string, timeout time.Duration) error {
+	bs := []byte(str)
+
+	after := time.After(timeout)
+
+	ticker := time.NewTicker(50 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		vt.mu.RLock()
+		if bytes.Contains(vt.buff.Bytes(), bs) {
+			vt.mu.RUnlock()
 			return nil
 		}
-		time.Sleep(250 * time.Millisecond)
+		vt.mu.RUnlock()
+
+		select {
+		case <-after:
+			return fmt.Errorf("timeout waiting for %q", str)
+		case <-ticker.C:
+			// Check again.
+		}
 	}
-	return fmt.Errorf("could not find %q in %v", str, timeout)
 }
 
 func writeLines(t testing.TB, path string, lines ...string) {

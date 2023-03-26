@@ -39,7 +39,7 @@ test: $(GO_FILES)
 
 .PHONY: test-integration
 test-integration: $(TMUX_FASTCOPY)
-	PATH=$(GOBIN):$$PATH go test -C integration -race ./...
+	PATH=$(GOBIN):$$PATH go test -C integration -v -race ./...
 
 .PHONY: cover
 cover: export GOEXPERIMENT = coverageredesign
