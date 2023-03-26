@@ -7,7 +7,26 @@ on:
     branches: [ '*' ]
   workflow_dispatch:
 
+env:
+  GO_VERSION: 1.20.x
+
 jobs:
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        cache: true
+
+    - name: Lint
+      run: make lint
 
   build:
     runs-on: ubuntu-latest
@@ -32,7 +51,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: 1.20.x
+        go-version: ${{ env.GO_VERSION }}
         cache: true
 
     - name: Load cached Tmux
@@ -59,9 +78,6 @@ jobs:
 
     - name: Build tmux-fastcopy
       run: make build
-
-    - name: Lint
-      run: make lint
 
     - name: Test
       run: PATH="$HOME/.local/bin:$PATH" make cover
