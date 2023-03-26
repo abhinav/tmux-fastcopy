@@ -6,10 +6,11 @@ TOOLS_GO_FILES = $(shell find tools -type f -a -name '*.go')
 
 TMUX_FASTCOPY = $(BIN)/tmux-fastcopy
 
-REVIVE = bin/revive
+REVIVE = $(BIN)/revive
 MOCKGEN = $(BIN)/mockgen
 STATICCHECK = $(BIN)/staticcheck
-TOOLS = $(REVIVE) $(STATICCHECK) $(MOCKGEN)
+STITCHMD = $(BIN)/stitchmd
+TOOLS = $(REVIVE) $(STATICCHECK) $(MOCKGEN) $(STITCHMD)
 
 PROJECT_ROOT = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 export GOBIN ?= $(PROJECT_ROOT)/$(BIN)
@@ -60,7 +61,7 @@ cover-integration: $(GO_FILES)
 	go tool cover -html=cover.integration.out -o cover.integration.html
 
 .PHONY: lint
-lint: gofmt revive staticcheck gomodtidy nogenerate
+lint: gofmt revive staticcheck gomodtidy nogenerate readmecheck
 
 .PHONY: gofmt
 gofmt:
@@ -106,3 +107,21 @@ nogenerate:
 		git status --porcelain && \
 		false; \
 	fi
+
+.PHONY: readme
+readme: README.md
+
+.PHONY: readmecheck
+readmecheck: $(STITCHMD)
+	@DIFF=$$($(STITCHMD) -color -d -o README.md doc/README.md); \
+	if [[ -n "$$DIFF" ]]; then \
+		echo "README.md is out of date:"; \
+		echo "$$DIFF"; \
+		false; \
+	fi
+
+README.md: $(wildcard doc/*) $(STITCHMD)
+	$(STITCHMD) -o README.md doc/README.md
+
+$(STITCHMD): tools/go.mod
+	cd tools && go install go.abhg.dev/stitchmd
