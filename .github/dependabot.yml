@@ -5,6 +5,10 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "gomod"
+    directory: "/integration"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "gomod"
     directory: "/tools"
     schedule:
       interval: "daily"

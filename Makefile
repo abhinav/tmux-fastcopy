@@ -34,20 +34,30 @@ $(MOCKGEN): tools/go.mod
 tools: $(TOOLS)
 
 .PHONY: test
-test: $(GO_FILES) $(TMUX_FASTCOPY)
-	PATH=$(GOBIN):$$PATH go test -v -race ./...
+test: $(GO_FILES)
+	go test -v -race ./...
+
+.PHONY: test-integration
+test-integration: $(TMUX_FASTCOPY)
+	PATH=$(GOBIN):$$PATH go test -C integration -race ./...
 
 .PHONY: cover
 cover: export GOEXPERIMENT = coverageredesign
 cover: $(GO_FILES)
+	go test -v -race -coverprofile=cover.out -coverpkg=./... ./...
+	go tool cover -html=cover.out -o cover.html
+
+.PHONY: cover-integration
+cover-integration: export GOEXPERIMENT = coverageredesign
+cover-integration: $(GO_FILES)
 	$(eval BIN := $(shell mktemp -d))
 	$(eval COVERDIR := $(shell mktemp -d))
 	GOBIN=$(BIN) \
 	      go install -cover -coverpkg=./... github.com/abhinav/tmux-fastcopy
 	GOCOVERDIR=$(COVERDIR) PATH=$(BIN):$$PATH \
-		   go test -v -race -coverprofile=cover.out -coverpkg=./... ./...
+		   go test -C integration -v -race ./...
 	go tool covdata textfmt -i=$(COVERDIR) -o=cover.integration.out
-	go tool cover -html=cover.out -o cover.html
+	go tool cover -html=cover.integration.out -o cover.integration.html
 
 .PHONY: lint
 lint: gofmt revive staticcheck gomodtidy nogenerate
@@ -72,6 +82,7 @@ $(REVIVE): tools/go.mod
 staticcheck: $(STATICCHECK)
 	$(STATICCHECK) ./...
 	cd tools && ../$(STATICCHECK) ./...
+	cd integration && ../$(STATICCHECK) ./...
 
 $(STATICCHECK): tools/go.mod
 	cd tools && go install honnef.co/go/tools/cmd/staticcheck
@@ -79,7 +90,8 @@ $(STATICCHECK): tools/go.mod
 .PHONY: gomodtidy
 gomodtidy: go.mod go.sum tools/go.mod tools/go.sum
 	go mod tidy
-	cd tools && go mod tidy
+	go mod tidy -C tools
+	go mod tidy -C integration
 	@if ! git diff --quiet $^; then \
 		echo "go mod tidy changed files:" && \
 		git status --porcelain $^ && \
