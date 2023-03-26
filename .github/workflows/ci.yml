@@ -31,7 +31,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    name: Test
+    name: Unit Test
 
     steps:
     - uses: actions/checkout@v3
