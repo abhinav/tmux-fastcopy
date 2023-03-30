@@ -10,7 +10,7 @@ require (
 	github.com/mattn/go-shellwords v1.0.12
 	github.com/rivo/uniseg v0.4.4
 	github.com/stretchr/testify v1.8.2
-	go.uber.org/multierr v1.10.0
+	go.uber.org/multierr v1.11.0
 )
 
 require (
