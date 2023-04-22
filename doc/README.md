@@ -16,3 +16,4 @@
 - [FAQ](faq.md)
 - [Credits](credits.md)
 - [Similar projects](similar.md)
+- [License](license.md)

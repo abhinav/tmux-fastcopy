@@ -46,7 +46,12 @@ func run(cmd *mainCmd, args []string) (err error) {
 	}
 
 	if *version {
-		fmt.Fprintf(cmd.Stdout, "tmux-fastcopy version %v\n", _version)
+		fmt.Fprintln(cmd.Stdout, "tmux-fastcopy version", _version)
+		fmt.Fprintln(cmd.Stdout, "Copyright (C) 2023 Abhinav Gupta")
+		fmt.Fprintln(cmd.Stdout, "  <https://github.com/abhinav/tmux-fastcopy>")
+		fmt.Fprintln(cmd.Stdout, "tmux-fastcopy comes with ABSOLUTELY NO WARRANTY.")
+		fmt.Fprintln(cmd.Stdout, "This is free software, and you are welcome to redistribute it")
+		fmt.Fprintln(cmd.Stdout, "under certain conditions. See source for details.")
 		return nil
 	}
 
@@ -142,7 +147,7 @@ func (cmd *mainCmd) Run(cfg *config) (err error) {
 	cmd.init()
 
 	if file := cfg.LogFile; len(file) > 0 {
-		f, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		f, err := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 		if err != nil {
 			return fmt.Errorf("open log %q: %v", file, err)
 		}
