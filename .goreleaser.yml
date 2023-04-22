@@ -41,7 +41,7 @@ aurs:
     description: "easymotion-style text copying for tmux."
     maintainers:
       - 'Abhinav Gupta <mail@abhinavg.net>'
-    license: "MIT"
+    license: "GPL-2.0"
     git_url: "ssh://aur@aur.archlinux.org/tmux-fastcopy-bin.git"
     skip_upload: auto
     private_key: '{{ .Env.AUR_KEY }}'
@@ -65,7 +65,7 @@ brews:
       email: mail@abhinavg.net
     homepage: https://github.com/abhinav/tmux-fastcopy
     description: "easymotion-style text copying for tmux."
-    license: "MIT"
+    license: "GPL-2.0"
     skip_upload: auto
     dependencies:
       - name: tmux
