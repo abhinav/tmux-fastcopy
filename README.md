@@ -157,7 +157,7 @@ bind-key f run-shell -b tmux-fastcopy
 When there is text on the screen you'd like to copy:
 
 1. Press `<prefix> + f` to invoke tmux-fastcopy. (You can change this key by
-   setting the [`@fastcopy-key`][] option.)
+   setting the [`@fastcopy-key`](#fastcopy-key) option.)
 2. Enter the label next to the highlighted text to copy that text.
 
 For example,
@@ -342,7 +342,7 @@ set-option -g @fastcopy-regex-isodate ""
 ```
 
 The name of the regular expression that matched the selection is available to
-the [`@fastcopy-action`][] via the `FASTCOPY_REGEX_NAME` environment variable.
+the [`@fastcopy-action`](#fastcopy-action) via the `FASTCOPY_REGEX_NAME` environment variable.
 See [Accessing the regex name](#accessing-the-regex-name) for more details.
 
 ## How to
@@ -486,7 +486,8 @@ set-option -g @fastcopy-regex-isodate ""
 The `FASTCOPY_REGEX_NAME` environment variable holds the name of the regex that
 matched your selection.
 You can run different actions on a per-regex basis by inspecting the
-`FASTCOPY_REGEX_NAME` environment variable in your [`@fastcopy-action`][].
+`FASTCOPY_REGEX_NAME` environment variable in your
+[`@fastcopy-action`](#fastcopy-action).
 
 See [Accessing the regex name](#accessing-the-regex-name) for more details.
 
