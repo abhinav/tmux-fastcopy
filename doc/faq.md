@@ -59,6 +59,7 @@ For example, the following deletes the `isodate` regular expression.
 The `FASTCOPY_REGEX_NAME` environment variable holds the name of the regex that
 matched your selection.
 You can run different actions on a per-regex basis by inspecting the
-`FASTCOPY_REGEX_NAME` environment variable in your [`@fastcopy-action`][].
+`FASTCOPY_REGEX_NAME` environment variable in your
+[`@fastcopy-action`](opt-action.md).
 
 See [Accessing the regex name](howto-regex-name.md) for more details.

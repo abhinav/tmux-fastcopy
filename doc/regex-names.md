@@ -20,5 +20,5 @@ them to a blank string.
     set-option -g @fastcopy-regex-isodate ""
 
 The name of the regular expression that matched the selection is available to
-the [`@fastcopy-action`][] via the `FASTCOPY_REGEX_NAME` environment variable.
+the [`@fastcopy-action`](opt-action.md) via the `FASTCOPY_REGEX_NAME` environment variable.
 See [Accessing the regex name](howto-regex-name.md) for more details.
