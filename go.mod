@@ -11,6 +11,7 @@ require (
 	github.com/rivo/uniseg v0.4.4
 	github.com/stretchr/testify v1.8.2
 	go.uber.org/multierr v1.11.0
+	pgregory.net/rapid v0.5.7
 )
 
 require (

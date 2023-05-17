@@ -2,13 +2,8 @@ package main
 
 import (
 	"flag"
-	"math/rand"
-	"reflect"
 	"strings"
 	"testing"
-	"testing/quick"
-	"time"
-	"unicode/utf8"
 
 	"github.com/abhinav/tmux-fastcopy/internal/iotest"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux"
@@ -17,6 +12,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"pgregory.net/rapid"
 )
 
 func TestMatcherDefaultRegexes(t *testing.T) {
@@ -472,45 +468,34 @@ func TestConfigMerge(t *testing.T) {
 	}
 }
 
-func TestConfigFlagsQuickCheck(t *testing.T) {
+func TestConfigFlags_rapid(t *testing.T) {
 	t.Parallel()
 
 	// Make sure that config is always round-trippable because we need to
 	// the wrapper process to be able to send the exact same configuration
 	// down to the wrapped process.
 
-	seed := time.Now().UnixNano()
-	defer func() {
-		if t.Failed() {
-			t.Logf("random seed: %v", seed)
-		}
-	}()
+	gen := configGenerator()
+	rapid.Check(t, func(t *rapid.T) {
+		give := gen.Draw(t, "config")
 
-	quick.Check(func(give config) bool {
 		// Skip invalid alphabets.
 		if give.Alphabet.Validate() != nil {
-			return true
+			t.Skip()
 		}
 
 		flag := flag.NewFlagSet(t.Name(), flag.ContinueOnError)
 		flag.SetOutput(iotest.Writer(t))
+
 		var got config
 		got.RegisterFlags(flag)
 
-		if !assert.NoError(t, flag.Parse(give.Flags())) {
-			return false
-		}
+		require.NoError(t, flag.Parse(give.Flags()))
 
 		if len(give.Regexes) == 0 {
 			give.Regexes = nil // to make nil v non-nil map comparison easier
 		}
-
-		return assert.Equal(t, give, got)
-	}, &quick.Config{
-		Rand: rand.New(rand.NewSource(seed)),
-		Values: func(vs []reflect.Value, rand *rand.Rand) {
-			vs[0] = reflect.ValueOf(generateConfig(t, rand))
-		},
+		require.Equal(t, give, got)
 	})
 }
 
@@ -531,79 +516,31 @@ func TestUsageHasAllConfigFlags(t *testing.T) {
 	})
 }
 
-var (
-	_typeString = reflect.TypeOf("")
-	_typeBool   = reflect.TypeOf(true)
-)
+func configGenerator() *rapid.Generator[config] {
+	alphabetGen := rapid.Custom(func(t *rapid.T) alphabet {
+		alpha := rapid.SliceOfNDistinct(rapid.Rune(), 2, -1, rapid.ID[rune]).Draw(t, "alphabet")
+		return alphabet(alpha)
+	})
 
-func generateConfig(t testing.TB, rand *rand.Rand) config {
-	return config{
-		Pane:        generateString(t, rand, 0, "generate pane"),
-		Action:      generateString(t, rand, 0, "generate action"),
-		ShiftAction: generateString(t, rand, 0, "generate shift action"),
-		Alphabet:    generateAlphabet(t, rand),
-		Verbose:     generateValue(t, rand, _typeBool, "verbose").(bool),
-		Regexes:     generateRegexes(t, rand),
-		LogFile:     generateString(t, rand, 0, "generate logFile"),
-		Tmux:        generateString(t, rand, 1, "generate tmux"),
-	}
-}
+	regexGen := rapid.MapOf(
+		rapid.StringN(1, -1, -1).Filter(func(s string) bool {
+			return !strings.Contains(s, ":")
+		}),
+		rapid.StringN(1, -1, -1),
+	)
 
-func generateAlphabet(t testing.TB, rand *rand.Rand) alphabet {
-	for {
-		alpha := generateString(t, rand, 2, "generate alphabet")
-
-		runes := make(map[rune]struct{})
-		for _, r := range alpha {
-			runes[r] = struct{}{}
+	return rapid.Custom(func(t *rapid.T) config {
+		return config{
+			Pane:        rapid.String().Draw(t, "pane"),
+			Action:      rapid.String().Draw(t, "action"),
+			ShiftAction: rapid.String().Draw(t, "shift action"),
+			Alphabet:    alphabetGen.Draw(t, "alphabet"),
+			Verbose:     rapid.Bool().Draw(t, "verbose"),
+			Regexes:     regexGen.Draw(t, "regexes"),
+			LogFile:     rapid.String().Draw(t, "logFile"),
+			Tmux:        rapid.StringN(1, -1, -1).Draw(t, "tmux"),
 		}
-
-		if len(runes) < 2 {
-			continue // too short, try again
-		}
-
-		out := make([]rune, 0, len(runes))
-		for r := range runes {
-			out = append(out, r)
-		}
-		return alphabet(out)
-	}
-}
-
-func generateRegexes(t testing.TB, rand *rand.Rand) regexes {
-	count := rand.Intn(100)
-	m := make(regexes, count)
-	for i := 0; i < count; i++ {
-		var key string
-		for {
-			key = generateString(t, rand, 1, "regex name")
-			if strings.IndexByte(key, ':') < 0 {
-				break
-			}
-		}
-		value := generateString(t, rand, 1, "regex value")
-		m[key] = value
-	}
-	return m
-}
-
-func generateString(t testing.TB, rand *rand.Rand, minLength int, msg ...interface{}) string {
-	for {
-		s := generateValue(t, rand, _typeString, msg...).(string)
-		if len(s) < minLength {
-			continue
-		}
-		if !utf8.ValidString(s) {
-			continue
-		}
-		return s
-	}
-}
-
-func generateValue(t testing.TB, rand *rand.Rand, typ reflect.Type, msg ...interface{}) interface{} {
-	v, ok := quick.Value(typ, rand)
-	require.True(t, ok, msg...)
-	return v.Interface()
+	})
 }
 
 func joinLines(lines ...string) string {
