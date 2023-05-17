@@ -2,13 +2,11 @@ package huffman
 
 import (
 	"fmt"
-	"math/rand"
 	"strings"
 	"testing"
-	"testing/quick"
-	"time"
 
 	"github.com/stretchr/testify/assert"
+	"pgregory.net/rapid"
 )
 
 // Index based test cases are difficult to read. Set up some machinery to write
@@ -125,34 +123,24 @@ func TestLabel(t *testing.T) {
 	}
 }
 
-func TestQuick(t *testing.T) {
-	runTest := func(t *testing.T, alphabet *alphabet) interface{} {
-		return func(freqs []int) bool {
-			got := alphabet.Labels(
-				Label(alphabet.Size(), freqs),
-			)
-			return assertLabelInvariants(t, len(freqs), got)
-		}
-	}
-
+func TestLabel_rapid(t *testing.T) {
 	for _, alphabet := range _alphabets {
 		t.Run(alphabet.String(), func(t *testing.T) {
-			seed := time.Now().UnixNano()
-			t.Logf("random seed: %v", seed)
-
-			err := quick.Check(
-				runTest(t, alphabet),
-				&quick.Config{
-					Rand: rand.New(rand.NewSource(seed)),
-				},
-			)
-			assert.NoError(t, err)
+			rapid.Check(t, func(t *rapid.T) {
+				freqs := rapid.SliceOf(rapid.Int()).Draw(t, "freqs")
+				got := alphabet.Labels(
+					Label(alphabet.Size(), freqs),
+				)
+				assertLabelInvariants(t, len(freqs), got)
+			})
 		})
 	}
 }
 
-func assertLabelInvariants(t *testing.T, numItems int, labels []string) bool {
-	t.Helper()
+func assertLabelInvariants(t assert.TestingT, numItems int, labels []string) bool {
+	if h, ok := t.(interface{ Helper() }); ok {
+		h.Helper()
+	}
 
 	// 1) Number of labels must match the number of
 	//    frequencies/elements.
