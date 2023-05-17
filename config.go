@@ -1,14 +1,19 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"sort"
 	"strings"
 
 	"github.com/abhinav/tmux-fastcopy/internal/must"
+	"github.com/abhinav/tmux-fastcopy/internal/tmux"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux/tmuxopt"
+	"github.com/peterbourgon/ff/v3"
 )
 
 var _defaultRegexes = map[string]string{
@@ -72,6 +77,60 @@ func (m *regexes) FillFrom(o regexes) {
 			must.NotErrorf(err, "unexpected invalid key %q", k)
 		}
 	}
+}
+
+type tmuxConfigFileParser struct {
+	prefix []byte // prefix for all items incl '-'
+
+	// prefix => transformation (prefix includes '-')
+	transform map[string]func(k, v string) (outk, outv string, err error)
+	tmux      tmux.Driver
+}
+
+var _ ff.ConfigFileParser = new(tmuxConfigFileParser).Parse // TODO: delete
+
+func (p *tmuxConfigFileParser) Parse(r io.Reader, set func(k, v string) error) error {
+	out, err := p.tmux.ShowOptions(tmux.ShowOptionsRequest{
+		Global: true,
+	})
+	if err != nil {
+		return err
+	}
+
+	scan := bufio.NewScanner(bytes.NewReader(out))
+	for scan.Scan() {
+		// fastcopy-foo bar => ["fastcopy-foo", "bar"]
+		keyb, valb, ok := bytes.Cut(scan.Bytes(), []byte(" "))
+		if !ok {
+			continue
+		}
+
+		// fastcopy-foo => foo
+		keyb, ok = bytes.CutPrefix(keyb, p.prefix)
+		if !ok {
+			continue
+		}
+
+		key, val := string(keyb), string(valb)
+		for prefix, t := range p.transform {
+			k, ok := strings.CutPrefix(key, prefix)
+			if !ok {
+				continue
+			}
+
+			nk, nv, err := t(k, val)
+			if err != nil {
+				return fmt.Errorf("transform %q: %w", key, err)
+			}
+			key, val = nk, nv
+		}
+
+		if err := set(key, val); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 type config struct {

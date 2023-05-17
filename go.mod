@@ -8,6 +8,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/mattn/go-runewidth v0.0.15
 	github.com/mattn/go-shellwords v1.0.12
+	github.com/peterbourgon/ff/v3 v3.3.0
 	github.com/rivo/uniseg v0.4.4
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/multierr v1.11.0
