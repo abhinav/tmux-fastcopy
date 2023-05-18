@@ -47,6 +47,7 @@ func sampleStyle() Style {
 	}
 }
 
+//nolint:tparallel // shared state between subtests
 func TestWidget(t *testing.T) {
 	t.Parallel()
 

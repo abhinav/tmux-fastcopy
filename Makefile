@@ -1,18 +1,26 @@
-BIN = bin
-GO_FILES = $(shell find . -path '*/.*' -prune -o \
-	   '(' -type f -a -name '*.go' ')' -print)
-
-TOOLS_GO_FILES = $(shell find tools -type f -a -name '*.go')
-
-TMUX_FASTCOPY = $(BIN)/tmux-fastcopy
-
-REVIVE = $(BIN)/revive
-MOCKGEN = $(BIN)/mockgen
-STATICCHECK = $(BIN)/staticcheck
-TOOLS = $(REVIVE) $(STATICCHECK) $(MOCKGEN)
+SHELL = /bin/bash
 
 PROJECT_ROOT = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-export GOBIN ?= $(PROJECT_ROOT)/$(BIN)
+
+# Setting GOBIN and PATH ensures two things:
+# - All 'go install' commands we run
+#   only affect the current directory.
+# - All installed tools are available on PATH
+#   for commands like go generate.
+export GOBIN = $(PROJECT_ROOT)/bin
+export PATH := $(GOBIN):$(PATH)
+
+GO_MODULES ?= $(shell find . \
+	-path '*/.*' -prune -o \
+	-type f -a -name 'go.mod' -printf '%h\n')
+
+# Non-test Go files.
+GO_SRC_FILES = $(shell find . \
+	   -path '*/.*' -prune -o \
+	   '(' -type f -a -name '*.go' -a -not -name '*_test.go' ')' -print)
+
+TMUX_FASTCOPY = bin/tmux-fastcopy
+MOCKGEN = bin/mockgen
 
 .PHONY: all
 all: build lint test
@@ -20,36 +28,33 @@ all: build lint test
 .PHONY: build
 build: $(TMUX_FASTCOPY)
 
-$(TMUX_FASTCOPY): $(GO_FILES)
+$(TMUX_FASTCOPY): $(GO_SRC_FILES)
 	go install github.com/abhinav/tmux-fastcopy
 
 .PHONY: generate
 generate: $(MOCKGEN)
-	PATH=$(GOBIN):$$PATH go generate -x ./...
+	go generate -x ./...
 
-$(MOCKGEN): tools/go.mod
-	cd tools && go install github.com/golang/mock/mockgen
-
-.PHONY: tools
-tools: $(TOOLS)
+$(MOCKGEN): go.mod
+	go install github.com/golang/mock/mockgen
 
 .PHONY: test
-test: $(GO_FILES)
+test:
 	go test -v -race ./...
 
 .PHONY: test-integration
 test-integration: $(TMUX_FASTCOPY)
-	PATH=$(GOBIN):$$PATH go test -C integration -v -race ./...
+	go test -C integration -v -race ./...
 
 .PHONY: cover
 cover: export GOEXPERIMENT = coverageredesign
-cover: $(GO_FILES)
+cover:
 	go test -v -race -coverprofile=cover.out -coverpkg=./... ./...
 	go tool cover -html=cover.out -o cover.html
 
 .PHONY: cover-integration
 cover-integration: export GOEXPERIMENT = coverageredesign
-cover-integration: $(GO_FILES)
+cover-integration:
 	$(eval BIN := $(shell mktemp -d))
 	$(eval COVERDIR := $(shell mktemp -d))
 	GOBIN=$(BIN) \
@@ -60,46 +65,30 @@ cover-integration: $(GO_FILES)
 	go tool cover -html=cover.integration.out -o cover.integration.html
 
 .PHONY: lint
-lint: gofmt revive staticcheck gomodtidy nogenerate
+lint: golangci-lint tidy-lint generate-lint
 
-.PHONY: gofmt
-gofmt:
-	$(eval FMT_LOG := $(shell mktemp -t gofmt.XXXXX))
-	@gofmt -e -s -l $(GO_FILES) > $(FMT_LOG) || true
-	@[ ! -s "$(FMT_LOG)" ] || \
-		(echo "gofmt failed. Please reformat the following files:" | \
-		cat - $(FMT_LOG) && false)
+.PHONY: fmt
+fmt:
+	gofumpt -w .
 
-.PHONY: revive
-revive: $(REVIVE)
-	$(REVIVE) -config revive.toml ./...
-	cd tools && ../$(REVIVE) -config ../revive.toml ./...
+.PHONY: golangci-lint
+golangci-lint:
+	$(foreach mod,$(GO_MODULES), \
+		(cd $(mod) && golangci-lint run --path-prefix $(mod)) &&) true
 
-$(REVIVE): tools/go.mod
-	cd tools && go install github.com/mgechev/revive
+.PHONY: tidy
+tidy:
+	$(foreach mod,$(GO_MODULES),(cd $(mod) && go mod tidy) &&) true
 
-.PHONY: staticcheck
-staticcheck: $(STATICCHECK)
-	$(STATICCHECK) ./...
-	cd tools && ../$(STATICCHECK) ./...
-	cd integration && ../$(STATICCHECK) ./...
+.PHONY: tidy-lint
+tidy-lint:
+	$(foreach mod,$(GO_MODULES), \
+		(cd $(mod) && go mod tidy && \
+			git diff --exit-code -- go.mod go.sum || \
+			(echo "[$(mod)] go mod tidy changed files" && false)) &&) true
 
-$(STATICCHECK): tools/go.mod
-	cd tools && go install honnef.co/go/tools/cmd/staticcheck
-
-.PHONY: gomodtidy
-gomodtidy: go.mod go.sum tools/go.mod tools/go.sum
-	go mod tidy
-	go mod tidy -C tools
-	go mod tidy -C integration
-	@if ! git diff --quiet $^; then \
-		echo "go mod tidy changed files:" && \
-		git status --porcelain $^ && \
-		false; \
-	fi
-
-.PHONY: nogenerate
-nogenerate:
+.PHONY: generate-lint
+generate-lint:
 	make generate
 	@if ! git diff --quiet; then \
 		echo "working tree is dirty after generate:" && \

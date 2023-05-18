@@ -1,3 +1,6 @@
+// Package log provides leveled logging interface.
+// The log messages are intended to be user-facing
+// similar to the standard library's log package.
 package log
 
 import (
@@ -105,7 +108,7 @@ func (l *Logger) Log(level Level, msg string, args ...interface{}) {
 	}
 	out.WriteString("\n")
 
-	l.w.WriteString(out.String())
+	_, _ = l.w.WriteString(out.String()) // ignore error
 }
 
 type lockedWriter struct {
