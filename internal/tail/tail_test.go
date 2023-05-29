@@ -38,7 +38,7 @@ func (b *lockedBuffer) String() string {
 	return b.buff.String()
 }
 
-//nolint:tparallel // shared state between subtests
+//nolint:paralleltest // shared state between subtests
 func TestTee(t *testing.T) {
 	t.Parallel()
 

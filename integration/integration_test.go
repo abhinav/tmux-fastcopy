@@ -216,6 +216,8 @@ func testIntegrationSelectMatches(t *testing.T, shift bool) {
 }
 
 func TestIntegration_ShiftNoop(t *testing.T) {
+	t.Parallel()
+
 	env := (&fakeEnvConfig{
 		Action: "unexpected",
 	}).Build(t)
