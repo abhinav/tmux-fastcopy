@@ -1,3 +1,5 @@
+// Package ui defines a thin framework for building terminal UIs using tcell
+// and accompanying widgets.
 package ui
 
 import (
@@ -115,7 +117,7 @@ func (app *App) Stop() {
 // Defer this inside goroutines to catch panics inside them.
 func (app *App) handlePanic() {
 	w := log.Writer{Log: app.Log, Level: log.Error}
-	defer w.Close()
+	defer func() { _ = w.Close() }()
 
 	if err := paniclog.Handle(recover(), &w); err != nil {
 		app.err = err

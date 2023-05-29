@@ -66,8 +66,12 @@ func (m *regexes) Set(v string) error {
 
 func (m *regexes) FillFrom(o regexes) {
 	for k, v := range o {
-		if _, ok := (*m)[k]; !ok {
-			m.Put(k, v)
+		if _, ok := (*m)[k]; ok {
+			continue
+		}
+
+		if err := m.Put(k, v); err != nil {
+			panic(fmt.Sprintf("unexpected bad regex key %q=%q: %v", k, v, err))
 		}
 	}
 }

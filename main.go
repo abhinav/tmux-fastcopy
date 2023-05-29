@@ -1,3 +1,8 @@
+// tmux-fastcopy is a plugin for tmux that aids in copying text.
+// It allows matching text on the screen with pre-defined regular expressions
+// and copying the matched text with minimal keystrokes.
+//
+// See README.md for more information.
 package main
 
 import (

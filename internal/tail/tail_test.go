@@ -38,6 +38,7 @@ func (b *lockedBuffer) String() string {
 	return b.buff.String()
 }
 
+//nolint:tparallel // shared state between subtests
 func TestTee(t *testing.T) {
 	t.Parallel()
 
@@ -58,7 +59,7 @@ func TestTee(t *testing.T) {
 		assert.NoError(t, tee.Stop())
 	}()
 
-	w, err := os.OpenFile(r.Name(), os.O_WRONLY, 0644)
+	w, err := os.OpenFile(r.Name(), os.O_WRONLY, 0o644)
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -71,7 +72,9 @@ func TestTee(t *testing.T) {
 	t.Run("write", func(t *testing.T) {
 		defer buff.Reset()
 
-		io.WriteString(w, "hello")
+		_, err := io.WriteString(w, "hello")
+		require.NoError(t, err)
+
 		clock.Add(_defaultDelay)
 		assert.Equal(t, "hello", buff.String())
 	})
@@ -84,7 +87,9 @@ func TestTee(t *testing.T) {
 			assert.Empty(t, buff.String())
 		}
 
-		io.WriteString(w, "world")
+		_, err := io.WriteString(w, "world")
+		require.NoError(t, err)
+
 		clock.Add(_defaultDelay)
 		assert.Equal(t, "world", buff.String())
 	})

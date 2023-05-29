@@ -98,7 +98,7 @@ func (w *wrapper) Run(cfg *config) (err error) {
 	}
 
 	logw := &log.Writer{Log: w.Log}
-	defer logw.Close()
+	defer multierr.AppendInvoke(&err, multierr.Close(logw))
 
 	tee := tail.Tee{W: logw, R: tmpLog}
 	tee.Start()

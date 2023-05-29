@@ -69,6 +69,8 @@ func TestDrawText(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.desc, func(t *testing.T) {
+			t.Parallel()
+
 			w, h := 10, 10
 			if tt.w > 0 {
 				w = tt.w

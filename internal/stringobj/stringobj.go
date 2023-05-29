@@ -1,3 +1,5 @@
+// Package stringobj aids in writing String methods for objects
+// with a JSON-like output.
 package stringobj
 
 import (

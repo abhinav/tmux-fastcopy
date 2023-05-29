@@ -1,3 +1,5 @@
+// Package envtest provides a fake environment variable backend
+// for testing purposes.
 package envtest
 
 import (
