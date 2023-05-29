@@ -121,18 +121,13 @@ var _wantMatches = []matchInfo{
 	{Regex: "phab-diff", Text: "D1234567"},
 }
 
+//nolint:paralleltest // flaky when parallel
 func TestIntegration_SelectMatches(t *testing.T) {
-	t.Parallel()
-
 	t.Run("default action", func(t *testing.T) {
-		t.Parallel()
-
 		testIntegrationSelectMatches(t, false)
 	})
 
 	t.Run("shift action", func(t *testing.T) {
-		t.Parallel()
-
 		testIntegrationSelectMatches(t, true)
 	})
 }
