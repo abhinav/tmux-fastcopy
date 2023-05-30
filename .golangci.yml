@@ -32,11 +32,11 @@ linters:
     - noctx
     - nolintlint
     - nosprintfhostport
+    - paralleltest
     - reassign
     - revive
     - rowserrcheck
     - tenv
-    - tparallel
     - unconvert
     - whitespace
 
