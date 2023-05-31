@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/abhinav/tmux-fastcopy v0.10.0
 	github.com/creack/pty v1.1.18
-	github.com/stretchr/testify v1.8.3
+	github.com/stretchr/testify v1.8.4
 )
 
 require (
