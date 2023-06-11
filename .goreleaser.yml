@@ -29,12 +29,12 @@ builds:
 archives:
   - name_template: >-
       {{ .ProjectName }}_
-      {{ .Version }}_
+      {{- .Version }}_
       {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
-      {{ with .Arm }}v{{ . }}{{ end }}
+      {{- with .Arm }}v{{ . }}{{ end }}
 
 aurs:
   - name: tmux-fastcopy-bin
