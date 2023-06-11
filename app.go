@@ -112,16 +112,20 @@ func (app *app) Run(cfg *config) error {
 			ToggleZoom: true,
 		})
 
-		defer app.Tmux.ResizePane(tmux.ResizePaneRequest{
-			Target:     targetPane.ID,
-			ToggleZoom: true,
-		})
+		defer func() {
+			_ = app.Tmux.ResizePane(tmux.ResizePaneRequest{
+				Target:     targetPane.ID,
+				ToggleZoom: true,
+			})
+		}()
 	}
 
-	defer app.Tmux.SwapPane(tmux.SwapPaneRequest{
-		Destination: targetPane.ID,
-		Source:      myPane.ID,
-	})
+	defer func() {
+		_ = app.Tmux.SwapPane(tmux.SwapPaneRequest{
+			Destination: targetPane.ID,
+			Source:      myPane.ID,
+		})
+	}()
 
 	selection, err := ctrl.Wait()
 	if err != nil {

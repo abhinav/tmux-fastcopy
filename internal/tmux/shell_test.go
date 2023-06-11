@@ -57,8 +57,7 @@ func TestNewSessionArgs(t *testing.T) {
 				Env:     []string{"FOO=bar", "BAZ=qux"},
 				Command: []string{"/bin/bash"},
 			},
-			want: []string{"new-session",
-				"/usr/bin/env", "FOO=bar", "BAZ=qux", "/bin/bash"},
+			want: []string{"new-session", "/usr/bin/env", "FOO=bar", "BAZ=qux", "/bin/bash"},
 		},
 	}
 
@@ -68,7 +67,7 @@ func TestNewSessionArgs(t *testing.T) {
 			t.Parallel()
 
 			blob := make([]byte, 10)
-			rand.Read(blob)
+			randRead(t, blob)
 
 			r := newFakeRunner(t)
 			r.ExpectOutput("tmux", tt.want...).Stdout(blob)
@@ -119,7 +118,7 @@ func TestCapturePaneArgs(t *testing.T) {
 			t.Parallel()
 
 			blob := make([]byte, 10)
-			rand.Read(blob)
+			randRead(t, blob)
 
 			r := newFakeRunner(t)
 			r.ExpectOutput("tmux", tt.want...).Stdout(blob)
@@ -165,7 +164,7 @@ func TestDisplayMessageArgs(t *testing.T) {
 			t.Parallel()
 
 			blob := make([]byte, 10)
-			rand.Read(blob)
+			randRead(t, blob)
 
 			r := newFakeRunner(t)
 			r.ExpectOutput("tmux", tt.want...).Stdout(blob)
@@ -395,7 +394,7 @@ func TestShowOptionsArgs(t *testing.T) {
 			t.Parallel()
 
 			blob := make([]byte, 10)
-			rand.Read(blob)
+			randRead(t, blob)
 
 			r := newFakeRunner(t)
 			r.ExpectOutput("tmux", tt.want...).Stdout(blob)
@@ -510,4 +509,11 @@ func (r *fakeRunner) _verify() {
 	for _, c := range r.calls {
 		r.t.Errorf("missing call: %v", c)
 	}
+}
+
+func randRead(t testing.TB, bs []byte) {
+	t.Helper()
+
+	_, err := rand.Read(bs)
+	require.NoError(t, err)
 }

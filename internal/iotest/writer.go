@@ -1,3 +1,4 @@
+// Package iotest provides IO-related testing utilities.
 package iotest
 
 import (

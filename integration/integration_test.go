@@ -19,6 +19,7 @@ import (
 	"github.com/creack/pty"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/multierr"
 )
 
 var _behaviors = map[string]func() (exitCode int){
@@ -51,12 +52,13 @@ func behaviorBinary(t testing.TB, name string) string {
 	return behavior
 }
 
-func jsonReportAction() (exitCode int) {
-	var state struct {
-		RegexName string
-		Text      string
-	}
+type jsonReport struct {
+	RegexName string `json:"regexName"`
+	Text      string `json:"text"`
+}
 
+func jsonReportAction() (exitCode int) {
+	var state jsonReport
 	txt, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		log.Printf("unable to read stdin: %v", err)
@@ -119,6 +121,7 @@ var _wantMatches = []matchInfo{
 	{Regex: "phab-diff", Text: "D1234567"},
 }
 
+//nolint:paralleltest // flaky when parallel
 func TestIntegration_SelectMatches(t *testing.T) {
 	t.Run("default action", func(t *testing.T) {
 		testIntegrationSelectMatches(t, false)
@@ -166,9 +169,13 @@ func testIntegrationSelectMatches(t *testing.T, shift bool) {
 	var matches []matchInfo
 	for i := 0; i < len(_wantMatches); i++ {
 		tmux.Clear()
-		tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
+		_, err := tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
+		require.NoError(t, err, "send ctrl-a f")
+
 		time.Sleep(250 * time.Millisecond)
-		tmux.WaitUntilContains("--EOF--", 3*time.Second)
+		require.NoError(t,
+			tmux.WaitUntilContains("--EOF--", 3*time.Second),
+			"wait for fastcopy window")
 
 		hints := tmux.Hints()
 		t.Logf("got hints %q", hints)
@@ -179,20 +186,19 @@ func testIntegrationSelectMatches(t *testing.T, shift bool) {
 		hint := hints[i]
 		t.Logf("selecting %q", hint)
 		if shift {
-			io.WriteString(tmux, strings.ToUpper(hint))
+			_, err := io.WriteString(tmux, strings.ToUpper(hint))
+			require.NoError(t, err, "select hint")
 		} else {
-			io.WriteString(tmux, hint)
+			_, err := io.WriteString(tmux, hint)
+			require.NoError(t, err, "select hint")
 		}
 		time.Sleep(250 * time.Millisecond)
 
 		got, err := tmux.Command("show-buffer").Output()
 		require.NoError(t, err)
 
-		var state struct {
-			RegexName string
-			Text      string
-		}
-		require.NoError(t, json.Unmarshal([]byte(got), &state))
+		var state jsonReport
+		require.NoError(t, json.Unmarshal(got, &state))
 
 		t.Logf("got %+v", state)
 		matches = append(matches, matchInfo{
@@ -205,6 +211,8 @@ func testIntegrationSelectMatches(t *testing.T, shift bool) {
 }
 
 func TestIntegration_ShiftNoop(t *testing.T) {
+	t.Parallel()
+
 	env := (&fakeEnvConfig{
 		Action: "unexpected",
 	}).Build(t)
@@ -233,7 +241,8 @@ func TestIntegration_ShiftNoop(t *testing.T) {
 	}
 
 	tmux.Clear()
-	tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
+	_, err := tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
+	require.NoError(t, err, "send ctrl-a f")
 	require.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second))
 
 	hints := tmux.Hints()
@@ -242,7 +251,8 @@ func TestIntegration_ShiftNoop(t *testing.T) {
 
 	hint := hints[rand.Intn(len(hints))]
 	t.Logf("selecting %q", hint)
-	io.WriteString(tmux, strings.ToUpper(hint))
+	_, err = io.WriteString(tmux, strings.ToUpper(hint))
+	require.NoError(t, err, "select hint")
 	time.Sleep(250 * time.Millisecond)
 
 	got, err := tmux.Command("show-buffer").Output()
@@ -395,8 +405,10 @@ func (cfg *virtualTmuxConfig) Build(t testing.TB) *virtualTmux {
 
 	readerDone := make(chan struct{})
 	t.Cleanup(func() {
-		vt.Command("kill-server").Run()
-		pty.Close()
+		assert.NoError(t,
+			vt.Command("kill-server").Run(),
+			"kill tmux server")
+		assert.NoError(t, pty.Close(), "close pty")
 
 		select {
 		case <-readerDone:
@@ -405,7 +417,7 @@ func (cfg *virtualTmuxConfig) Build(t testing.TB) *virtualTmux {
 		}
 	})
 
-	go vt.readLoop(t, pty, readerDone)
+	go vt.readLoop(pty, readerDone)
 	return vt
 }
 
@@ -417,7 +429,7 @@ func (vt *virtualTmux) Command(args ...string) *exec.Cmd {
 	return cmd
 }
 
-func (vt *virtualTmux) readLoop(t testing.TB, r io.Reader, done chan struct{}) {
+func (vt *virtualTmux) readLoop(r io.Reader, done chan struct{}) {
 	defer close(done)
 
 	bs := make([]byte, 4*1024)
@@ -541,18 +553,18 @@ func writeLines(t testing.TB, path string, lines ...string) {
 	}
 }
 
-func copyFile(dst, src string) error {
+func copyFile(dst, src string) (err error) {
 	i, err := os.Open(src)
 	if err != nil {
 		return fmt.Errorf("open source: %w", err)
 	}
-	defer i.Close()
+	defer multierr.AppendInvoke(&err, multierr.Close(i))
 
 	o, err := os.Create(dst)
 	if err != nil {
 		return fmt.Errorf("open destination: %w", err)
 	}
-	defer o.Close()
+	defer multierr.AppendInvoke(&err, multierr.Close(o))
 
 	_, err = io.Copy(o, i)
 	return err

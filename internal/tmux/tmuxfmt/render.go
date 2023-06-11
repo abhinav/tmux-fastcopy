@@ -2,7 +2,6 @@ package tmuxfmt
 
 import (
 	"bytes"
-	"io"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -16,14 +15,7 @@ func Render(e Expr) string {
 	return out.String()
 }
 
-type writer interface {
-	io.Writer
-	io.StringWriter
-
-	WriteRune(rune) (int, error) // RuneWriter
-}
-
-func render(w writer, e Expr, escapeString bool) {
+func render(w *strings.Builder, e Expr, escapeString bool) {
 	switch e := e.(type) {
 	case String:
 		if escapeString {
@@ -62,7 +54,7 @@ func render(w writer, e Expr, escapeString bool) {
 
 const _escapedRunes = ",#}"
 
-func renderStringEscaped(w writer, b []byte) {
+func renderStringEscaped(w *strings.Builder, b []byte) {
 	for len(b) > 0 {
 		idx := bytes.IndexAny(b, _escapedRunes)
 		if idx < 0 {

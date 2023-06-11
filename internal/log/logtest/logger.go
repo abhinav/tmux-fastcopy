@@ -1,3 +1,4 @@
+// Package logtest provides a logger that can write to a testing.T.
 package logtest
 
 import (

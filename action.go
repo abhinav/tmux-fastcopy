@@ -8,6 +8,7 @@ import (
 	"github.com/abhinav/tmux-fastcopy/internal/fastcopy"
 	"github.com/abhinav/tmux-fastcopy/internal/log"
 	shellwords "github.com/mattn/go-shellwords"
+	"go.uber.org/multierr"
 )
 
 const (
@@ -73,11 +74,11 @@ type stdinAction struct {
 	Environ func() []string // == os.Environ
 }
 
-func (h *stdinAction) Run(sel fastcopy.Selection) error {
+func (h *stdinAction) Run(sel fastcopy.Selection) (err error) {
 	logw := &log.Writer{
 		Log: h.Log.WithName(h.Cmd),
 	}
-	defer logw.Close()
+	defer multierr.AppendInvoke(&err, multierr.Close(logw))
 
 	cmd := exec.Command(h.Cmd, h.Args...)
 	cmd.Stdin = strings.NewReader(sel.Text)
@@ -94,11 +95,11 @@ type argAction struct {
 	Environ               func() []string // == os.Environ
 }
 
-func (h *argAction) Run(sel fastcopy.Selection) error {
+func (h *argAction) Run(sel fastcopy.Selection) (err error) {
 	logw := &log.Writer{
 		Log: h.Log.WithName(h.Cmd),
 	}
-	defer logw.Close()
+	defer multierr.AppendInvoke(&err, multierr.Close(logw))
 
 	args := make([]string, 0, len(h.BeforeArgs)+len(h.AfterArgs)+1)
 	args = append(args, h.BeforeArgs...)

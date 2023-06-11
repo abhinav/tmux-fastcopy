@@ -105,7 +105,10 @@ func TestLabel(t *testing.T) {
 	}
 
 	for i, tt := range tests {
+		tt := tt
 		t.Run(fmt.Sprintf("%v/%v", tt.alphabet, i), func(t *testing.T) {
+			t.Parallel()
+
 			freqs := make([]int, len(tt.items))
 			want := make([]string, len(tt.items))
 			for i, item := range tt.items {
@@ -124,8 +127,13 @@ func TestLabel(t *testing.T) {
 }
 
 func TestLabel_rapid(t *testing.T) {
+	t.Parallel()
+
 	for _, alphabet := range _alphabets {
+		alphabet := alphabet
 		t.Run(alphabet.String(), func(t *testing.T) {
+			t.Parallel()
+
 			rapid.Check(t, func(t *rapid.T) {
 				freqs := rapid.SliceOf(rapid.Int()).Draw(t, "freqs")
 				got := alphabet.Labels(

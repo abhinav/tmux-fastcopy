@@ -84,7 +84,7 @@ func (s *ShellDriver) errorWriter(ws ...*io.Writer) (close func()) {
 	for _, w := range ws {
 		*w = writer
 	}
-	return func() { writer.Close() }
+	return func() { _ = writer.Close() }
 }
 
 // NewSession runs the tmux new-session command.
@@ -136,7 +136,7 @@ func (s *ShellDriver) CapturePane(req CapturePaneRequest) ([]byte, error) {
 
 	args := []string{"capture-pane", "-p", "-J"}
 	if len(req.Pane) > 0 {
-		args = append(args, "-t", string(req.Pane))
+		args = append(args, "-t", req.Pane)
 	}
 	if s := req.StartLine; s != 0 {
 		args = append(args, "-S", strconv.Itoa(s))
@@ -157,7 +157,7 @@ func (s *ShellDriver) DisplayMessage(req DisplayMessageRequest) ([]byte, error) 
 
 	args := []string{"display-message", "-p"}
 	if len(req.Pane) > 0 {
-		args = append(args, "-t", string(req.Pane))
+		args = append(args, "-t", req.Pane)
 	}
 	args = append(args, req.Message)
 

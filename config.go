@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/abhinav/tmux-fastcopy/internal/must"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux/tmuxopt"
 )
 
@@ -67,7 +68,8 @@ func (m *regexes) Set(v string) error {
 func (m *regexes) FillFrom(o regexes) {
 	for k, v := range o {
 		if _, ok := (*m)[k]; !ok {
-			m.Put(k, v)
+			err := m.Put(k, v)
+			must.NotErrorf(err, "unexpected invalid key %q", k)
 		}
 	}
 }

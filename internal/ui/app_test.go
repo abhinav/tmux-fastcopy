@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+//nolint:paralleltest // shared state between subtests
 func TestAppEvents(t *testing.T) {
 	t.Parallel()
 

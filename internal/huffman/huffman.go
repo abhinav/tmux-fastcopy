@@ -1,3 +1,5 @@
+// Package huffman implements an n-ary Huffman coding algorithm
+// to generate prefix-free labels for a set of items.
 package huffman
 
 import "container/heap"
