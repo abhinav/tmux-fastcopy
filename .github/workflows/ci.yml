@@ -18,35 +18,37 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-
-    - name: Set up Go
-      uses: actions/setup-go@v4
+      name: Check out repository
+    - uses: actions/setup-go@v4
+      name: Set up Go
       with:
         go-version: ${{ env.GO_VERSION }}
-        cache: true
+        cache: false
+    - uses: golangci/golangci-lint-action@v3
+      name: Install golangci-lint
+      with:
+        version: latest
+        args: --version
+    - run: make lint
+      name: Lint
 
-    - name: Lint
-      run: make lint
 
   test:
     runs-on: ubuntu-latest
-
     name: Unit Test
 
     steps:
     - uses: actions/checkout@v3
+      name: Check out repository
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
         go-version: ${{ env.GO_VERSION }}
         cache: true
-
     - name: Build tmux-fastcopy
       run: make build
-
     - name: Test
       run: PATH="$HOME/.local/bin:$PATH" make cover
-
     - name: Coverage
       uses: codecov/codecov-action@v3
       with:
@@ -55,13 +57,13 @@ jobs:
   integration:
     runs-on: ubuntu-latest
     name: Integration Test / Tmux ${{ matrix.tmux-version }}
-
     strategy:
       matrix:
         tmux-version: ["3.2a", "3.1c", "3.0a", "2.9a", "2.8", "2.7"]
 
     steps:
     - uses: actions/checkout@v3
+      name: Check out repository
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
@@ -74,7 +76,6 @@ jobs:
         repository: tmux/tmux
         ref: ${{ matrix.tmux-version }}
         path: src/tmux
-
     - name: Load cached Tmux
       uses: actions/cache@v3
       with:
@@ -84,7 +85,6 @@ jobs:
     - name: Download and install dependencies
       run: |
         sudo apt-get install -y libevent-dev libncurses-dev
-
     - name: Install Tmux
       working-directory: src/tmux
       run: |
@@ -101,9 +101,7 @@ jobs:
 
     - name: Integration test
       run: make cover-integration
-
     - name: Coverage
       uses: codecov/codecov-action@v3
       with:
         files: ./cover.integration.out
-

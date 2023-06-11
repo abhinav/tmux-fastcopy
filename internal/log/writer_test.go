@@ -61,7 +61,8 @@ func TestWriter(t *testing.T) {
 
 			w := Writer{Log: log}
 			for _, s := range tt.give {
-				io.WriteString(&w, s)
+				_, err := io.WriteString(&w, s)
+				require.NoError(t, err)
 			}
 			require.NoError(t, w.Close())
 

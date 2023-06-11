@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"io/ioutil"
 	"os"
 	"sync"
 	"testing"
@@ -38,13 +37,14 @@ func (b *lockedBuffer) String() string {
 	return b.buff.String()
 }
 
+//nolint:paralleltest // shared state between subtests
 func TestTee(t *testing.T) {
 	t.Parallel()
 
 	clock := clock.NewMock()
 
 	var buff lockedBuffer
-	r, err := ioutil.TempFile(t.TempDir(), "file")
+	r, err := os.CreateTemp(t.TempDir(), "file")
 	require.NoError(t, err)
 
 	tee := Tee{
@@ -58,7 +58,7 @@ func TestTee(t *testing.T) {
 		assert.NoError(t, tee.Stop())
 	}()
 
-	w, err := os.OpenFile(r.Name(), os.O_WRONLY, 0644)
+	w, err := os.OpenFile(r.Name(), os.O_WRONLY, 0o644)
 	if !assert.NoError(t, err) {
 		return
 	}
@@ -71,7 +71,9 @@ func TestTee(t *testing.T) {
 	t.Run("write", func(t *testing.T) {
 		defer buff.Reset()
 
-		io.WriteString(w, "hello")
+		_, err := io.WriteString(w, "hello")
+		require.NoError(t, err)
+
 		clock.Add(_defaultDelay)
 		assert.Equal(t, "hello", buff.String())
 	})
@@ -84,7 +86,9 @@ func TestTee(t *testing.T) {
 			assert.Empty(t, buff.String())
 		}
 
-		io.WriteString(w, "world")
+		_, err := io.WriteString(w, "world")
+		require.NoError(t, err)
+
 		clock.Add(_defaultDelay)
 		assert.Equal(t, "world", buff.String())
 	})
@@ -99,7 +103,7 @@ func TestTeeError(t *testing.T) {
 	r := iotest.ErrReader(errors.New("great sadness"))
 	tee := Tee{
 		W: &buff,
-		R: ioutil.NopCloser(r),
+		R: io.NopCloser(r),
 	}
 	tee.Start()
 
@@ -114,7 +118,7 @@ func TestTeeClosed(t *testing.T) {
 	var buff lockedBuffer
 	defer func() { assert.Empty(t, buff.String()) }()
 
-	r, err := ioutil.TempFile(t.TempDir(), "file")
+	r, err := os.CreateTemp(t.TempDir(), "file")
 	require.NoError(t, err)
 
 	tee := Tee{

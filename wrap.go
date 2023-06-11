@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 
@@ -65,7 +64,7 @@ func (w *wrapper) Run(cfg *config) (err error) {
 
 	// Send the logs to a temporary file that we will copy from until we
 	// exit.
-	tmpLog, err := ioutil.TempFile("", "tmux-fastcopy")
+	tmpLog, err := os.CreateTemp("", "tmux-fastcopy")
 	if err != nil {
 		return err
 	}
@@ -98,7 +97,7 @@ func (w *wrapper) Run(cfg *config) (err error) {
 	}
 
 	logw := &log.Writer{Log: w.Log}
-	defer logw.Close()
+	defer multierr.AppendInvoke(&err, multierr.Close(logw))
 
 	tee := tail.Tee{W: logw, R: tmpLog}
 	tee.Start()

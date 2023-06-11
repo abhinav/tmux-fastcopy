@@ -1,3 +1,7 @@
+// Package tmuxopt provides an API for loading and parsing tmux options
+// into Go variables.
+//
+// It provides an API similar to the flag package, but for tmux options.
 package tmuxopt
 
 import (

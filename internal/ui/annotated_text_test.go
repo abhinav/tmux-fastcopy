@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+//nolint:paralleltest // shared state between subtests
 func TestAnnotatedText(t *testing.T) {
 	t.Parallel()
 

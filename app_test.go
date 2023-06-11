@@ -12,6 +12,8 @@ import (
 )
 
 func TestApp_Run_badRegex(t *testing.T) {
+	t.Parallel()
+
 	mockCtrl := gomock.NewController(t)
 	err := (&app{
 		Log:  logtest.NewLogger(t),
@@ -26,6 +28,8 @@ func TestApp_Run_badRegex(t *testing.T) {
 }
 
 func TestApp_Run_inspectPaneError(t *testing.T) {
+	t.Parallel()
+
 	mockCtrl := gomock.NewController(t)
 
 	tmuxDriver := tmuxtest.NewMockDriver(mockCtrl)

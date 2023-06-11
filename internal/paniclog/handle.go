@@ -1,3 +1,5 @@
+// Package paniclog provides a handler for panicking code
+// that logs the panic to an io.Writer.
 package paniclog
 
 import (
