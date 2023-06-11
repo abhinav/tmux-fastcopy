@@ -17,8 +17,14 @@ to the command over stdin. For example,
 
     set-option -g @fastcopy-action pbcopy  # for macOS
 
-Note that the command string is executed through the tmux-fastcopy binary,
-so it must be a path to a binary or shell script that is executable,
-and is not executed in the context of a full login shell.
-Additionally, if the command string uses `{}`,
+Note that if the command string uses `{}`,
 the selected text is *not* passed via stdin.
+
+## Execution context
+
+The command string is executed directly by tmux-fastcopy,
+so it must be a path to a binary or shell script that is executable.
+It is not executed in the context of a full login shell.
+
+The command runs inside the directory of the pane
+where tmux-fastcopy was invoked if this information is available from tmux.

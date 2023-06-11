@@ -16,7 +16,7 @@ import (
 type app struct {
 	Log       *log.Logger
 	Tmux      tmux.Driver
-	NewAction func(string) (action, error)
+	NewAction func(newActionRequest) (action, error)
 
 	NewScreen func() (tcell.Screen, error) // == tcell.NewScreen
 }
@@ -141,7 +141,10 @@ func (app *app) Run(cfg *config) error {
 		return nil
 	}
 
-	action, err := app.NewAction(actionStr)
+	action, err := app.NewAction(newActionRequest{
+		Action: actionStr,
+		Dir:    targetPane.CurrentPath,
+	})
 	if err != nil {
 		return fmt.Errorf("load action %q: %v", actionStr, err)
 	}

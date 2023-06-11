@@ -1,0 +1,4 @@
+kind: Changed
+body: Run `fastcopy-action` and `fastcopy-shift-action` inside the pane's current
+  directory, if available.
+time: 2023-06-11T12:25:31.129359475-07:00

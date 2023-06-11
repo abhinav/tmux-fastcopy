@@ -23,6 +23,20 @@ func regexNamesEnvEntry(matchers []string) string {
 type actionFactory struct {
 	Log     *log.Logger
 	Environ func() []string
+	Getwd   func() (string, error)
+}
+
+type newActionRequest struct {
+	// Action is a multi-word shell command.
+	// It should use "{}" as an argument to reference the selected text.
+	// If no "{}" is present, the selection will be sent to the command
+	// over stdin.
+	Action string
+
+	// Dir is the working directory to run the command in.
+	//
+	// If empty, the current working directory is used.
+	Dir string
 }
 
 // New builds a command handler from the provided string.
@@ -30,14 +44,24 @@ type actionFactory struct {
 // The string is a multi-word shell command. It should use "{}" as an argument
 // to reference the selected text. If no "{}" is present, the selection will be
 // sent to the command over stdin.
-func (f *actionFactory) New(action string) (action, error) {
-	args, err := shellwords.Parse(action)
+func (f *actionFactory) New(req newActionRequest) (action, error) {
+	args, err := shellwords.Parse(req.Action)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(args) == 0 {
 		return nil, errors.New("empty action")
+	}
+
+	dir := req.Dir
+	if dir == "" {
+		dir, err = f.Getwd()
+		if err != nil {
+			// This should never happen, but if it does, use an
+			// empty string and let exec.Command() figure it out.
+			dir = ""
+		}
 	}
 
 	cmd, args := args[0], args[1:]
@@ -49,6 +73,7 @@ func (f *actionFactory) New(action string) (action, error) {
 				AfterArgs:  args[i+1:],
 				Log:        f.Log,
 				Environ:    f.Environ,
+				Dir:        dir,
 			}, nil
 		}
 	}
@@ -59,6 +84,7 @@ func (f *actionFactory) New(action string) (action, error) {
 		Args:    args,
 		Log:     f.Log,
 		Environ: f.Environ,
+		Dir:     dir,
 	}, nil
 }
 
@@ -69,6 +95,7 @@ type action interface {
 
 type stdinAction struct {
 	Cmd     string
+	Dir     string
 	Args    []string
 	Log     *log.Logger
 	Environ func() []string // == os.Environ
@@ -84,12 +111,14 @@ func (h *stdinAction) Run(sel fastcopy.Selection) (err error) {
 	cmd.Stdin = strings.NewReader(sel.Text)
 	cmd.Stdout = logw
 	cmd.Stderr = logw
+	cmd.Dir = h.Dir
 	cmd.Env = append(h.Environ(), regexNamesEnvEntry(sel.Matchers))
 	return cmd.Run()
 }
 
 type argAction struct {
 	Cmd                   string
+	Dir                   string
 	BeforeArgs, AfterArgs []string
 	Log                   *log.Logger
 	Environ               func() []string // == os.Environ
@@ -109,6 +138,7 @@ func (h *argAction) Run(sel fastcopy.Selection) (err error) {
 	cmd := exec.Command(h.Cmd, args...)
 	cmd.Stdout = logw
 	cmd.Stderr = logw
+	cmd.Dir = h.Dir
 	cmd.Env = append(h.Environ(), regexNamesEnvEntry(sel.Matchers))
 	return cmd.Run()
 }
