@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"testing"
 
 	"github.com/abhinav/tmux-fastcopy/internal/fastcopy"
@@ -13,9 +14,11 @@ import (
 func TestNewCommandAction(t *testing.T) {
 	t.Parallel()
 
+	cwd := "/foo/bar"
+
 	tests := []struct {
 		desc string
-		give string
+		give newActionRequest
 
 		wantArg   *argAction
 		wantStdin *stdinAction
@@ -23,29 +26,56 @@ func TestNewCommandAction(t *testing.T) {
 	}{
 		{
 			desc:    "empty",
-			give:    "",
+			give:    newActionRequest{Action: ""},
 			wantErr: `empty action`,
 		},
 		{
 			desc:    "parse error",
-			give:    `foo "`,
+			give:    newActionRequest{Action: `foo "`},
 			wantErr: `invalid command line string`,
 		},
 		{
 			desc: "stdin",
-			give: "pbcopy",
+			give: newActionRequest{Action: "pbcopy"},
 			wantStdin: &stdinAction{
 				Cmd:  "pbcopy",
 				Args: []string{},
+				Dir:  cwd,
 			},
 		},
 		{
 			desc: "argument",
-			give: "tmux set-buffer -- {}",
+			give: newActionRequest{Action: "tmux set-buffer -- {}"},
 			wantArg: &argAction{
 				Cmd:        "tmux",
 				BeforeArgs: []string{"set-buffer", "--"},
 				AfterArgs:  []string{},
+				Dir:        cwd,
+			},
+		},
+		{
+			desc: "stdin with dir",
+			give: newActionRequest{
+				Action: "pbcopy",
+				Dir:    "/tmp",
+			},
+			wantStdin: &stdinAction{
+				Cmd:  "pbcopy",
+				Args: []string{},
+				Dir:  "/tmp",
+			},
+		},
+		{
+			desc: "argument with dir",
+			give: newActionRequest{
+				Action: "tmux set-buffer -- {}",
+				Dir:    "/tmp",
+			},
+			wantArg: &argAction{
+				Cmd:        "tmux",
+				BeforeArgs: []string{"set-buffer", "--"},
+				AfterArgs:  []string{},
+				Dir:        "/tmp",
 			},
 		},
 	}
@@ -55,7 +85,12 @@ func TestNewCommandAction(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := new(actionFactory).New(tt.give)
+			got, err := (&actionFactory{
+				Getwd: func() (string, error) {
+					return cwd, nil
+				},
+			}).New(tt.give)
+
 			switch {
 			case len(tt.wantErr) > 0:
 				require.Error(t, err)
@@ -74,6 +109,19 @@ func TestNewCommandAction(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNewCommandAction_noCWD(t *testing.T) {
+	t.Parallel()
+
+	got, err := (&actionFactory{
+		Getwd: func() (string, error) {
+			return "", errors.New("great sadness")
+		},
+	}).New(newActionRequest{Action: "pbcopy"})
+	require.NoError(t, err)
+
+	assert.Empty(t, got.(*stdinAction).Dir)
 }
 
 func TestStdinAction(t *testing.T) {

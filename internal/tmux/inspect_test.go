@@ -13,7 +13,7 @@ import (
 func TestInspectPane(t *testing.T) {
 	t.Parallel()
 
-	message := []byte("%42\t@123\t80\t40\tcopy-mode\t40")
+	message := []byte("%42\t@123\t80\t40\tcopy-mode\t40\t0\t/home/user/dir")
 
 	ctrl := gomock.NewController(t)
 	mockTmux := tmuxtest.NewMockDriver(ctrl)
@@ -31,6 +31,7 @@ func TestInspectPane(t *testing.T) {
 		Height:         40,
 		Mode:           tmux.CopyMode,
 		ScrollPosition: 40,
+		CurrentPath:    "/home/user/dir",
 	}, got)
 
 	t.Run("String", func(t *testing.T) {
@@ -43,5 +44,6 @@ func TestInspectPane(t *testing.T) {
 		assert.Contains(t, s, "height: 40")
 		assert.Contains(t, s, "mode: copy-mode")
 		assert.Contains(t, s, "scrollPosition: 40")
+		assert.Contains(t, s, "currentPath: /home/user/dir")
 	})
 }

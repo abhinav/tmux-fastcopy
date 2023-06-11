@@ -187,6 +187,7 @@ func (cmd *mainCmd) Run(cfg *config) (err error) {
 			NewAction: (&actionFactory{
 				Log:     logger,
 				Environ: cmd.Environ,
+				Getwd:   os.Getwd,
 			}).New,
 		}
 	} else {

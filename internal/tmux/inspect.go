@@ -26,6 +26,9 @@ type PaneInfo struct {
 	Mode           PaneMode
 	ScrollPosition int
 	WindowZoomed   bool
+
+	// Current path of the pane, if available.
+	CurrentPath string
 }
 
 func (i *PaneInfo) String() string {
@@ -36,14 +39,16 @@ func (i *PaneInfo) String() string {
 	b.Put("height", i.Height)
 	b.Put("mode", i.Mode)
 	b.Put("scrollPosition", i.ScrollPosition)
+	b.Put("currentPath", i.CurrentPath)
 	return b.String()
 }
 
 var (
-	_paneID     = tmuxfmt.Var("pane_id")
-	_paneWidth  = tmuxfmt.Var("pane_width")
-	_paneHeight = tmuxfmt.Var("pane_height")
-	_paneMode   = tmuxfmt.Ternary{
+	_paneCurrentPath = tmuxfmt.Var("pane_current_path")
+	_paneID          = tmuxfmt.Var("pane_id")
+	_paneWidth       = tmuxfmt.Var("pane_width")
+	_paneHeight      = tmuxfmt.Var("pane_height")
+	_paneMode        = tmuxfmt.Ternary{
 		Cond: tmuxfmt.Var("pane_in_mode"),
 		Then: tmuxfmt.Var("pane_mode"),
 		Else: tmuxfmt.String("normal-mode"),
@@ -77,6 +82,7 @@ func InspectPane(driver Driver, identifier string) (*PaneInfo, error) {
 	fc.StringVar((*string)(&info.Mode), _paneMode)
 	fc.IntVar(&info.ScrollPosition, _paneScrollPosition)
 	fc.BoolVar(&info.WindowZoomed, _windowZoomed)
+	fc.StringVar(&info.CurrentPath, _paneCurrentPath)
 
 	msg, parse := fc.Prepare()
 	out, err := driver.DisplayMessage(DisplayMessageRequest{

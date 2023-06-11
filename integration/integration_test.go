@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -55,23 +56,32 @@ func behaviorBinary(t testing.TB, name string) string {
 type jsonReport struct {
 	RegexName string `json:"regexName"`
 	Text      string `json:"text"`
+	CWD       string `json:"cwd"`
 }
 
 func jsonReportAction() (exitCode int) {
-	var state jsonReport
 	txt, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		log.Printf("unable to read stdin: %v", err)
 		return 1
 	}
 
-	state.RegexName = os.Getenv("FASTCOPY_REGEX_NAME")
-	state.Text = string(txt)
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Printf("unable to get cwd: %v", err)
+		return 1
+	}
 
 	tmuxExe := os.Getenv("TMUX_EXE")
 	if len(tmuxExe) == 0 {
 		log.Print("TMUX_EXE is unset")
 		return 1
+	}
+
+	state := jsonReport{
+		RegexName: os.Getenv("FASTCOPY_REGEX_NAME"),
+		Text:      string(txt),
+		CWD:       cwd,
 	}
 
 	bs, err := json.Marshal(state)
@@ -263,6 +273,84 @@ func TestIntegration_ShiftNoop(t *testing.T) {
 	}
 }
 
+func TestIntegration_ActionDir(t *testing.T) {
+	t.Parallel()
+
+	seed := time.Now().UnixNano()
+	t.Logf("random seed %d", seed)
+	rand := rand.New(rand.NewSource(seed))
+
+	env := (&fakeEnvConfig{
+		Action: "json-report",
+	}).Build(t)
+
+	testFile := filepath.Join(env.Root, "give.txt")
+	require.NoError(t,
+		os.WriteFile(testFile, []byte(_giveText), 0o644),
+		"write test file")
+
+	tmux := (&virtualTmuxConfig{
+		Tmux:   env.Tmux,
+		Width:  80,
+		Height: 40,
+		Env:    env.Environ(),
+		Dir:    env.Home,
+	}).Build(t)
+	time.Sleep(250 * time.Millisecond)
+	require.NoError(t, tmux.Command("set-buffer", "").Run(),
+		"clear tmux buffer")
+
+	// Create a random directory in the home directory
+	// and cd into it.
+	var bs [8]byte
+	_, err := rand.Read(bs[:])
+	require.NoError(t, err, "generate random bytes")
+	cwd := filepath.Join(env.Home, hex.EncodeToString(bs[:]))
+	require.NoError(t, os.MkdirAll(cwd, 0o755), "create random directory")
+	fmt.Fprintln(tmux, "cd", cwd)
+	tmux.Clear()
+
+	// Sanity check: make sure we're in the right directory.
+	fmt.Fprintln(tmux, "pwd")
+	if !assert.NoError(t, tmux.WaitUntilContains(cwd, 5*time.Second)) {
+		t.Fatalf("could not find %q in %q", cwd, tmux.Contents())
+	}
+	t.Logf("Running fastcopy in %q", cwd)
+
+	// Clear to ensure the "cat /path/to/whatever" isn't part of the
+	// matched text.
+	tmux.Clear()
+	fmt.Fprintln(tmux, "clear && cat", testFile)
+	if !assert.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second)) {
+		t.Fatalf("could not find EOF in %q", tmux.Contents())
+	}
+
+	tmux.Clear()
+	_, err = tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
+	require.NoError(t, err, "send ctrl-a f")
+	require.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second))
+
+	hints := tmux.Hints()
+	t.Logf("got hints %q", hints)
+	require.NotEmpty(t, hints, "expected hints in %q", tmux.Contents())
+
+	hint := hints[rand.Intn(len(hints))]
+	t.Logf("selecting %q", hint)
+
+	_, err = io.WriteString(tmux, hint)
+	require.NoError(t, err, "select hint")
+	time.Sleep(250 * time.Millisecond)
+
+	got, err := tmux.Command("show-buffer").Output()
+	require.NoError(t, err)
+
+	var state jsonReport
+	require.NoError(t, json.Unmarshal(got, &state))
+
+	assert.Equal(t, cwd, state.CWD,
+		"action directory does not match")
+}
+
 type fakeEnv struct {
 	Root   string
 	Home   string
@@ -379,6 +467,7 @@ type virtualTmuxConfig struct {
 	Tmux          string // path to tmux executable
 	Width, Height uint16
 	Env           []string
+	Dir           string
 }
 
 func (cfg *virtualTmuxConfig) Build(t testing.TB) *virtualTmux {
@@ -386,6 +475,7 @@ func (cfg *virtualTmuxConfig) Build(t testing.TB) *virtualTmux {
 	cmd := exec.Command(cfg.Tmux)
 	cmd.Env = cfg.Env
 	cmd.Stderr = iotest.Writer(t)
+	cmd.Dir = cfg.Dir
 
 	t.Logf("Starting tmux with size %dx%d", cfg.Width, cfg.Height)
 	pty, err := pty.StartWithSize(cmd, &pty.Winsize{
