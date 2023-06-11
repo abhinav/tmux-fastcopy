@@ -28,26 +28,6 @@ jobs:
     - name: Lint
       run: make lint
 
-  docs:
-    name: Check documentation
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: write
-
-    steps:
-    - uses: actions/checkout@v3
-    - name: Check or update documentation
-      uses: abhinav/stitchmd-action@v1
-      with:
-        summary: doc/README.md
-        output: README.md
-        mode: ${{ github.event_name == 'pull_request' && 'write' || 'check' }}
-    - uses: stefanzweifel/git-auto-commit-action@v4
-      with:
-        file_pattern: README.md
-        commit_message: 'Update README.md'
-
   test:
     runs-on: ubuntu-latest
 
