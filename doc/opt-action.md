@@ -28,3 +28,13 @@ It is not executed in the context of a full login shell.
 
 The command runs inside the directory of the pane
 where tmux-fastcopy was invoked if this information is available from tmux.
+It runs with the following environment variables set:
+
+- `FASTCOPY_REGEX_NAME`:
+  Name of `@fastcopy-regex` rule that matched.
+  See [Regex names](regex-names.md) and [Accessing the regex name](howto-regex-name.md)
+  for more information.
+- `FASTCOPY_TARGET_PANE_ID`:
+  Unique identifier for the pane inside which fastcopy was invoked.
+  Use this when running tmux operations inside the action
+  to target them to that pane.

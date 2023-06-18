@@ -1,4 +1,4 @@
-# Accessing the regex name
+# Access the regex name
 
 tmux-fastcopy executes the action with the `FASTCOPY_REGEX_NAME` environment
 variable set. This holds the [name of the regex](regex-names.md) that matched the

@@ -14,6 +14,7 @@ import (
 const (
 	_placeholderArg   = "{}"
 	_regexNamesEnvKey = "FASTCOPY_REGEX_NAME"
+	_targetPaneEnvKey = "FASTCOPY_TARGET_PANE_ID"
 )
 
 func regexNamesEnvEntry(matchers []string) string {
@@ -37,6 +38,9 @@ type newActionRequest struct {
 	//
 	// If empty, the current working directory is used.
 	Dir string
+
+	// TargetPaneID is the ID of the pane to send the output to.
+	TargetPaneID string
 }
 
 // New builds a command handler from the provided string.
@@ -74,6 +78,7 @@ func (f *actionFactory) New(req newActionRequest) (action, error) {
 				Log:        f.Log,
 				Environ:    f.Environ,
 				Dir:        dir,
+				PaneID:     req.TargetPaneID,
 			}, nil
 		}
 	}
@@ -85,6 +90,7 @@ func (f *actionFactory) New(req newActionRequest) (action, error) {
 		Log:     f.Log,
 		Environ: f.Environ,
 		Dir:     dir,
+		PaneID:  req.TargetPaneID,
 	}, nil
 }
 
@@ -98,6 +104,7 @@ type stdinAction struct {
 	Dir     string
 	Args    []string
 	Log     *log.Logger
+	PaneID  string
 	Environ func() []string // == os.Environ
 }
 
@@ -112,7 +119,9 @@ func (h *stdinAction) Run(sel fastcopy.Selection) (err error) {
 	cmd.Stdout = logw
 	cmd.Stderr = logw
 	cmd.Dir = h.Dir
-	cmd.Env = append(h.Environ(), regexNamesEnvEntry(sel.Matchers))
+	cmd.Env = append(h.Environ(),
+		regexNamesEnvEntry(sel.Matchers),
+		_targetPaneEnvKey+"="+h.PaneID)
 	return cmd.Run()
 }
 
@@ -121,6 +130,7 @@ type argAction struct {
 	Dir                   string
 	BeforeArgs, AfterArgs []string
 	Log                   *log.Logger
+	PaneID                string
 	Environ               func() []string // == os.Environ
 }
 
@@ -139,6 +149,8 @@ func (h *argAction) Run(sel fastcopy.Selection) (err error) {
 	cmd.Stdout = logw
 	cmd.Stderr = logw
 	cmd.Dir = h.Dir
-	cmd.Env = append(h.Environ(), regexNamesEnvEntry(sel.Matchers))
+	cmd.Env = append(h.Environ(),
+		regexNamesEnvEntry(sel.Matchers),
+		_targetPaneEnvKey+"="+h.PaneID)
 	return cmd.Run()
 }

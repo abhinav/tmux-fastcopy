@@ -11,8 +11,9 @@
   - [`@fastcopy-regex-*`](#fastcopy-regex-)
     - [Regex names](#regex-names)
 - [How to](#how-to)
-  - [Access the regex name](#accessing-the-regex-name)
+  - [Access the regex name](#access-the-regex-name)
   - [Copy text to the clipboard](#copy-text-to-the-clipboard)
+  - [Select text without copying](#select-text-without-copying)
 - [FAQ](#faq)
 - [Credits](#credits)
 - [Similar projects](#similar-projects)
@@ -227,6 +228,16 @@ It is not executed in the context of a full login shell.
 
 The command runs inside the directory of the pane
 where tmux-fastcopy was invoked if this information is available from tmux.
+It runs with the following environment variables set:
+
+- `FASTCOPY_REGEX_NAME`:
+  Name of `@fastcopy-regex` rule that matched.
+  See [Regex names](#regex-names) and [Accessing the regex name](#access-the-regex-name)
+  for more information.
+- `FASTCOPY_TARGET_PANE_ID`:
+  Unique identifier for the pane inside which fastcopy was invoked.
+  Use this when running tmux operations inside the action
+  to target them to that pane.
 
 ### `@fastcopy-shift-action`
 
@@ -247,10 +258,9 @@ selected text.
 set-option -g @fastcopy-shift-action "fastcopy-shift.sh {}"
 ```
 
-As with `@fastcopy-action`, tmux-fastcopy will set `FASTCOPY_REGEX_NAME` to the
-name of the regular expression that matched when running the
-`@fastcopy-shift-action`.
-See [Accessing the regex name](#accessing-the-regex-name) for more details.
+The `@fastcopy-shift-action` will run with the same
+[execution context](#execution-context)
+as the `@fastcopy-action`.
 
 ### `@fastcopy-alphabet`
 
@@ -356,11 +366,11 @@ set-option -g @fastcopy-regex-isodate ""
 
 The name of the regular expression that matched the selection is available to
 the [`@fastcopy-action`](#fastcopy-action) via the `FASTCOPY_REGEX_NAME` environment variable.
-See [Accessing the regex name](#accessing-the-regex-name) for more details.
+See [Accessing the regex name](#access-the-regex-name) for more details.
 
 ## How to
 
-### Accessing the regex name
+### Access the regex name
 
 tmux-fastcopy executes the action with the `FASTCOPY_REGEX_NAME` environment
 variable set. This holds the [name of the regex](#regex-names) that matched the
@@ -424,6 +434,72 @@ set-option -g @fastcopy-action 'xclip -selection clipboard'
 #
 #  [wl-clipboard]: https://github.com/bugaevc/wl-clipboard
 set-option -g @fastcopy-action wl-copy
+```
+
+### Select text without copying
+
+If you'd like to select the matched text rather than copy in,
+you can define an action that takes the target pane in copy mode,
+and moves your cursor over to the matched text.
+
+The following script should suffice for this:
+
+```bash
+#!/usr/bin/env bash
+
+MATCH_TEXT="$1"
+PANE_ID="$FASTCOPY_TARGET_PANE_ID"
+
+tmux \
+	copy-mode -t "$PANE_ID" ';' \
+	send-keys -t "$PANE_ID" -X search-backward-text "$MATCH_TEXT" ';' \
+	send-keys -t "$PANE_ID" -X begin-selection ';' \
+	send-keys -t "$PANE_ID" -X -N "$((${#MATCH_TEXT} - 1))" cursor-right ';' \
+	send-keys -t "$PANE_ID" -X end-selection
+```
+
+<details>
+<summary>Explanation</summary>
+
+The script above expects the matched text as an argument,
+and grabs the target pane ID from the environment.
+tmux-fastcopy sets `FASTCOPY_TARGET_PANE_ID` when running the action
+(see [Execution context](#execution-context)).
+
+It then runs the following tmux commands on the pane:
+
+- switch it to copy mode
+- search for the closest recent instance of the matched text
+  and move your cursor there
+- begin a selection
+- move the cursor to the end of the selected text
+- end the selection
+
+The end result of this is that when the action runs,
+your cursor will have selected the matched text
+leaving you room to adjust the selection before copying.
+
+</details>
+
+Place this script in a location of your choice, say, `~/.tmux/select.sh`
+and mark it as an executable:
+
+```bash
+chmod +x ~/.tmux/select.sh
+```
+
+Then add the following to your `~/tmux.conf`.
+
+```tmux
+set -g @fastcopy-action '~/.tmux/select.sh {}'
+```
+
+Or add the following if you want to do this
+only when you press shift along with the label
+(see [`@fastcopy-shift-action`](#fastcopy-shift-action)).
+
+```tmux
+set -g @fastcopy-shift-action '~/.tmux/select.sh {}'
 ```
 
 ## FAQ
@@ -502,7 +578,7 @@ You can run different actions on a per-regex basis by inspecting the
 `FASTCOPY_REGEX_NAME` environment variable in your
 [`@fastcopy-action`](#fastcopy-action).
 
-See [Accessing the regex name](#accessing-the-regex-name) for more details.
+See [Accessing the regex name](#access-the-regex-name) for more details.
 
 ## Credits
 

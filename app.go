@@ -142,8 +142,9 @@ func (app *app) Run(cfg *config) error {
 	}
 
 	action, err := app.NewAction(newActionRequest{
-		Action: actionStr,
-		Dir:    targetPane.CurrentPath,
+		Action:       actionStr,
+		Dir:          targetPane.CurrentPath,
+		TargetPaneID: targetPane.ID,
 	})
 	if err != nil {
 		return fmt.Errorf("load action %q: %v", actionStr, err)

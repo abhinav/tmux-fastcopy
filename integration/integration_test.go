@@ -54,9 +54,10 @@ func behaviorBinary(t testing.TB, name string) string {
 }
 
 type jsonReport struct {
-	RegexName string `json:"regexName"`
-	Text      string `json:"text"`
-	CWD       string `json:"cwd"`
+	RegexName    string `json:"regexName"`
+	TargetPaneID string `json:"targetPaneID"`
+	Text         string `json:"text"`
+	CWD          string `json:"cwd"`
 }
 
 func jsonReportAction() (exitCode int) {
@@ -79,9 +80,10 @@ func jsonReportAction() (exitCode int) {
 	}
 
 	state := jsonReport{
-		RegexName: os.Getenv("FASTCOPY_REGEX_NAME"),
-		Text:      string(txt),
-		CWD:       cwd,
+		RegexName:    os.Getenv("FASTCOPY_REGEX_NAME"),
+		TargetPaneID: os.Getenv("FASTCOPY_TARGET_PANE_ID"),
+		Text:         string(txt),
+		CWD:          cwd,
 	}
 
 	bs, err := json.Marshal(state)
@@ -273,7 +275,7 @@ func TestIntegration_ShiftNoop(t *testing.T) {
 	}
 }
 
-func TestIntegration_ActionDir(t *testing.T) {
+func TestIntegration_ActionEnv(t *testing.T) {
 	t.Parallel()
 
 	seed := time.Now().UnixNano()
@@ -302,10 +304,10 @@ func TestIntegration_ActionDir(t *testing.T) {
 
 	// Create a random directory in the home directory
 	// and cd into it.
-	var bs [8]byte
-	_, err := rand.Read(bs[:])
+	bs := make([]byte, 8)
+	_, err := rand.Read(bs)
 	require.NoError(t, err, "generate random bytes")
-	cwd := filepath.Join(env.Home, hex.EncodeToString(bs[:]))
+	cwd := filepath.Join(env.Home, hex.EncodeToString(bs))
 	require.NoError(t, os.MkdirAll(cwd, 0o755), "create random directory")
 	fmt.Fprintln(tmux, "cd", cwd)
 	tmux.Clear()
@@ -316,6 +318,12 @@ func TestIntegration_ActionDir(t *testing.T) {
 		t.Fatalf("could not find %q in %q", cwd, tmux.Contents())
 	}
 	t.Logf("Running fastcopy in %q", cwd)
+
+	// Get the current pane's ID.
+	bs, err = tmux.Command("list-panes", "-F", "#{pane_id}").Output()
+	require.NoError(t, err)
+	targetPaneID := strings.TrimSpace(string(bs))
+	require.NotEmpty(t, targetPaneID, "expected pane ID")
 
 	// Clear to ensure the "cat /path/to/whatever" isn't part of the
 	// matched text.
@@ -349,6 +357,8 @@ func TestIntegration_ActionDir(t *testing.T) {
 
 	assert.Equal(t, cwd, state.CWD,
 		"action directory does not match")
+	assert.Equal(t, targetPaneID, state.TargetPaneID,
+		"action pane ID does not match")
 }
 
 type fakeEnv struct {

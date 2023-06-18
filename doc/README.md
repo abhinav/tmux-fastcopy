@@ -13,6 +13,7 @@
 - How to
     - [Access the regex name](howto-regex-name.md)
     - [Copy text to the clipboard](howto-clipboard.md)
+    - [Select text without copying](howto-select.md)
 - [FAQ](faq.md)
 - [Credits](credits.md)
 - [Similar projects](similar.md)

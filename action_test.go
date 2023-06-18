@@ -78,6 +78,33 @@ func TestNewCommandAction(t *testing.T) {
 				Dir:        "/tmp",
 			},
 		},
+		{
+			desc: "stdin with pane ID",
+			give: newActionRequest{
+				Action:       "pbcopy",
+				TargetPaneID: "123",
+			},
+			wantStdin: &stdinAction{
+				Cmd:    "pbcopy",
+				Args:   []string{},
+				PaneID: "123",
+				Dir:    cwd,
+			},
+		},
+		{
+			desc: "argument with pane ID",
+			give: newActionRequest{
+				Action:       "tmux set-buffer -- {}",
+				TargetPaneID: "123",
+			},
+			wantArg: &argAction{
+				Cmd:        "tmux",
+				BeforeArgs: []string{"set-buffer", "--"},
+				AfterArgs:  []string{},
+				PaneID:     "123",
+				Dir:        cwd,
+			},
+		},
 	}
 
 	for _, tt := range tests {
