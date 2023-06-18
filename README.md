@@ -491,7 +491,7 @@ chmod +x ~/.tmux/select.sh
 Then add the following to your `~/tmux.conf`.
 
 ```tmux
-set -g @fastcopy-action '~/.tmux/select.sh {}'
+set -g @fastcopy-action "~/.tmux/selectsh {}"
 ```
 
 Or add the following if you want to do this
@@ -499,7 +499,7 @@ only when you press shift along with the label
 (see [`@fastcopy-shift-action`](#fastcopy-shift-action)).
 
 ```tmux
-set -g @fastcopy-shift-action '~/.tmux/select.sh {}'
+set -g @fastcopy-shift-action "~/.tmux/select.sh {}"
 ```
 
 ## FAQ
