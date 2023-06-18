@@ -13,7 +13,6 @@ selected text.
 
     set-option -g @fastcopy-shift-action "fastcopy-shift.sh {}"
 
-As with `@fastcopy-action`, tmux-fastcopy will set `FASTCOPY_REGEX_NAME` to the
-name of the regular expression that matched when running the
-`@fastcopy-shift-action`.
-See [Accessing the regex name](howto-regex-name.md) for more details.
+The `@fastcopy-shift-action` will run with the same
+[execution context](opt-action.md#execution-context)
+as the `@fastcopy-action`.
