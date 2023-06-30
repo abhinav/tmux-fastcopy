@@ -182,7 +182,6 @@ func (cmd *mainCmd) Run(cfg *config) (err error) {
 	if len(parent) > 0 {
 		target = &app{
 			Log:       logger,
-			Tmux:      tmuxDriver,
 			NewScreen: tcell.NewScreen,
 			NewAction: (&actionFactory{
 				Log:     logger,

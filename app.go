@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/abhinav/tmux-fastcopy/internal/fastcopy"
 	"github.com/abhinav/tmux-fastcopy/internal/log"
-	"github.com/abhinav/tmux-fastcopy/internal/tmux"
 	"github.com/abhinav/tmux-fastcopy/internal/ui"
 	tcell "github.com/gdamore/tcell/v2"
 )
@@ -15,7 +16,6 @@ import (
 // care of ensuring that.)
 type app struct {
 	Log       *log.Logger
-	Tmux      tmux.Driver
 	NewAction func(newActionRequest) (action, error)
 
 	NewScreen func() (tcell.Screen, error) // == tcell.NewScreen
@@ -36,45 +36,9 @@ func (app *app) Run(cfg *config) error {
 		}
 	}
 
-	targetPane, err := tmux.InspectPane(app.Tmux, cfg.Pane)
+	bs, err := io.ReadAll(os.Stdin)
 	if err != nil {
-		return fmt.Errorf("inspect pane %q: %v", cfg.Pane, err)
-	}
-
-	// Size specification in new-session doesn't always take and causes
-	// flickers when swapping panes around. Make sure that the window is
-	// right-sized.
-	myPane, err := tmux.InspectPane(app.Tmux, "")
-	if err != nil {
-		return err
-	}
-
-	if myPane.Width != targetPane.Width || myPane.Height != targetPane.Height {
-		resizeReq := tmux.ResizeWindowRequest{
-			Window: myPane.WindowID,
-			Width:  targetPane.Width,
-			Height: targetPane.Height,
-		}
-		if err := app.Tmux.ResizeWindow(resizeReq); err != nil {
-			app.Log.Errorf("unable to resize %q: %v",
-				myPane.WindowID, err)
-			// Not the end of the world. Keep going.
-		}
-	}
-
-	creq := tmux.CapturePaneRequest{Pane: targetPane.ID}
-	if targetPane.Mode == tmux.CopyMode {
-		// If the pane is in copy-mode, the default capture-pane will
-		// capture the bottom of the screen that would normally be
-		// visible if not in copy mode. Supply positions to capture for
-		// that case.
-		creq.StartLine = -targetPane.ScrollPosition
-		creq.EndLine = creq.StartLine + targetPane.Height - 1
-	}
-
-	bs, err := app.Tmux.CapturePane(creq)
-	if err != nil {
-		return fmt.Errorf("capture pane %q: %v", cfg.Pane, err)
+		return fmt.Errorf("read stdin: %v", err)
 	}
 
 	screen, err := app.NewScreen()
@@ -96,37 +60,6 @@ func (app *app) Run(cfg *config) error {
 	}
 	ctrl.Init()
 
-	if err := app.Tmux.SwapPane(tmux.SwapPaneRequest{
-		Source:      targetPane.ID,
-		Destination: myPane.ID,
-	}); err != nil {
-		return err
-	}
-
-	// If the window was zoomed, zoom the swapped pane as well. In Tmux 3.1
-	// or newer, we can use the '-Z' flag of swap-pane, but that's not
-	// available in older versions.
-	if targetPane.WindowZoomed {
-		_ = app.Tmux.ResizePane(tmux.ResizePaneRequest{
-			Target:     myPane.ID,
-			ToggleZoom: true,
-		})
-
-		defer func() {
-			_ = app.Tmux.ResizePane(tmux.ResizePaneRequest{
-				Target:     targetPane.ID,
-				ToggleZoom: true,
-			})
-		}()
-	}
-
-	defer func() {
-		_ = app.Tmux.SwapPane(tmux.SwapPaneRequest{
-			Destination: targetPane.ID,
-			Source:      myPane.ID,
-		})
-	}()
-
 	selection, err := ctrl.Wait()
 	if err != nil {
 		return err
@@ -142,9 +75,10 @@ func (app *app) Run(cfg *config) error {
 	}
 
 	action, err := app.NewAction(newActionRequest{
-		Action:       actionStr,
-		Dir:          targetPane.CurrentPath,
-		TargetPaneID: targetPane.ID,
+		Action: actionStr,
+		// TOOD: dir argument, -E argument for env
+		// Dir:          targetPane.CurrentPath,
+		// TargetPaneID: targetPane.ID,
 	})
 	if err != nil {
 		return fmt.Errorf("load action %q: %v", actionStr, err)

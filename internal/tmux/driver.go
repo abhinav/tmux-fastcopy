@@ -12,6 +12,9 @@ type Driver interface {
 	// output.
 	DisplayMessage(DisplayMessageRequest) ([]byte, error)
 
+	// ListPanes lists panes in a given session or window.
+	ListPanes(ListPanesRequest) ([][]byte, error)
+
 	// CapturePane runs the tmux capture-pane command and returns its
 	// output.
 	CapturePane(CapturePaneRequest) ([]byte, error)
@@ -159,5 +162,23 @@ func (r ResizePaneRequest) String() string {
 	var b stringobj.Builder
 	b.Put("target", r.Target)
 	b.Put("toggleZoom", r.ToggleZoom)
+	return b.String()
+}
+
+// ListPanesRequest specifies the parameters for a list-panes command.
+//
+// If neither All or Session is set,
+// ListPanes will list panes in the current window.
+type ListPanesRequest struct {
+	All     bool   // list all panes on the server
+	Session string // list only panes for this session
+
+	Format string // output format
+}
+
+func (r ListPanesRequest) String() string {
+	var b stringobj.Builder
+	b.Put("all", r.All)
+	b.Put("session", r.Session)
 	return b.String()
 }

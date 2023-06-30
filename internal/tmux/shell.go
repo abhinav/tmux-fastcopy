@@ -1,6 +1,7 @@
 package tmux
 
 import (
+	"bytes"
 	"errors"
 	"io"
 	"os/exec"
@@ -256,4 +257,33 @@ func (s *ShellDriver) ShowOptions(req ShowOptionsRequest) ([]byte, error) {
 
 	s.log.Debugf("show options: %v", req)
 	return s.run.Output(cmd)
+}
+
+// ListPanes runs the list-panes command.
+func (s *ShellDriver) ListPanes(req ListPanesRequest) ([][]byte, error) {
+	s.init()
+
+	args := []string{"list-panes"}
+	if len(req.Session) > 0 {
+		args = append(args, "-s", "-t", req.Session)
+	} else if req.All {
+		args = append(args, "-a")
+	}
+
+	if len(req.Format) > 0 {
+		args = append(args, "-F", req.Format)
+	} else {
+		args = append(args, "-F", "#{pane_id}")
+	}
+
+	cmd := s.cmd(args...)
+	defer s.errorWriter(&cmd.Stderr)()
+
+	s.log.Debugf("list panes: %v", req)
+	bs, err := s.run.Output(cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes.Split(bs, []byte{'\n'}), nil
 }
