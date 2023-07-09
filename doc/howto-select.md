@@ -53,7 +53,7 @@ chmod +x ~/.tmux/select.sh
 Then add the following to your `~/tmux.conf`.
 
 ```tmux
-set -g @fastcopy-action "~/.tmux/selectsh {}"
+set -g @fastcopy-action "~/.tmux/select.sh {}"
 ```
 
 Or add the following if you want to do this
