@@ -140,6 +140,56 @@ func TestLoaderStrings(t *testing.T) {
 	}
 }
 
+func TestLoaderBool(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	mockTmux := tmuxtest.NewMockDriver(ctrl)
+
+	loader := Loader{Tmux: mockTmux}
+
+	var foo, bar, baz, qux bool
+	loader.BoolVar(&foo, "foo")
+	loader.BoolVar(&bar, "bar")
+	loader.BoolVar(&baz, "baz")
+	loader.BoolVar(&qux, "qux")
+
+	mockTmux.EXPECT().
+		ShowOptions(gomock.Any()).
+		Return(unlines(
+			"foo on",
+			"bar off",
+			"baz 1",
+			"qux 0",
+		), nil)
+
+	err := loader.Load(tmux.ShowOptionsRequest{})
+	require.NoError(t, err)
+
+	assert.True(t, foo)
+	assert.False(t, bar)
+	assert.True(t, baz)
+	assert.False(t, qux)
+}
+
+func TestLoaderBool_badBoolean(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	mockTmux := tmuxtest.NewMockDriver(ctrl)
+
+	loader := Loader{Tmux: mockTmux}
+	loader.BoolVar(new(bool), "foo")
+	mockTmux.EXPECT().
+		ShowOptions(gomock.Any()).
+		Return(unlines(
+			"foo not-a-boolean",
+		), nil)
+
+	err := loader.Load(tmux.ShowOptionsRequest{})
+	require.ErrorContains(t, err, `invalid boolean value "not-a-boolean"`)
+}
+
 func TestLoaderMap(t *testing.T) {
 	t.Parallel()
 

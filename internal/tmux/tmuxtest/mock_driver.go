@@ -121,6 +121,20 @@ func (mr *MockDriverMockRecorder) SendSignal(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendSignal", reflect.TypeOf((*MockDriver)(nil).SendSignal), arg0)
 }
 
+// SetOption mocks base method.
+func (m *MockDriver) SetOption(arg0 tmux.SetOptionRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetOption", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetOption indicates an expected call of SetOption.
+func (mr *MockDriverMockRecorder) SetOption(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetOption", reflect.TypeOf((*MockDriver)(nil).SetOption), arg0)
+}
+
 // ShowOptions mocks base method.
 func (m *MockDriver) ShowOptions(arg0 tmux.ShowOptionsRequest) ([]byte, error) {
 	m.ctrl.T.Helper()
