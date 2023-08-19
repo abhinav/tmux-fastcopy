@@ -1,6 +1,9 @@
 package log
 
-import "bytes"
+import (
+	"bytes"
+	"context"
+)
 
 // Writer is an io.Writer that writes to the provided logger, splitting
 // messages across newlines into new log entries.
@@ -63,5 +66,5 @@ func (w *Writer) flush(allowEmpty bool) {
 }
 
 func (w *Writer) logLine(b []byte) {
-	w.Log.Log(w.Level, "%s", b)
+	w.Log.Log(context.Background(), w.Level, string(b))
 }

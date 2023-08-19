@@ -1,6 +1,11 @@
 package tmux
 
-import "github.com/abhinav/tmux-fastcopy/internal/stringobj"
+import (
+	"log/slog"
+	"strings"
+
+	"github.com/abhinav/tmux-fastcopy/internal/log"
+)
 
 // Driver is a low-level API to access tmux. This maps directly to tmux
 // commands.
@@ -76,16 +81,16 @@ type NewSessionRequest struct {
 	Command []string
 }
 
-func (r NewSessionRequest) String() string {
-	var b stringobj.Builder
-	b.Put("name", r.Name)
-	b.Put("format", r.Format)
-	b.Put("width", r.Width)
-	b.Put("height", r.Height)
-	b.Put("detached", r.Detached)
-	b.Put("env", r.Env)
-	b.Put("command", r.Command)
-	return b.String()
+func (r NewSessionRequest) LogValue() slog.Value {
+	return slog.GroupValue(
+		log.OmitEmpty(slog.String, "name", r.Name),
+		log.OmitEmpty(slog.String, "format", r.Format),
+		log.OmitEmpty(slog.Int, "width", r.Width),
+		log.OmitEmpty(slog.Int, "height", r.Height),
+		slog.Bool("detached", r.Detached),
+		log.OmitEmpty(slog.String, "env", strings.Join(r.Env, " ")),
+		log.OmitEmpty(slog.String, "command", strings.Join(r.Command, " ")),
+	)
 }
 
 // CapturePaneRequest specifies the parameters for a capture-pane command.
@@ -98,12 +103,12 @@ type CapturePaneRequest struct {
 	StartLine, EndLine int
 }
 
-func (r CapturePaneRequest) String() string {
-	var b stringobj.Builder
-	b.Put("pane", r.Pane)
-	b.Put("startLine", r.StartLine)
-	b.Put("endLine", r.EndLine)
-	return b.String()
+func (r CapturePaneRequest) LogValue() slog.Value {
+	return slog.GroupValue(
+		log.OmitEmpty(slog.String, "pane", r.Pane),
+		log.OmitEmpty(slog.Int, "startLine", r.StartLine),
+		log.OmitEmpty(slog.Int, "endLine", r.EndLine),
+	)
 }
 
 // DisplayMessageRequest specifies the parameters for a display-message
@@ -116,11 +121,11 @@ type DisplayMessageRequest struct {
 	Message string
 }
 
-func (r DisplayMessageRequest) String() string {
-	var b stringobj.Builder
-	b.Put("pane", r.Pane)
-	b.Put("message", r.Message)
-	return b.String()
+func (r DisplayMessageRequest) LogValue() slog.Value {
+	return slog.GroupValue(
+		log.OmitEmpty(slog.String, "pane", r.Pane),
+		log.OmitEmpty(slog.String, "message", r.Message),
+	)
 }
 
 // SwapPaneRequest specifies the parameters for a swap-pane command.
@@ -132,11 +137,11 @@ type SwapPaneRequest struct {
 	Destination string
 }
 
-func (r SwapPaneRequest) String() string {
-	var b stringobj.Builder
-	b.Put("source", r.Source)
-	b.Put("destination", r.Destination)
-	return b.String()
+func (r SwapPaneRequest) LogValue() slog.Value {
+	return slog.GroupValue(
+		log.OmitEmpty(slog.String, "source", r.Source),
+		log.OmitEmpty(slog.String, "destination", r.Destination),
+	)
 }
 
 // ResizeWindowRequest specifies the parameters for a resize-window command.
@@ -145,12 +150,12 @@ type ResizeWindowRequest struct {
 	Width, Height int
 }
 
-func (r ResizeWindowRequest) String() string {
-	var b stringobj.Builder
-	b.Put("window", r.Window)
-	b.Put("width", r.Width)
-	b.Put("height", r.Height)
-	return b.String()
+func (r ResizeWindowRequest) LogValue() slog.Value {
+	return slog.GroupValue(
+		log.OmitEmpty(slog.String, "window", r.Window),
+		log.OmitEmpty(slog.Int, "width", r.Width),
+		log.OmitEmpty(slog.Int, "height", r.Height),
+	)
 }
 
 // ShowOptionsRequest specifies the parameters for a show-options command.
@@ -158,10 +163,10 @@ type ShowOptionsRequest struct {
 	Global bool // show global options
 }
 
-func (r ShowOptionsRequest) String() string {
-	var b stringobj.Builder
-	b.Put("global", r.Global)
-	return b.String()
+func (r ShowOptionsRequest) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Bool("global", r.Global),
+	)
 }
 
 // ResizePaneRequest specifies the parameters for a resize-pane command.
@@ -170,9 +175,9 @@ type ResizePaneRequest struct {
 	ToggleZoom bool   // whether to toggle zoom
 }
 
-func (r ResizePaneRequest) String() string {
-	var b stringobj.Builder
-	b.Put("target", r.Target)
-	b.Put("toggleZoom", r.ToggleZoom)
-	return b.String()
+func (r ResizePaneRequest) LogValue() slog.Value {
+	return slog.GroupValue(
+		log.OmitEmpty(slog.String, "target", r.Target),
+		slog.Bool("toggleZoom", r.ToggleZoom),
+	)
 }

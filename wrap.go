@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 
@@ -23,6 +24,7 @@ type wrapper struct {
 	Tmux tmux.Driver
 	Log  *log.Logger
 
+	Stderr     io.Writer              // os.Stderr
 	Executable func() (string, error) // os.Executable
 	Getenv     func(string) string    // os.Getenv
 	Getpid     func() int             // os.Getpid
@@ -124,10 +126,7 @@ func (w *wrapper) Run(cfg *config) (err error) {
 		return err
 	}
 
-	logw := &log.Writer{Log: w.Log}
-	defer multierr.AppendInvoke(&err, multierr.Close(logw))
-
-	tee := tail.Tee{W: logw, R: tmpLog}
+	tee := tail.Tee{W: w.Stderr, R: tmpLog}
 	tee.Start()
 	defer func() {
 		err = multierr.Append(err, tmpLog.Close())

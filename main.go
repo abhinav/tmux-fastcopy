@@ -172,10 +172,11 @@ func (cmd *mainCmd) Run(cfg *config) (err error) {
 	}
 	defer paniclog.Recover(&err, cmd.Stderr)
 
-	logger := log.New(cmd.Stderr)
+	logLevel := log.Info
 	if cfg.Verbose {
-		logger = logger.WithLevel(log.Debug)
+		logLevel = log.Debug
 	}
+	logger := log.New(cmd.Stderr, logLevel)
 	tmuxDriver.SetLogger(logger.WithName("tmux"))
 
 	var target interface{ Run(*config) error }
@@ -193,6 +194,7 @@ func (cmd *mainCmd) Run(cfg *config) (err error) {
 	} else {
 		target = &wrapper{
 			Log:        logger,
+			Stderr:     cmd.Stderr,
 			Tmux:       tmuxDriver,
 			Executable: cmd.Executable,
 			Getenv:     cmd.Getenv,

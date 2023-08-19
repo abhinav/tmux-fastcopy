@@ -126,7 +126,7 @@ func (s *ShellDriver) NewSession(req NewSessionRequest) ([]byte, error) {
 	cmd := s.cmd(args...)
 	defer s.errorWriter(&cmd.Stderr)()
 
-	s.log.Debugf("new session: %v", req)
+	s.log.Debug("new session", "req", req)
 	return s.run.Output(cmd)
 }
 
@@ -147,7 +147,7 @@ func (s *ShellDriver) CapturePane(req CapturePaneRequest) ([]byte, error) {
 	cmd := s.cmd(args...)
 	defer s.errorWriter(&cmd.Stderr)()
 
-	s.log.Debugf("capture pane: %v", req)
+	s.log.Debug("capture pane", "req", req)
 	return s.run.Output(cmd)
 }
 
@@ -181,7 +181,7 @@ func (s *ShellDriver) DisplayMessage(req DisplayMessageRequest) ([]byte, error) 
 	cmd := s.cmd(args...)
 	defer s.errorWriter(&cmd.Stderr)()
 
-	s.log.Debugf("display message: %v", req)
+	s.log.Debug("display message", "req", req)
 	return s.run.Output(cmd)
 }
 
@@ -197,7 +197,7 @@ func (s *ShellDriver) SwapPane(req SwapPaneRequest) error {
 	cmd := s.cmd(args...)
 	defer s.errorWriter(&cmd.Stdout, &cmd.Stderr)()
 
-	s.log.Debugf("swap pane: %v", req)
+	s.log.Debug("swap pane", "req", req)
 	return s.run.Run(cmd)
 }
 
@@ -213,7 +213,7 @@ func (s *ShellDriver) ResizePane(req ResizePaneRequest) error {
 	cmd := s.cmd(args...)
 	defer s.errorWriter(&cmd.Stdout, &cmd.Stderr)()
 
-	s.log.Debugf("resize pane: %v", req)
+	s.log.Debug("resize pane", "req", req)
 	return s.run.Run(cmd)
 }
 
@@ -236,7 +236,7 @@ func (s *ShellDriver) ResizeWindow(req ResizeWindowRequest) error {
 	cmd := s.cmd(args...)
 	defer s.errorWriter(&cmd.Stdout, &cmd.Stderr)()
 
-	s.log.Debugf("resize window: %v", req)
+	s.log.Debug("resize window", "req", req)
 	return s.run.Run(cmd)
 }
 
@@ -246,7 +246,7 @@ func (s *ShellDriver) WaitForSignal(sig string) error {
 	cmd := s.cmd("wait-for", sig)
 	defer s.errorWriter(&cmd.Stdout, &cmd.Stderr)()
 
-	s.log.Debugf("wait-for: %v", sig)
+	s.log.Debug("wait-for", "signal", sig)
 	return s.run.Run(cmd)
 }
 
@@ -256,7 +256,7 @@ func (s *ShellDriver) SendSignal(sig string) error {
 	cmd := s.cmd("wait-for", "-S", sig)
 	defer s.errorWriter(&cmd.Stdout, &cmd.Stderr)()
 
-	s.log.Debugf("wait-for -S: %v", sig)
+	s.log.Debug("wait-for -S", "signal", sig)
 	return s.run.Run(cmd)
 }
 
@@ -271,6 +271,6 @@ func (s *ShellDriver) ShowOptions(req ShowOptionsRequest) ([]byte, error) {
 	cmd := s.cmd(args...)
 	defer s.errorWriter(&cmd.Stderr)()
 
-	s.log.Debugf("show options: %v", req)
+	s.log.Debug("show options", "req", req)
 	return s.run.Output(cmd)
 }

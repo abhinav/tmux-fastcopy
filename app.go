@@ -56,8 +56,9 @@ func (app *app) Run(cfg *config) error {
 			Height: targetPane.Height,
 		}
 		if err := app.Tmux.ResizeWindow(resizeReq); err != nil {
-			app.Log.Errorf("unable to resize %q: %v",
-				myPane.WindowID, err)
+			app.Log.Error("unable to resize",
+				"window", myPane.WindowID,
+				"err", err)
 			// Not the end of the world. Keep going.
 		}
 	}
