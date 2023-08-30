@@ -6,6 +6,8 @@ package log
 import (
 	"io"
 	"log/slog"
+
+	"github.com/lmittmann/tint"
 )
 
 // Level specifies the level of logging.
@@ -23,10 +25,17 @@ type Logger struct{ *slog.Logger }
 // New builds a logger that writes to the given writer.
 // The logger defaults to level Info.
 func New(w io.Writer, lvl Level) *Logger {
-	log := slog.New(&handler{
-		W:     w,
+	h := tint.NewHandler(w, &tint.Options{
 		Level: lvl,
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			if len(groups) == 0 && a.Key == slog.TimeKey {
+				return slog.Attr{}
+			}
+			return a
+		},
 	})
+
+	log := slog.New(h)
 	return &Logger{log}
 }
 

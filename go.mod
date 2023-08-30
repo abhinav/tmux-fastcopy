@@ -8,6 +8,7 @@ require (
 	github.com/benbjohnson/clock v1.3.5
 	github.com/gdamore/tcell/v2 v2.6.0
 	github.com/golang/mock v1.6.0
+	github.com/lmittmann/tint v1.0.1
 	github.com/mattn/go-runewidth v0.0.15
 	github.com/mattn/go-shellwords v1.0.12
 	github.com/rivo/uniseg v0.4.4
