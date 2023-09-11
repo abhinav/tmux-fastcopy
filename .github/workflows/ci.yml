@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       name: Check out repository
     - uses: actions/setup-go@v4
       name: Set up Go
@@ -38,7 +38,7 @@ jobs:
     name: Unit Test
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       name: Check out repository
     - name: Set up Go
       uses: actions/setup-go@v4
@@ -62,7 +62,7 @@ jobs:
         tmux-version: ["3.2a", "3.1c", "3.0a", "2.9a", "2.8", "2.7"]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       name: Check out repository
     - name: Set up Go
       uses: actions/setup-go@v4
@@ -71,7 +71,7 @@ jobs:
         cache: true
 
     - name: Checkout Tmux
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         repository: tmux/tmux
         ref: ${{ matrix.tmux-version }}
