@@ -88,6 +88,8 @@ type WidgetConfig struct {
 
 	Style Style
 
+	StyleMulti Style
+
 	// Internal override for generateHints.
 	generateHints func([]rune, string, []Match) []hint
 }
@@ -96,18 +98,20 @@ type WidgetConfig struct {
 // more hints and unique prefix-free labels next to each hint to select that
 // label.
 type Widget struct {
-	style   Style
-	handler Handler
-	textw   *ui.AnnotatedText
+	style      Style
+	styleMulti Style
+	handler    Handler
+	textw      *ui.AnnotatedText
 
 	hints        []hint
 	hintsByLabel map[string]int // label -> hints[i]
 
 	// Mutable attributes:
 
-	mu        sync.RWMutex
-	input     string // text input so far
-	shiftDown bool   // whether shift was pressed
+	mu          sync.RWMutex
+	input       string // text input so far
+	shiftDown   bool   // whether shift was pressed
+	multiSelect bool   // weather in multi select mode
 }
 
 // Build builds a new Fastcopy widget using the provided configuration.
@@ -130,6 +134,7 @@ func (cfg *WidgetConfig) Build() *Widget {
 			Style: cfg.Style.Normal,
 		},
 		style:        cfg.Style,
+		styleMulti:   cfg.StyleMulti,
 		handler:      cfg.Handler,
 		hints:        hints,
 		hintsByLabel: byLabel,
@@ -169,6 +174,22 @@ func (w *Widget) HandleEvent(ev tcell.Event) (handled bool) {
 		}
 		w.mu.Unlock()
 
+	case tcell.KeyTab:
+		if !w.multiSelect {
+			w.multiSelect = true
+		} else {
+			w.multiSelect = false
+
+			var sel Selection
+			for _, h := range w.hints {
+				if h.Selected {
+					sel.Text += h.Text + " "
+					sel.Shift = w.shiftDown
+				}
+			}
+			defer w.handler.HandleSelection(sel)
+		}
+
 	case tcell.KeyRune:
 		handled = true
 		w.mu.Lock()
@@ -202,6 +223,8 @@ func (w *Widget) inputChanged() {
 	idx, ok := w.hintsByLabel[w.input]
 	if ok {
 		h = w.hints[idx]
+		h.Selected = !h.Selected
+		w.hints[idx] = h
 		w.input = ""
 	}
 	w.mu.Unlock()
@@ -224,7 +247,9 @@ func (w *Widget) inputChanged() {
 	}
 	sort.Strings(sel.Matchers)
 
-	w.handler.HandleSelection(sel)
+	if !w.multiSelect {
+		w.handler.HandleSelection(sel)
+	}
 }
 
 func (w *Widget) annotateText() {
@@ -233,7 +258,11 @@ func (w *Widget) annotateText() {
 
 	var anns []ui.TextAnnotation
 	for _, hint := range w.hints {
-		anns = append(anns, hint.Annotations(w.input, w.style)...)
+		if !hint.Selected {
+			anns = append(anns, hint.Annotations(w.input, w.style)...)
+		} else {
+			anns = append(anns, hint.Annotations(hint.Label, w.styleMulti)...)
+		}
 	}
 
 	w.textw.SetAnnotations(anns...)

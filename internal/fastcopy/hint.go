@@ -9,9 +9,10 @@ import (
 )
 
 type hint struct {
-	Label   string
-	Text    string
-	Matches []Match
+	Label    string
+	Text     string
+	Matches  []Match
+	Selected bool
 }
 
 // generateHints generates a list of hints for the given text. It uses alphabet
