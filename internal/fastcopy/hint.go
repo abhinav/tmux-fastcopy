@@ -9,9 +9,22 @@ import (
 )
 
 type hint struct {
-	Label    string
-	Text     string
-	Matches  []Match
+	// Label to select this hint.
+	Label string
+
+	// Text that will be copied if this hint is selected.
+	Text string
+
+	// List ot matches identified by this hint.
+	//
+	// Note that a hint may have multiple matches
+	// if the same text appears on the screen multiple times,
+	// or if the same text matches multiple regexes.
+	Matches []Match
+
+	// Selected reports whether this hint is selected.
+	//
+	// This is only used in multi-selection mode.
 	Selected bool
 }
 
