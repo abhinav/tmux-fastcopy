@@ -362,6 +362,8 @@ func TestIntegration_ActionEnv(t *testing.T) {
 }
 
 func TestIntegration_MultiSelect(t *testing.T) {
+	t.Parallel()
+
 	env := (&fakeEnvConfig{
 		Action: "json-report",
 	}).Build(t)
