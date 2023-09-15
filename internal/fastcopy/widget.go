@@ -46,6 +46,10 @@ type Style struct {
 
 	HintLabel      tcell.Style // labels for hints
 	HintLabelInput tcell.Style // typed portion of hints
+
+	// Multi-select mode:
+	SelectedMatch tcell.Style // one of the selected matches
+	DeselectLabel tcell.Style // label for deselection
 }
 
 // Selection is a choice made by the user in the fastcopy UI.
@@ -86,9 +90,8 @@ type WidgetConfig struct {
 	// selection.
 	Handler Handler
 
+	// Style configures the look of the widget.
 	Style Style
-
-	StyleMulti Style
 
 	// Internal override for generateHints.
 	generateHints func([]rune, string, []Match) []hint
@@ -98,10 +101,9 @@ type WidgetConfig struct {
 // more hints and unique prefix-free labels next to each hint to select that
 // label.
 type Widget struct {
-	style      Style
-	styleMulti Style
-	handler    Handler
-	textw      *ui.AnnotatedText
+	style   Style
+	handler Handler
+	textw   *ui.AnnotatedText
 
 	hints        []hint
 	hintsByLabel map[string]int // label -> hints[i]
@@ -134,7 +136,6 @@ func (cfg *WidgetConfig) Build() *Widget {
 			Style: cfg.Style.Normal,
 		},
 		style:        cfg.Style,
-		styleMulti:   cfg.StyleMulti,
 		handler:      cfg.Handler,
 		hints:        hints,
 		hintsByLabel: byLabel,
@@ -258,11 +259,26 @@ func (w *Widget) annotateText() {
 
 	var anns []ui.TextAnnotation
 	for _, hint := range w.hints {
-		if !hint.Selected {
-			anns = append(anns, hint.Annotations(w.input, w.style)...)
-		} else {
-			anns = append(anns, hint.Annotations(hint.Label, w.styleMulti)...)
+		input := w.input
+		style := AnnotationStyle{
+			Match:      w.style.Match,
+			Skipped:    w.style.SkippedMatch,
+			Label:      w.style.HintLabel,
+			LabelTyped: w.style.HintLabelInput,
 		}
+
+		if hint.Selected {
+			// If this hint is selected, we're in multi-select mode,
+			// and we want to allow deselection.
+			//
+			// Pretend there's no input,
+			// and use the DeselectLabel style for hints.
+			input = ""
+			style.Match = w.style.SelectedMatch
+			style.Label = w.style.DeselectLabel
+		}
+
+		anns = append(anns, hint.Annotations(input, style)...)
 	}
 
 	w.textw.SetAnnotations(anns...)

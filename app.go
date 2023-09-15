@@ -181,13 +181,8 @@ func (c *ctrl) Init() {
 			SkippedMatch:   base.Foreground(tcell.ColorGray),
 			HintLabel:      base.Foreground(tcell.ColorRed),
 			HintLabelInput: base.Foreground(tcell.ColorYellow),
-		},
-		StyleMulti: fastcopy.Style{
-			Normal:         base,
-			Match:          base.Foreground(tcell.ColorYellow),
-			SkippedMatch:   base.Foreground(tcell.ColorGray),
-			HintLabel:      base.Foreground(tcell.ColorRed),
-			HintLabelInput: base.Foreground(tcell.ColorDarkRed),
+			SelectedMatch:  base.Foreground(tcell.ColorYellow),
+			DeselectLabel:  base.Foreground(tcell.ColorDarkRed),
 		},
 	}).Build()
 
