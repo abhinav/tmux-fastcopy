@@ -361,6 +361,85 @@ func TestIntegration_ActionEnv(t *testing.T) {
 		"action pane ID does not match")
 }
 
+func TestIntegration_MultiSelect(t *testing.T) {
+	env := (&fakeEnvConfig{
+		Action: "json-report",
+	}).Build(t)
+
+	testFile := filepath.Join(env.Root, "give.txt")
+	require.NoError(t,
+		os.WriteFile(testFile, []byte(_giveText), 0o644),
+		"write test file")
+
+	tmux := (&virtualTmuxConfig{
+		Tmux:   env.Tmux,
+		Width:  80,
+		Height: 40,
+		Env:    env.Environ(),
+	}).Build(t)
+	time.Sleep(250 * time.Millisecond)
+	require.NoError(t, tmux.Command("set-buffer", "").Run(),
+		"clear tmux buffer")
+
+	// Clear to ensure the "cat /path/to/whatever" isn't part of the
+	// matched text.
+	tmux.Clear()
+	fmt.Fprintln(tmux, "clear && cat", testFile)
+	if !assert.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second)) {
+		t.Fatalf("could not find EOF in %q", tmux.Contents())
+	}
+
+	tmux.Clear()
+	_, err := tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
+	require.NoError(t, err, "send ctrl-a f")
+
+	time.Sleep(250 * time.Millisecond)
+
+	// Enter multi-select mode.
+	_, err = tmux.Write([]byte{0x09})
+	require.NoError(t, err, "send tab")
+
+	time.Sleep(200 * time.Millisecond)
+
+	hints := tmux.Hints()
+	t.Logf("got hints %q", hints)
+	if !assert.Len(t, hints, len(_wantMatches)) {
+		t.Fatalf("expected %d hints in %q", len(_wantMatches), tmux.Contents())
+	}
+
+	// Select all hints.
+	for _, hint := range hints {
+		_, err := io.WriteString(tmux, hint)
+		require.NoError(t, err, "select hint %q", hint)
+		time.Sleep(250 * time.Millisecond)
+	}
+
+	// Accept output and exit.
+	_, err = tmux.Write([]byte{0x0d}) // CR
+	require.NoError(t, err, "send enter")
+
+	time.Sleep(250 * time.Millisecond)
+
+	got, err := tmux.Command("show-buffer").Output()
+	require.NoError(t, err)
+
+	var state jsonReport
+	require.NoError(t, json.Unmarshal(got, &state))
+
+	t.Logf("got %+v", state)
+
+	// The outputs are space-separated in some order.
+	texts := strings.Split(state.Text, " ")
+	assert.Len(t, texts, len(_wantMatches), "expected texts to match")
+
+	var wantTexts []string
+	for i := range _wantMatches {
+		wantTexts = append(wantTexts, _wantMatches[i].Text)
+	}
+
+	assert.ElementsMatch(t, wantTexts, texts)
+}
+
 type fakeEnv struct {
 	Root   string
 	Home   string
