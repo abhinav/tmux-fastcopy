@@ -3,6 +3,7 @@
 - [Introduction](intro.md)
 - [Installation](install.md)
 - [Usage](usage.md)
+    - [Multiple selections](multi-select.md)
 - Options
     - [`@fastcopy-key`](opt-key.md)
     - [`@fastcopy-action`](opt-action.md)

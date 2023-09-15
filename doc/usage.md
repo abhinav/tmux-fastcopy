@@ -5,6 +5,7 @@ When there is text on the screen you'd like to copy:
 1. Press `<prefix> + f` to invoke tmux-fastcopy. (You can change this key by
    setting the [`@fastcopy-key`](opt-key.md) option.)
 2. Enter the label next to the highlighted text to copy that text.
+   (You can also [select multiple items](multi-select.md).)
 
 For example,
 

@@ -3,6 +3,7 @@
 - [Introduction](#introduction)
 - [Installation](#installation)
 - [Usage](#usage)
+  - [Multiple selections](#multiple-selections)
 - [Options](#options)
   - [`@fastcopy-key`](#fastcopy-key)
   - [`@fastcopy-action`](#fastcopy-action)
@@ -161,6 +162,7 @@ When there is text on the screen you'd like to copy:
 1. Press `<prefix> + f` to invoke tmux-fastcopy. (You can change this key by
    setting the [`@fastcopy-key`](#fastcopy-key) option.)
 2. Enter the label next to the highlighted text to copy that text.
+   (You can also [select multiple items](#multiple-selections).)
 
 For example,
 
@@ -179,6 +181,20 @@ set-option -g @fastcopy-action 'tmux load-buffer -w -'
 
 See [How to copy text to the clipboard?](#copy-text-to-the-clipboard) for older versions of
 tmux.
+
+### Multiple selections
+
+tmux-fastcopy also supports a multi-selection mode.
+To select multiple items:
+
+1. Press `<prefix> + f` to invoke tmux-fastcopy as usual.
+2. Press `Tab`. This enters multi-selection mode.
+3. Enter all the labels for text you want to copy.
+   If you selected something accidentally,
+   enter that label again to deselect it.
+4. Press `Tab` or `Enter` to accept your selections.
+
+tmux-fastcopy will join your selections together and copy the result.
 
 ## Options
 
