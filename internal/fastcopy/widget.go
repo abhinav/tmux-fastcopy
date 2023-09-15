@@ -246,7 +246,7 @@ func (w *Widget) handleSelection() {
 		text  strings.Builder
 		count int
 	)
-	for _, h := range w.hints {
+	for idx, h := range w.hints {
 		if !h.Selected {
 			continue
 		}
@@ -258,6 +258,15 @@ func (w *Widget) handleSelection() {
 		for _, m := range h.Matches {
 			matchers[m.Matcher] = struct{}{}
 		}
+
+		// Deselect the hint in the widget
+		// in case we want to select it again.
+		//
+		// This typically won't happen because HandleSelection upstream
+		// will exit the UI loop,
+		// but there's no guarantee of that for the Widget interface.
+		h.Selected = false
+		w.hints[idx] = h
 	}
 
 	if count == 0 {
