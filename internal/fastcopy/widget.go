@@ -4,6 +4,7 @@ package fastcopy
 import (
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 	"unicode"
 
@@ -113,7 +114,7 @@ type Widget struct {
 	mu          sync.RWMutex
 	input       string // text input so far
 	shiftDown   bool   // whether shift was pressed
-	multiSelect bool   // weather in multi select mode
+	multiSelect bool   // whether in multi select mode
 }
 
 // Build builds a new Fastcopy widget using the provided configuration.
@@ -180,15 +181,7 @@ func (w *Widget) HandleEvent(ev tcell.Event) (handled bool) {
 			w.multiSelect = true
 		} else {
 			w.multiSelect = false
-
-			var sel Selection
-			for _, h := range w.hints {
-				if h.Selected {
-					sel.Text += h.Text + " "
-					sel.Shift = w.shiftDown
-				}
-			}
-			defer w.handler.HandleSelection(sel)
+			defer w.handleSelection()
 		}
 
 	case tcell.KeyRune:
@@ -218,29 +211,44 @@ func (w *Widget) inputChanged() {
 	// exactly, we have a guarantee that this is a match.
 	defer w.annotateText()
 
-	var h hint
-
 	w.mu.Lock()
 	idx, ok := w.hintsByLabel[w.input]
 	if ok {
-		h = w.hints[idx]
-		h.Selected = !h.Selected
+		h := w.hints[idx]
+		h.Selected = !h.Selected // toggle selection
 		w.hints[idx] = h
+
+		// Clear the input to allow for more selections
+		// if we're in multi-select mode.
 		w.input = ""
 	}
 	w.mu.Unlock()
 
-	if !ok || w.handler == nil {
-		return
+	// If we're not in multi-select mode,
+	// we can report the selection immediately.
+	if ok && !w.multiSelect {
+		w.handleSelection()
 	}
+}
 
-	matchers := make(map[string]struct{}, len(h.Matches))
-	for _, m := range h.Matches {
-		matchers[m.Matcher] = struct{}{}
+func (w *Widget) handleSelection() {
+	matchers := make(map[string]struct{})
+	var text strings.Builder
+	for _, h := range w.hints {
+		if !h.Selected {
+			continue
+		}
+		if text.Len() > 0 {
+			text.WriteString(" ")
+		}
+		text.WriteString(h.Text)
+		for _, m := range h.Matches {
+			matchers[m.Matcher] = struct{}{}
+		}
 	}
 
 	sel := Selection{
-		Text:  h.Text,
+		Text:  text.String(),
 		Shift: w.shiftDown,
 	}
 	for m := range matchers {
@@ -248,9 +256,7 @@ func (w *Widget) inputChanged() {
 	}
 	sort.Strings(sel.Matchers)
 
-	if !w.multiSelect {
-		w.handler.HandleSelection(sel)
-	}
+	w.handler.HandleSelection(sel)
 }
 
 func (w *Widget) annotateText() {
