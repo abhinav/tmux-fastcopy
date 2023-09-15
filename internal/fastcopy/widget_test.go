@@ -129,4 +129,40 @@ func TestWidget(t *testing.T) {
 		assert.True(t,
 			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, 'B', 0)))
 	})
+
+	t.Run("multi-select", func(t *testing.T) {
+		handler.EXPECT().
+			HandleSelection(Selection{
+				Text:     "fo ar",
+				Matchers: []string{"p", "q"},
+			})
+
+		// enter multi-select mode
+		assert.True(t,
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyTab, 0, 0)))
+
+		// Select one.
+		assert.True(t,
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, 'a', 0)))
+		assert.True(t,
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, 'a', 0)))
+
+		// Select another.
+		assert.True(t,
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, 'b', 0)))
+		assert.True(t,
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, 'b', 0)))
+
+		// Accept selection.
+		assert.True(t,
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyTab, 0, 0)))
+	})
+
+	t.Run("multi-select no match", func(t *testing.T) {
+		// Enter multi-select and accept right away.
+		assert.True(t,
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyTab, 0, 0)))
+		assert.True(t,
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyEnter, 0, 0)))
+	})
 }
