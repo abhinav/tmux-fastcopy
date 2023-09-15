@@ -177,11 +177,20 @@ func (w *Widget) HandleEvent(ev tcell.Event) (handled bool) {
 		w.mu.Unlock()
 
 	case tcell.KeyTab:
+		handled = true
 		if !w.multiSelect {
 			w.multiSelect = true
 		} else {
 			w.multiSelect = false
-			defer w.handleSelection()
+			w.handleSelection()
+		}
+
+	case tcell.KeyEnter:
+		// In multi-select mode, <enter>
+		// always confirms the current selection.
+		if w.multiSelect {
+			handled = true
+			w.handleSelection()
 		}
 
 	case tcell.KeyRune:
@@ -233,18 +242,28 @@ func (w *Widget) inputChanged() {
 
 func (w *Widget) handleSelection() {
 	matchers := make(map[string]struct{})
-	var text strings.Builder
+	var (
+		text  strings.Builder
+		count int
+	)
 	for _, h := range w.hints {
 		if !h.Selected {
 			continue
 		}
-		if text.Len() > 0 {
+		if count > 0 {
 			text.WriteString(" ")
 		}
+		count++
 		text.WriteString(h.Text)
 		for _, m := range h.Matches {
 			matchers[m.Matcher] = struct{}{}
 		}
+	}
+
+	if count == 0 {
+		// There were no matches selected.
+		// This is a no-op.
+		return
 	}
 
 	sel := Selection{
