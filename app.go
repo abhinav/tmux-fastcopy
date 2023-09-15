@@ -181,6 +181,8 @@ func (c *ctrl) Init() {
 			SkippedMatch:   base.Foreground(tcell.ColorGray),
 			HintLabel:      base.Foreground(tcell.ColorRed),
 			HintLabelInput: base.Foreground(tcell.ColorYellow),
+			SelectedMatch:  base.Foreground(tcell.ColorYellow),
+			DeselectLabel:  base.Foreground(tcell.ColorDarkRed),
 		},
 	}).Build()
 

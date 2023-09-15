@@ -6,12 +6,27 @@ import (
 
 	"github.com/abhinav/tmux-fastcopy/internal/huffman"
 	"github.com/abhinav/tmux-fastcopy/internal/ui"
+	tcell "github.com/gdamore/tcell/v2"
 )
 
 type hint struct {
-	Label   string
-	Text    string
+	// Label to select this hint.
+	Label string
+
+	// Text that will be copied if this hint is selected.
+	Text string
+
+	// List ot matches identified by this hint.
+	//
+	// Note that a hint may have multiple matches
+	// if the same text appears on the screen multiple times,
+	// or if the same text matches multiple regexes.
 	Matches []Match
+
+	// Selected reports whether this hint is selected.
+	//
+	// This is only used in multi-selection mode.
+	Selected bool
 }
 
 // generateHints generates a list of hints for the given text. It uses alphabet
@@ -58,13 +73,28 @@ func generateHints(alphabet []rune, text string, matches []Match) []hint {
 	return hints
 }
 
-func (h *hint) Annotations(input string, style Style) (anns []ui.TextAnnotation) {
+// AnnotationStyle is the style of annotations for hints and matched text.
+type AnnotationStyle struct {
+	// Matched text that is still a candidate for selection.
+	Match tcell.Style
+
+	// Matched text that is no longer a candidate for selection.
+	Skipped tcell.Style
+
+	// Label that the user must type to select the hint.
+	Label tcell.Style
+
+	// Part of a multi-character label that the user has already typed.
+	LabelTyped tcell.Style
+}
+
+func (h *hint) Annotations(input string, style AnnotationStyle) (anns []ui.TextAnnotation) {
 	matched := strings.HasPrefix(h.Label, input)
 
 	// If the hint matches the input, overlay the hint (both, typed
 	// and non-typed portions) over the string. Otherwise, grey out
 	// the match.
-	matchStyle := style.SkippedMatch
+	matchStyle := style.Skipped
 	if matched {
 		matchStyle = style.Match
 	}
@@ -82,7 +112,7 @@ func (h *hint) Annotations(input string, style Style) (anns []ui.TextAnnotation)
 				anns = append(anns, ui.OverlayTextAnnotation{
 					Offset:  pos.Start,
 					Overlay: input,
-					Style:   style.HintLabelInput,
+					Style:   style.LabelTyped,
 				})
 				i += len(input)
 			}
@@ -92,7 +122,7 @@ func (h *hint) Annotations(input string, style Style) (anns []ui.TextAnnotation)
 				anns = append(anns, ui.OverlayTextAnnotation{
 					Offset:  pos.Start + len(input),
 					Overlay: h.Label[i:],
-					Style:   style.HintLabel,
+					Style:   style.Label,
 				})
 			}
 

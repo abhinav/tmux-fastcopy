@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/abhinav/tmux-fastcopy/internal/ui"
+	tcell "github.com/gdamore/tcell/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -107,7 +108,12 @@ func TestGenerateHints(t *testing.T) {
 func TestHintAnnotations(t *testing.T) {
 	t.Parallel()
 
-	style := sampleStyle()
+	style := AnnotationStyle{
+		Match:      tcell.StyleDefault.Foreground(tcell.ColorGreen),
+		Skipped:    tcell.StyleDefault.Foreground(tcell.ColorGray),
+		Label:      tcell.StyleDefault.Foreground(tcell.ColorRed),
+		LabelTyped: tcell.StyleDefault.Foreground(tcell.ColorYellow),
+	}
 
 	tests := []struct {
 		desc  string
@@ -130,7 +136,7 @@ func TestHintAnnotations(t *testing.T) {
 				ui.OverlayTextAnnotation{
 					Offset:  0,
 					Overlay: "a",
-					Style:   style.HintLabel,
+					Style:   style.Label,
 				},
 				ui.StyleTextAnnotation{
 					Offset: 1,
@@ -140,7 +146,7 @@ func TestHintAnnotations(t *testing.T) {
 				ui.OverlayTextAnnotation{
 					Offset:  7,
 					Overlay: "a",
-					Style:   style.HintLabel,
+					Style:   style.Label,
 				},
 				ui.StyleTextAnnotation{
 					Offset: 8,
@@ -163,7 +169,7 @@ func TestHintAnnotations(t *testing.T) {
 				ui.OverlayTextAnnotation{
 					Offset:  0,
 					Overlay: "a",
-					Style:   style.HintLabelInput,
+					Style:   style.LabelTyped,
 				},
 				ui.StyleTextAnnotation{
 					Offset: 1,
@@ -185,7 +191,7 @@ func TestHintAnnotations(t *testing.T) {
 				ui.OverlayTextAnnotation{
 					Offset:  1,
 					Overlay: "ab",
-					Style:   style.HintLabel,
+					Style:   style.Label,
 				},
 				ui.StyleTextAnnotation{
 					Offset: 3,
@@ -208,12 +214,12 @@ func TestHintAnnotations(t *testing.T) {
 				ui.OverlayTextAnnotation{
 					Offset:  1,
 					Overlay: "a",
-					Style:   style.HintLabelInput,
+					Style:   style.LabelTyped,
 				},
 				ui.OverlayTextAnnotation{
 					Offset:  2,
 					Overlay: "b",
-					Style:   style.HintLabel,
+					Style:   style.Label,
 				},
 				ui.StyleTextAnnotation{
 					Offset: 3,
@@ -236,7 +242,7 @@ func TestHintAnnotations(t *testing.T) {
 				ui.StyleTextAnnotation{
 					Offset: 1,
 					Length: 6,
-					Style:  style.SkippedMatch,
+					Style:  style.Skipped,
 				},
 			},
 		},
@@ -253,7 +259,7 @@ func TestHintAnnotations(t *testing.T) {
 				ui.OverlayTextAnnotation{
 					Offset:  0,
 					Overlay: "abcd",
-					Style:   style.HintLabel,
+					Style:   style.Label,
 				},
 			},
 		},

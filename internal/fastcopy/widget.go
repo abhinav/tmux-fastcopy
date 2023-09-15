@@ -4,6 +4,7 @@ package fastcopy
 import (
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 	"unicode"
 
@@ -46,6 +47,10 @@ type Style struct {
 
 	HintLabel      tcell.Style // labels for hints
 	HintLabelInput tcell.Style // typed portion of hints
+
+	// Multi-select mode:
+	SelectedMatch tcell.Style // one of the selected matches
+	DeselectLabel tcell.Style // label for deselection
 }
 
 // Selection is a choice made by the user in the fastcopy UI.
@@ -86,6 +91,7 @@ type WidgetConfig struct {
 	// selection.
 	Handler Handler
 
+	// Style configures the look of the widget.
 	Style Style
 
 	// Internal override for generateHints.
@@ -105,9 +111,10 @@ type Widget struct {
 
 	// Mutable attributes:
 
-	mu        sync.RWMutex
-	input     string // text input so far
-	shiftDown bool   // whether shift was pressed
+	mu          sync.RWMutex
+	input       string // text input so far
+	shiftDown   bool   // whether shift was pressed
+	multiSelect bool   // whether in multi select mode
 }
 
 // Build builds a new Fastcopy widget using the provided configuration.
@@ -169,6 +176,23 @@ func (w *Widget) HandleEvent(ev tcell.Event) (handled bool) {
 		}
 		w.mu.Unlock()
 
+	case tcell.KeyTab:
+		handled = true
+		if !w.multiSelect {
+			w.multiSelect = true
+		} else {
+			w.multiSelect = false
+			w.handleSelection()
+		}
+
+	case tcell.KeyEnter:
+		// In multi-select mode, <enter>
+		// always confirms the current selection.
+		if w.multiSelect {
+			handled = true
+			w.handleSelection()
+		}
+
 	case tcell.KeyRune:
 		handled = true
 		w.mu.Lock()
@@ -196,27 +220,63 @@ func (w *Widget) inputChanged() {
 	// exactly, we have a guarantee that this is a match.
 	defer w.annotateText()
 
-	var h hint
-
 	w.mu.Lock()
 	idx, ok := w.hintsByLabel[w.input]
 	if ok {
-		h = w.hints[idx]
+		h := w.hints[idx]
+		h.Selected = !h.Selected // toggle selection
+		w.hints[idx] = h
+
+		// Clear the input to allow for more selections
+		// if we're in multi-select mode.
 		w.input = ""
 	}
 	w.mu.Unlock()
 
-	if !ok || w.handler == nil {
+	// If we're not in multi-select mode,
+	// we can report the selection immediately.
+	if ok && !w.multiSelect {
+		w.handleSelection()
+	}
+}
+
+func (w *Widget) handleSelection() {
+	matchers := make(map[string]struct{})
+	var (
+		text  strings.Builder
+		count int
+	)
+	for idx, h := range w.hints {
+		if !h.Selected {
+			continue
+		}
+		if count > 0 {
+			text.WriteString(" ")
+		}
+		count++
+		text.WriteString(h.Text)
+		for _, m := range h.Matches {
+			matchers[m.Matcher] = struct{}{}
+		}
+
+		// Deselect the hint in the widget
+		// in case we want to select it again.
+		//
+		// This typically won't happen because HandleSelection upstream
+		// will exit the UI loop,
+		// but there's no guarantee of that for the Widget interface.
+		h.Selected = false
+		w.hints[idx] = h
+	}
+
+	if count == 0 {
+		// There were no matches selected.
+		// This is a no-op.
 		return
 	}
 
-	matchers := make(map[string]struct{}, len(h.Matches))
-	for _, m := range h.Matches {
-		matchers[m.Matcher] = struct{}{}
-	}
-
 	sel := Selection{
-		Text:  h.Text,
+		Text:  text.String(),
 		Shift: w.shiftDown,
 	}
 	for m := range matchers {
@@ -233,7 +293,26 @@ func (w *Widget) annotateText() {
 
 	var anns []ui.TextAnnotation
 	for _, hint := range w.hints {
-		anns = append(anns, hint.Annotations(w.input, w.style)...)
+		input := w.input
+		style := AnnotationStyle{
+			Match:      w.style.Match,
+			Skipped:    w.style.SkippedMatch,
+			Label:      w.style.HintLabel,
+			LabelTyped: w.style.HintLabelInput,
+		}
+
+		if hint.Selected {
+			// If this hint is selected, we're in multi-select mode,
+			// and we want to allow deselection.
+			//
+			// Pretend there's no input,
+			// and use the DeselectLabel style for hints.
+			input = ""
+			style.Match = w.style.SelectedMatch
+			style.Label = w.style.DeselectLabel
+		}
+
+		anns = append(anns, hint.Annotations(input, style)...)
 	}
 
 	w.textw.SetAnnotations(anns...)
