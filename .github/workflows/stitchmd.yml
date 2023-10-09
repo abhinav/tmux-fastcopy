@@ -29,7 +29,7 @@ jobs:
         summary: doc/README.md
         output: README.md
 
-    - uses: stefanzweifel/git-auto-commit-action@v4
+    - uses: stefanzweifel/git-auto-commit-action@v5
       if: ${{ github.event_name == 'pull_request_target' }}
       with:
         file_pattern: README.md
