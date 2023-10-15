@@ -1,0 +1,43 @@
+env:
+  GIT_AUTHOR_DATE: "2023-10-11 00:00:00 +0000"
+  GIT_COMMITTER_DATE: "2023-10-11 00:00:00 +0000"
+
+setup: |
+  git init -b main
+  git config user.name "Test Author"
+  git config user.email "author@example.com"
+
+  # Fill up a fake projet history.
+  git commit --allow-empty -m "Initial import"
+  git commit --allow-empty -m "Add end-to-end tests"
+  git commit --allow-empty -m "README: Add installation instructions"
+  git commit --allow-empty -m "Release v0.1.0"
+  git tag v0.1.0
+  git commit --allow-empty -m "Fix infinite loop bug"
+  git commit --allow-empty -m "Release v0.1.1"
+  git tag v0.1.1
+  git commit --allow-empty -m "regex: Support case-insensitive matches"
+  git commit --allow-empty -m "Run on older versions of OS"
+  git commit --allow-empty -m "README: Add FAQ section"
+  git commit --allow-empty -m "Release v0.2.0"
+  git tag v0.2.0
+
+# TODO: generate everything before 'Type "git log"'
+tape: |
+  Set Shell "bash"
+  Set Padding 10
+  Set FontSize 24
+  Set Width 800
+  Set Height 600
+  Set Theme "Molokai"
+
+  Hide
+  Type "tmux" Sleep 100ms Enter Sleep 1000ms
+  Show
+
+  Type "git log --oneline" Sleep 500ms Enter
+  Sleep 2s
+  Ctrl+A Type "f" Sleep 3s
+
+  Ctrl+C Sleep 100ms
+  Type "q" Ctrl+D
