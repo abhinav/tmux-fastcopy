@@ -144,6 +144,27 @@ func (v *stringValue) Set(s string) error {
 	return nil
 }
 
+type boolValue bool
+
+// BoolVar specifies that the given option should be loaded as a boolean.
+func (l *Loader) BoolVar(dest *bool, option string) {
+	l.init()
+
+	l.Var((*boolValue)(dest), option)
+}
+
+func (v *boolValue) Set(s string) error {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "on", "yes", "true", "1":
+		*(*bool)(v) = true
+	case "off", "no", "false", "0":
+		*(*bool)(v) = false
+	default:
+		return fmt.Errorf("invalid boolean value %q", s)
+	}
+	return nil
+}
+
 func readValue(v []byte) (value string) {
 	if len(v) == 0 {
 		return ""

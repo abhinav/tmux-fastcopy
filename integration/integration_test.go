@@ -442,6 +442,67 @@ func TestIntegration_MultiSelect(t *testing.T) {
 	assert.ElementsMatch(t, wantTexts, texts)
 }
 
+func TestIntegration_DestroyUnattached(t *testing.T) {
+	t.Parallel()
+
+	seed := time.Now().UnixNano()
+	t.Logf("random seed %d", seed)
+	rand := rand.New(rand.NewSource(seed))
+
+	env := (&fakeEnvConfig{
+		Action:            "json-report",
+		DestroyUnattached: true,
+	}).Build(t)
+
+	testFile := filepath.Join(env.Root, "give.txt")
+	require.NoError(t,
+		os.WriteFile(testFile, []byte(_giveText), 0o644),
+		"write test file")
+
+	tmux := (&virtualTmuxConfig{
+		Tmux:   env.Tmux,
+		Width:  80,
+		Height: 40,
+		Env:    env.Environ(),
+		Dir:    env.Home,
+	}).Build(t)
+	time.Sleep(250 * time.Millisecond)
+	require.NoError(t, tmux.Command("set-buffer", "").Run(),
+		"clear tmux buffer")
+
+	// Clear to ensure the "cat /path/to/whatever" isn't part of the
+	// matched text.
+	tmux.Clear()
+	fmt.Fprintln(tmux, "clear && cat", testFile)
+	if !assert.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second)) {
+		t.Fatalf("could not find EOF in %q", tmux.Contents())
+	}
+
+	tmux.Clear()
+	_, err := tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
+	require.NoError(t, err, "send ctrl-a f")
+	time.Sleep(250 * time.Millisecond)
+	require.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second))
+
+	hints := tmux.Hints()
+	t.Logf("got hints %q", hints)
+	require.NotEmpty(t, hints, "expected hints in %q", tmux.Contents())
+
+	hint := hints[rand.Intn(len(hints))]
+	t.Logf("selecting %q", hint)
+
+	_, err = io.WriteString(tmux, hint)
+	require.NoError(t, err, "select hint")
+	time.Sleep(250 * time.Millisecond)
+
+	got, err := tmux.Command("show-buffer").Output()
+	require.NoError(t, err)
+
+	var state jsonReport
+	require.NoError(t, json.Unmarshal(got, &state))
+	assert.NotEmpty(t, state.Text)
+}
+
 type fakeEnv struct {
 	Root   string
 	Home   string
@@ -454,6 +515,9 @@ type fakeEnv struct {
 type fakeEnvConfig struct {
 	Action      string // name of the behavior
 	ShiftAction string // name of the behavior
+
+	// If true, this will configure tmux to destroy unattached sessions.
+	DestroyUnattached bool
 }
 
 func (cfg *fakeEnvConfig) Build(t testing.TB) *fakeEnv {
@@ -510,6 +574,9 @@ func (cfg *fakeEnvConfig) Build(t testing.TB) *fakeEnv {
 	if len(cfg.ShiftAction) > 0 {
 		exe := behaviorBinary(t, cfg.ShiftAction)
 		cfgLines = append(cfgLines, fmt.Sprintf("set -g @fastcopy-shift-action %q", exe))
+	}
+	if cfg.DestroyUnattached {
+		cfgLines = append(cfgLines, "set -g destroy-unattached on")
 	}
 
 	writeLines(t, filepath.Join(home, ".tmux.conf"), cfgLines...)

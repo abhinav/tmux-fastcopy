@@ -73,14 +73,42 @@ func (w *wrapper) Run(cfg *config) (err error) {
 	}()
 
 	tmuxLoader := tmuxopt.Loader{Tmux: w.Tmux}
-	var tmuxCfg config
+	var (
+		tmuxCfg           config
+		destroyUnattached bool
+	)
 	tmuxCfg.RegisterOptions(&tmuxLoader)
+	tmuxLoader.BoolVar(&destroyUnattached, "destroy-unattached")
 	if err := tmuxLoader.Load(tmux.ShowOptionsRequest{Global: true}); err != nil {
 		return fmt.Errorf("load options: %v", err)
 	}
 
 	cfg.LogFile = tmpLog.Name()
 	cfg.FillFrom(&tmuxCfg)
+
+	if destroyUnattached {
+		// If destroy-unattached is set, tmux-fastcopy's session
+		// will be terminated immediately upon spawning.
+		//
+		// We work around this by temporarily disabling the option
+		// and then re-enabling it after tmux-fastcopy exits.
+		req := tmux.SetOptionRequest{
+			Global: true,
+			Name:   "destroy-unattached",
+			Value:  "off",
+		}
+		if err := w.Tmux.SetOption(req); err != nil {
+			return fmt.Errorf("set destroy-unattached=off: %v", err)
+		}
+
+		req.Value = "on"
+		defer func(req tmux.SetOptionRequest) {
+			if setErr := w.Tmux.SetOption(req); setErr != nil {
+				err = multierr.Append(err, fmt.Errorf("set destroy-unattached=on: %v", setErr))
+			}
+		}(req)
+
+	}
 
 	parent := strconv.Itoa(w.Getpid())
 	req := tmux.NewSessionRequest{

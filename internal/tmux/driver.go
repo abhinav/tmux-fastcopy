@@ -33,9 +33,24 @@ type Driver interface {
 	// for this signal.
 	SendSignal(string) error
 
-	// ShowOptions runs the tmux shopw-options command and returns its
+	// ShowOptions runs the tmux show-options command and returns its
 	// output.
 	ShowOptions(ShowOptionsRequest) ([]byte, error)
+
+	// SetOption runs the tmux set-option command.
+	SetOption(SetOptionRequest) error
+}
+
+// SetOptionRequest specifies the parameters for the set-option command.
+type SetOptionRequest struct {
+	// Name of the option to set.
+	Name string
+
+	// Value to set the option to.
+	Value string
+
+	// Whether this option should be changed globally.
+	Global bool
 }
 
 // NewSessionRequest specifies the parameter for a new-session command.

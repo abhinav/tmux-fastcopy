@@ -180,6 +180,44 @@ func TestDisplayMessageArgs(t *testing.T) {
 	}
 }
 
+func TestSetOptionArgs(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		desc string
+		give SetOptionRequest
+		want []string
+	}{
+		{
+			desc: "local",
+			give: SetOptionRequest{Name: "foo", Value: "bar"},
+			want: []string{"set-option", "foo", "bar"},
+		},
+		{
+			desc: "global",
+			give: SetOptionRequest{Name: "foo", Value: "bar", Global: true},
+			want: []string{"set-option", "-g", "foo", "bar"},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.desc, func(t *testing.T) {
+			t.Parallel()
+
+			r := newFakeRunner(t)
+			r.ExpectOutput("tmux", tt.want...)
+
+			driver := ShellDriver{
+				run: r.Runner(),
+				log: logtest.NewLogger(t),
+			}
+			err := driver.SetOption(tt.give)
+			assert.NoError(t, err)
+		})
+	}
+}
+
 func TestSwapPaneArgs(t *testing.T) {
 	t.Parallel()
 

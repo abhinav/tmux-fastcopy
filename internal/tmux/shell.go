@@ -151,6 +151,23 @@ func (s *ShellDriver) CapturePane(req CapturePaneRequest) ([]byte, error) {
 	return s.run.Output(cmd)
 }
 
+// SetOption runs the set-option command with the given parameters.
+func (s *ShellDriver) SetOption(req SetOptionRequest) error {
+	s.init()
+
+	args := []string{"set-option"}
+	if req.Global {
+		args = append(args, "-g")
+	}
+	args = append(args, req.Name, req.Value)
+
+	cmd := s.cmd(args...)
+	defer s.errorWriter(&cmd.Stderr)()
+
+	s.log.Debugf("set-option: %v", req)
+	return s.run.Run(cmd)
+}
+
 // DisplayMessage displays the given message in tmux and returns its output.
 func (s *ShellDriver) DisplayMessage(req DisplayMessageRequest) ([]byte, error) {
 	s.init()

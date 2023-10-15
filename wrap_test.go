@@ -17,11 +17,11 @@ import (
 
 func TestWrapper(t *testing.T) {
 	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 
 	tests := []struct {
-		desc       string
-		giveConfig config
+		desc string
 
 		paneInfo tmux.PaneInfo
 		options  []string // options reported by tmux show-options
@@ -100,7 +100,52 @@ func TestWrapper(t *testing.T) {
 					return &tt.paneInfo, nil
 				},
 			}
-			assert.NoError(t, w.Run(&tt.giveConfig))
+			assert.NoError(t, w.Run(&config{}))
 		})
 	}
+}
+
+func TestWrapper_destroyUnattached(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+
+	mockTmux := tmuxtest.NewMockDriver(ctrl)
+	mockTmux.EXPECT().ShowOptions(gomock.Any()).
+		Return([]byte("destroy-unattached on\n"), nil)
+	mockTmux.EXPECT().WaitForSignal(gomock.Any())
+
+	// destroy-unattached is set to off before we create a new session,
+	// and set back to on after we create a new session.
+	gomock.InOrder(
+		mockTmux.EXPECT().SetOption(tmux.SetOptionRequest{
+			Global: true,
+			Name:   "destroy-unattached",
+			Value:  "off",
+		}).Return(nil),
+		mockTmux.EXPECT().NewSession(gomock.Any()),
+		mockTmux.EXPECT().SetOption(tmux.SetOptionRequest{
+			Global: true,
+			Name:   "destroy-unattached",
+			Value:  "on",
+		}).Return(nil),
+	)
+
+	w := wrapper{
+		Tmux: mockTmux,
+		Log:  logtest.NewLogger(t),
+		Executable: func() (string, error) {
+			return _name, nil
+		},
+		Getenv: envtest.Empty.Getenv,
+		Getpid: func() int { return 42 },
+		inspectPane: func(tmux.Driver, string) (*tmux.PaneInfo, error) {
+			return &tmux.PaneInfo{
+				ID:     "%1",
+				Width:  80,
+				Height: 40,
+			}, nil
+		},
+	}
+	assert.NoError(t, w.Run(&config{}))
 }
