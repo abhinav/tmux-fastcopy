@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/abhinav/tmux-fastcopy v0.10.0
-	github.com/creack/pty v1.1.20
+	github.com/creack/pty v1.1.21
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/multierr v1.11.0
 )
