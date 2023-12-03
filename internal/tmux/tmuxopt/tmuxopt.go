@@ -171,9 +171,7 @@ func readValue(v []byte) (value string) {
 	}
 
 	value = string(v)
-	// Try to unquote but don't fail if it doesn't work.
-	switch value[0] {
-	case '\'':
+	if strings.HasPrefix(value, `'`) {
 		// strconv.Unquote does not like single-quoted strings with
 		// multiple characters. Invert the quotes to let
 		// strconv.Unquote do the heavy-lifting and invert back.
@@ -181,11 +179,21 @@ func readValue(v []byte) (value string) {
 		defer func() {
 			value = invertQuotes(value)
 		}()
-		fallthrough
-	case '"':
-		if o, err := strconv.Unquote(value); err == nil {
-			value = o
-		}
+	} else if !strings.Contains(value, `"`) {
+		// If a string is unquoted,
+		// manually quote it to get the benefit of un-escaping characters
+		// from `strconv.Unquote`.
+		// This does not cover the case
+		// where `value` has a double-quote anywhere in the string.
+		// However,
+		// since `value` comes from `tmux show-options`,
+		// values containing double-quotes
+		// come in single-quotes.
+		value = `"` + value + `"`
+	}
+	// Try to unquote but don't fail if it doesn't work.
+	if o, err := strconv.Unquote(value); err == nil {
+		value = o
 	}
 	return value
 }
