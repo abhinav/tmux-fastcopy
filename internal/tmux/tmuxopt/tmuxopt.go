@@ -102,9 +102,9 @@ func (l *Loader) Load(req tmux.ShowOptionsRequest) (err error) {
 
 		var serr error
 		if r := l.lookupValue(name); r != nil {
-			serr = r.Set(readValue(value))
+			serr = r.Set(Unquote(value))
 		} else if k, r := l.lookupMapValue(name); r != nil {
-			serr = r.Put(k, readValue(value))
+			serr = r.Put(k, Unquote(value))
 		} else {
 			continue
 		}
@@ -165,7 +165,8 @@ func (v *boolValue) Set(s string) error {
 	return nil
 }
 
-func readValue(v []byte) (value string) {
+// Unquote unquotes a string returned by tmux show-option.
+func Unquote(v []byte) (value string) {
 	if len(v) == 0 {
 		return ""
 	}

@@ -1,0 +1,3 @@
+kind: Fixed
+body: Properly unescape escapes in regex strings when decoding tmux options.
+time: 2023-12-03T10:37:46.961999-08:00
