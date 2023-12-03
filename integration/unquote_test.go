@@ -85,7 +85,7 @@ func TestUnquoteTmuxOptions(t *testing.T) {
 				return r
 			}, tt.name)
 
-			cmd = exec.Command(tmuxExe, "set-option", optName, tt.give)
+			cmd := exec.Command(tmuxExe, "set-option", optName, tt.give)
 			cmd.Dir = root
 			cmd.Env = env
 			cmd.Stdout = cmdout
