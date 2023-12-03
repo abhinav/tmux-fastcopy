@@ -96,6 +96,16 @@ func TestLoaderStrings(t *testing.T) {
 			want:    []string{`foo \" bar`},
 		},
 		{
+			desc: "unquote/escape/unquoted",
+			give: unlines(
+				`foo foo\\sbar`,
+				// == set-option -g foo 'foo\sbar'
+				// == set-option -g foo "foo\\sbar"
+			),
+			options: []string{"foo"},
+			want:    []string{`foo\sbar`},
+		},
+		{
 			// For
 			// https://github.com/abhinav/tmux-fastcopy/issues/48.
 			// Adding either of the following to your tmux.conf
