@@ -77,7 +77,7 @@ jobs:
         ref: ${{ matrix.tmux-version }}
         path: src/tmux
     - name: Load cached Tmux
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.local
         key: ${{ runner.os }}-tmux-${{ matrix.tmux-version }}
