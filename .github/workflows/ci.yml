@@ -50,7 +50,7 @@ jobs:
     - name: Test
       run: PATH="$HOME/.local/bin:$PATH" make cover
     - name: Coverage
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         files: ./cover.out
 
@@ -102,6 +102,6 @@ jobs:
     - name: Integration test
       run: make cover-integration
     - name: Coverage
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         files: ./cover.integration.out
