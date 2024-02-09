@@ -12,7 +12,7 @@ export PATH := $(GOBIN):$(PATH)
 
 GO_MODULES ?= $(shell find . \
 	-path '*/.*' -prune -o \
-	-type f -a -name 'go.mod' -printf '%h\n')
+	-type f -a -name 'go.mod' -print | xargs -n1 dirname)
 
 TEST_FLAGS ?= -v -race
 
