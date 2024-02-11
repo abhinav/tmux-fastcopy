@@ -22,9 +22,7 @@ func TestUnquoteTmuxOptions(t *testing.T) {
 		t.Skip("tmux not found in PATH")
 	}
 
-	// Can't use t.TempDir() because tmux doesn't want a tmpdir path that's too long.
-	root, err := os.MkdirTemp("", "tmuxopt")
-	require.NoError(t, err)
+	root := mkdirTempGlobal(t, "tmux-fastcopy-unquote-test")
 
 	home := filepath.Join(root, "home")
 	require.NoError(t, os.Mkdir(home, 0o755))
@@ -38,6 +36,7 @@ func TestUnquoteTmuxOptions(t *testing.T) {
 	env := []string{
 		"HOME=" + home,
 		"TERM=screen",
+		"SHELL=/bin/sh",
 		"TMUX_TMPDIR=" + tmpDir,
 	}
 	cmdout := iotest.Writer(t)
