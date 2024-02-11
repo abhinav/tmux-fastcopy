@@ -181,6 +181,11 @@ func testIntegrationSelectMatches(t *testing.T, shift bool) {
 	var matches []matchInfo
 	for i := 0; i < len(_wantMatches); i++ {
 		tmux.Clear()
+		fmt.Fprintln(tmux, "clear && cat", testFile)
+		require.NoError(t,
+			tmux.WaitUntilContains("--EOF--", 3*time.Second),
+			"wait for fastcopy window")
+
 		_, err := tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
 		require.NoError(t, err, "send ctrl-a f")
 
@@ -523,7 +528,7 @@ type fakeEnvConfig struct {
 func (cfg *fakeEnvConfig) Build(t testing.TB) *fakeEnv {
 	t.Helper()
 
-	root := t.TempDir()
+	root := mkdirTempGlobal(t, "tmux-fastcopy-integration-")
 
 	home := filepath.Join(root, "home")
 	require.NoError(t, os.Mkdir(home, 0o1755), "set up home")
@@ -753,6 +758,10 @@ func (vt *virtualTmux) Hints() []string {
 		if end == -1 {
 			break
 		}
+		if end == 0 {
+			// Empty hint.
+			continue
+		}
 		hint := string(bs[:end])
 		if _, ok := seen[hint]; !ok {
 			hints = append(hints, hint)
@@ -816,4 +825,21 @@ func copyFile(dst, src string) (err error) {
 
 	_, err = io.Copy(o, i)
 	return err
+}
+
+// Creates a temporary directory in /tmp.
+// Use this for cases where a long temporary path isn't acceptable.
+func mkdirTempGlobal(t testing.TB, pattern string) string {
+	t.Helper()
+
+	dir, err := os.MkdirTemp("/tmp", pattern)
+	require.NoError(t, err, "create temporary directory")
+	t.Cleanup(func() {
+		assert.NoError(t, os.RemoveAll(dir), "remove temporary directory")
+	})
+
+	dir, err = filepath.EvalSymlinks(dir)
+	require.NoError(t, err, "resolve temporary directory")
+
+	return dir
 }

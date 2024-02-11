@@ -1,6 +1,6 @@
 module github.com/abhinav/tmux-fastcopy
 
-go 1.20
+go 1.22.0
 
 require (
 	github.com/benbjohnson/clock v1.3.5
