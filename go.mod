@@ -4,7 +4,7 @@ go 1.22.0
 
 require (
 	github.com/benbjohnson/clock v1.3.5
-	github.com/gdamore/tcell/v2 v2.7.1
+	github.com/gdamore/tcell/v2 v2.7.4
 	github.com/golang/mock v1.6.0
 	github.com/mattn/go-runewidth v0.0.15
 	github.com/mattn/go-shellwords v1.0.12
