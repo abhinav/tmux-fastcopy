@@ -22,8 +22,14 @@
 
 ## Introduction
 
+<div align="center">
+
+<img src="doc/static/logo.png" width="300"/>
+
 [![Go](https://github.com/abhinav/tmux-fastcopy/actions/workflows/ci.yml/badge.svg)](https://github.com/abhinav/tmux-fastcopy/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/abhinav/tmux-fastcopy/branch/main/graph/badge.svg?token=WJGAZQH4PI)](https://codecov.io/gh/abhinav/tmux-fastcopy)
+
+</div>
 
 tmux-fastcopy aids in copying of text in a tmux pane with ease.
 
