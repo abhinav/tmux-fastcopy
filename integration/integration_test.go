@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -18,8 +19,10 @@ import (
 
 	"github.com/abhinav/tmux-fastcopy/internal/iotest"
 	"github.com/creack/pty"
+	"github.com/muesli/termenv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vito/midterm"
 	"go.uber.org/multierr"
 )
 
@@ -172,7 +175,6 @@ func testIntegrationSelectMatches(t *testing.T, shift bool) {
 
 	// Clear to ensure the "cat /path/to/whatever" isn't part of the
 	// matched text.
-	tmux.Clear()
 	fmt.Fprintln(tmux, "clear && cat", testFile)
 	if !assert.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second)) {
 		t.Fatalf("could not find EOF in %q", tmux.Contents())
@@ -180,8 +182,8 @@ func testIntegrationSelectMatches(t *testing.T, shift bool) {
 
 	var matches []matchInfo
 	for i := 0; i < len(_wantMatches); i++ {
-		tmux.Clear()
 		fmt.Fprintln(tmux, "clear && cat", testFile)
+		time.Sleep(250 * time.Millisecond)
 		require.NoError(t,
 			tmux.WaitUntilContains("--EOF--", 3*time.Second),
 			"wait for fastcopy window")
@@ -201,12 +203,12 @@ func testIntegrationSelectMatches(t *testing.T, shift bool) {
 		}
 
 		hint := hints[i]
-		t.Logf("selecting %q", hint)
+		t.Logf("selecting: %v", hint)
 		if shift {
-			_, err := io.WriteString(tmux, strings.ToUpper(hint))
+			_, err := io.WriteString(tmux, strings.ToUpper(hint.Label))
 			require.NoError(t, err, "select hint")
 		} else {
-			_, err := io.WriteString(tmux, hint)
+			_, err := io.WriteString(tmux, hint.Label)
 			require.NoError(t, err, "select hint")
 		}
 		time.Sleep(250 * time.Millisecond)
@@ -251,15 +253,15 @@ func TestIntegration_ShiftNoop(t *testing.T) {
 
 	// Clear to ensure the "cat /path/to/whatever" isn't part of the
 	// matched text.
-	tmux.Clear()
 	fmt.Fprintln(tmux, "clear && cat", testFile)
+	time.Sleep(250 * time.Millisecond)
 	if !assert.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second)) {
 		t.Fatalf("could not find EOF in %q", tmux.Contents())
 	}
 
-	tmux.Clear()
 	_, err := tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
 	require.NoError(t, err, "send ctrl-a f")
+	time.Sleep(250 * time.Millisecond)
 	require.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second))
 
 	hints := tmux.Hints()
@@ -268,7 +270,7 @@ func TestIntegration_ShiftNoop(t *testing.T) {
 
 	hint := hints[rand.Intn(len(hints))]
 	t.Logf("selecting %q", hint)
-	_, err = io.WriteString(tmux, strings.ToUpper(hint))
+	_, err = io.WriteString(tmux, strings.ToUpper(hint.Label))
 	require.NoError(t, err, "select hint")
 	time.Sleep(250 * time.Millisecond)
 
@@ -315,7 +317,6 @@ func TestIntegration_ActionEnv(t *testing.T) {
 	cwd := filepath.Join(env.Home, hex.EncodeToString(bs))
 	require.NoError(t, os.MkdirAll(cwd, 0o755), "create random directory")
 	fmt.Fprintln(tmux, "cd", cwd)
-	tmux.Clear()
 
 	// Sanity check: make sure we're in the right directory.
 	fmt.Fprintln(tmux, "pwd")
@@ -332,15 +333,15 @@ func TestIntegration_ActionEnv(t *testing.T) {
 
 	// Clear to ensure the "cat /path/to/whatever" isn't part of the
 	// matched text.
-	tmux.Clear()
 	fmt.Fprintln(tmux, "clear && cat", testFile)
+	time.Sleep(250 * time.Millisecond)
 	if !assert.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second)) {
 		t.Fatalf("could not find EOF in %q", tmux.Contents())
 	}
 
-	tmux.Clear()
 	_, err = tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
 	require.NoError(t, err, "send ctrl-a f")
+	time.Sleep(250 * time.Millisecond)
 	require.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second))
 
 	hints := tmux.Hints()
@@ -350,7 +351,7 @@ func TestIntegration_ActionEnv(t *testing.T) {
 	hint := hints[rand.Intn(len(hints))]
 	t.Logf("selecting %q", hint)
 
-	_, err = io.WriteString(tmux, hint)
+	_, err = io.WriteString(tmux, hint.Label)
 	require.NoError(t, err, "select hint")
 	time.Sleep(250 * time.Millisecond)
 
@@ -390,13 +391,11 @@ func TestIntegration_MultiSelect(t *testing.T) {
 
 	// Clear to ensure the "cat /path/to/whatever" isn't part of the
 	// matched text.
-	tmux.Clear()
 	fmt.Fprintln(tmux, "clear && cat", testFile)
 	if !assert.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second)) {
 		t.Fatalf("could not find EOF in %q", tmux.Contents())
 	}
 
-	tmux.Clear()
 	_, err := tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
 	require.NoError(t, err, "send ctrl-a f")
 
@@ -416,7 +415,7 @@ func TestIntegration_MultiSelect(t *testing.T) {
 
 	// Select all hints.
 	for _, hint := range hints {
-		_, err := io.WriteString(tmux, hint)
+		_, err := io.WriteString(tmux, hint.Label)
 		require.NoError(t, err, "select hint %q", hint)
 		time.Sleep(250 * time.Millisecond)
 	}
@@ -477,13 +476,11 @@ func TestIntegration_DestroyUnattached(t *testing.T) {
 
 	// Clear to ensure the "cat /path/to/whatever" isn't part of the
 	// matched text.
-	tmux.Clear()
 	fmt.Fprintln(tmux, "clear && cat", testFile)
 	if !assert.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second)) {
 		t.Fatalf("could not find EOF in %q", tmux.Contents())
 	}
 
-	tmux.Clear()
 	_, err := tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
 	require.NoError(t, err, "send ctrl-a f")
 	time.Sleep(250 * time.Millisecond)
@@ -496,7 +493,7 @@ func TestIntegration_DestroyUnattached(t *testing.T) {
 	hint := hints[rand.Intn(len(hints))]
 	t.Logf("selecting %q", hint)
 
-	_, err = io.WriteString(tmux, hint)
+	_, err = io.WriteString(tmux, hint.Label)
 	require.NoError(t, err, "select hint")
 	time.Sleep(250 * time.Millisecond)
 
@@ -616,14 +613,14 @@ func (e *fakeEnv) Environ() []string {
 
 // virtualTmux is a tmux session that can be used to test tmux-fastcopy.
 type virtualTmux struct {
+	logf   func(string, ...any)
 	tmux   string
 	env    []string
-	w, h   int
 	stderr io.Writer
 
 	pty  *os.File
-	mu   sync.RWMutex // guards buff
-	buff bytes.Buffer // output
+	mu   sync.RWMutex // guards term
+	term *midterm.Terminal
 }
 
 type virtualTmuxConfig struct {
@@ -647,13 +644,15 @@ func (cfg *virtualTmuxConfig) Build(t testing.TB) *virtualTmux {
 	})
 	require.NoError(t, err, "start tmux")
 
+	term := midterm.NewTerminal(int(cfg.Height), int(cfg.Width))
+
 	vt := &virtualTmux{
-		w:      int(cfg.Width),
-		h:      int(cfg.Height),
+		logf:   t.Logf,
 		tmux:   cfg.Tmux,
 		env:    cfg.Env,
 		pty:    pty,
 		stderr: stderr,
+		term:   term,
 	}
 
 	readerDone := make(chan struct{})
@@ -688,102 +687,138 @@ func (vt *virtualTmux) readLoop(r io.Reader, done chan struct{}) {
 	bs := make([]byte, 4*1024)
 	for {
 		n, err := r.Read(bs)
+		if n > 0 {
+			vt.mu.Lock()
+			_, writeErr := vt.term.Write(bs[:n])
+			vt.mu.Unlock()
+			if writeErr != nil {
+				vt.logf("write error: %v", writeErr)
+				return
+			}
+		}
+
 		if err != nil {
+			if !errors.Is(err, io.EOF) && !errors.Is(err, os.ErrClosed) {
+				vt.logf("read error: %v", err)
+			}
 			return
 		}
-		vt.mu.Lock()
-		vt.buff.Write(bs[:n])
-		vt.mu.Unlock()
 	}
 }
 
 func (vt *virtualTmux) Write(b []byte) (int, error) {
-	return vt.pty.Write(b)
-}
-
-func (vt *virtualTmux) Clear() {
-	// TODO: Auto clear on escape sequence
-	vt.mu.Lock()
-	vt.buff.Reset()
-	vt.mu.Unlock()
+	_, err := vt.pty.Write(b)
+	_ = vt.pty.Sync()
+	return len(b), err
 }
 
 func (vt *virtualTmux) Contains(s string) bool {
-	bs := []byte(s)
-
 	vt.mu.RLock()
 	defer vt.mu.RUnlock()
-	return bytes.Contains(vt.buff.Bytes(), bs)
+
+	for _, row := range vt.term.Content {
+		if strings.Contains(string(row), s) {
+			return true
+		}
+	}
+	return false
 }
 
 func (vt *virtualTmux) Contents() string {
 	vt.mu.RLock()
 	defer vt.mu.RUnlock()
-	return vt.buff.String()
+
+	var lines []string
+	for _, row := range vt.term.Content {
+		rowstr := strings.TrimRight(string(row), " \t\n")
+		lines = append(lines, rowstr)
+	}
+
+	// Trim trailing empty lines.
+	for i := len(lines) - 1; i >= 0; i-- {
+		if len(lines[i]) > 0 {
+			lines = lines[:i+1]
+			break
+		}
+	}
+
+	return strings.Join(lines, "\n")
 }
 
-var _redText = [][]byte{
-	[]byte("\x1b[91m"),
-	[]byte("\x1b[31m"),
+func isRed(f midterm.Format) bool {
+	return f.Fg == termenv.ANSIRed || f.Fg == termenv.ANSIBrightRed
 }
 
-func (vt *virtualTmux) Hints() []string {
+func isGreen(f midterm.Format) bool {
+	return f.Fg == termenv.ANSIGreen || f.Fg == termenv.ANSIBrightGreen
+}
+
+type fastcopyHint struct {
+	// Label specifies the keys to press to select this hint.
+	Label string
+
+	// Suffix is the part of the selection text that follows the hint,
+	// not including the part that's been overlaid with the hint.
+	Suffix string
+}
+
+func (h fastcopyHint) String() string {
+	return fmt.Sprintf("[%s]%s", h.Label, h.Suffix)
+}
+
+func (vt *virtualTmux) Hints() []fastcopyHint {
 	vt.mu.RLock()
 	defer vt.mu.RUnlock()
 
-	bs := vt.buff.Bytes()
-	var hints []string
-	seen := make(map[string]struct{})
-	for {
-		idx := bytes.IndexByte(bs, 0x1b)
-		if idx == -1 {
-			break // no more hints
-		}
-		bs = bs[idx:]
+	var hints []fastcopyHint
+	for rowIdx, row := range vt.term.Content {
+		rowFormat := vt.term.Format[rowIdx]
 
-		found := false
-		for _, red := range _redText {
-			if bytes.HasPrefix(bs, red) {
-				bs = bs[len(red):]
-				found = true
-				break
+		var (
+			label  strings.Builder
+			suffix strings.Builder
+		)
+		for colIdx, f := range rowFormat {
+			if isRed(f) {
+				suffix.Reset()
+				label.WriteRune(rune(row[colIdx]))
+			} else if label.Len() > 0 && isGreen(f) {
+				suffix.WriteRune(rune(row[colIdx]))
+			} else if label.Len() > 0 {
+				hints = append(hints, fastcopyHint{
+					Label:  label.String(),
+					Suffix: suffix.String(),
+				})
+
+				label.Reset()
+				suffix.Reset()
 			}
 		}
-		if !found {
-			bs = bs[1:]
-			continue // not red text; skip over the escape
+
+		if label.Len() > 0 {
+			hints = append(hints, fastcopyHint{
+				Label:  label.String(),
+				Suffix: suffix.String(),
+			})
 		}
 
-		end := bytes.IndexByte(bs, 0x1b)
-		if end == -1 {
-			break
-		}
-		if end == 0 {
-			// Empty hint.
-			continue
-		}
-		hint := string(bs[:end])
-		if _, ok := seen[hint]; !ok {
-			hints = append(hints, hint)
-			seen[hint] = struct{}{}
-		}
-		bs = bs[end+1:]
 	}
+
 	return hints
 }
 
 func (vt *virtualTmux) WaitUntilContains(str string, timeout time.Duration) error {
-	bs := []byte(str)
-
 	after := time.After(timeout)
 
 	ticker := time.NewTicker(50 * time.Millisecond)
 	defer ticker.Stop()
 	for {
 		vt.mu.RLock()
-		if bytes.Contains(vt.buff.Bytes(), bs) {
-			vt.mu.RUnlock()
-			return nil
+		for _, row := range vt.term.Content {
+			if strings.Contains(string(row), str) {
+				vt.mu.RUnlock()
+				return nil
+			}
 		}
 		vt.mu.RUnlock()
 
