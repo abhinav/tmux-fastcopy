@@ -118,8 +118,8 @@ const _giveText = `
 IP address: 127.0.0.1
 UUID: 95471085-9665-403E-BD95-217C7237F83D
 Git SHA: 64b9df0bd2e2709fdd95d4b58ecaf2a1d9e943a7
-A line that wraps to the next line: 123456789012345678901234567890123456789012345678901234567890
-Phabricator diff: D1234567
+A line that wraps to the next line: 968252667611821948510192235053145881029182288625223102301440
+Phabricator diff: D1357
 --EOF--
 `
 
@@ -132,8 +132,8 @@ var _wantMatches = []matchInfo{
 	{Regex: "ipv4", Text: "127.0.0.1"},
 	{Regex: "uuid", Text: "95471085-9665-403E-BD95-217C7237F83D"},
 	{Regex: "gitsha", Text: "64b9df0bd2e2709fdd95d4b58ecaf2a1d9e943a7"},
-	{Regex: "int", Text: "123456789012345678901234567890123456789012345678901234567890"},
-	{Regex: "phab-diff", Text: "D1234567"},
+	{Regex: "int", Text: "968252667611821948510192235053145881029182288625223102301440"},
+	{Regex: "phab-diff", Text: "D1357"},
 }
 
 //nolint:paralleltest // flaky when parallel
@@ -202,7 +202,21 @@ func testIntegrationSelectMatches(t *testing.T, shift bool) {
 			t.Fatalf("expected %d hints in %q", len(_wantMatches), tmux.Contents())
 		}
 
-		hint := hints[i]
+		want := _wantMatches[i]
+		var hint *fastcopyHint
+		for _, h := range hints {
+			// This is not an exact match because h.Suffix may be
+			// truncated if the matched text is too long.
+			if strings.Contains(want.Text, h.Suffix) {
+				hint = &h
+				break
+			}
+		}
+
+		if hint == nil {
+			t.Fatalf("could not find hint for %q", want.Text)
+		}
+
 		t.Logf("selecting: %v", hint)
 		if shift {
 			_, err := io.WriteString(tmux, strings.ToUpper(hint.Label))
