@@ -59,7 +59,16 @@ jobs:
     name: Integration Test / Tmux ${{ matrix.tmux-version }}
     strategy:
       matrix:
-        tmux-version: ["3.3a", "3.2a", "3.1c", "3.0a", "2.9a", "2.8", "2.7"]
+        tmux-version:
+          - "3.5"
+          - "3.4"
+          - "3.3a"
+          - "3.2a"
+          - "3.1c"
+          - "3.0a"
+          - "2.9a"
+          - "2.8"
+          - "2.7"
 
     steps:
     - uses: actions/checkout@v4
