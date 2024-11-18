@@ -79,7 +79,7 @@ func (s *ShellDriver) cmd(args ...string) *exec.Cmd {
 //
 //	cmd := s.cmd("some", "cmd")
 //	defer s.errorWriter(&cmd.Stderr)()
-func (s *ShellDriver) errorWriter(ws ...*io.Writer) (close func()) {
+func (s *ShellDriver) errorWriter(ws ...*io.Writer) (cleanup func()) {
 	writer := &log.Writer{Log: s.log, Level: log.Error}
 	for _, w := range ws {
 		*w = writer
