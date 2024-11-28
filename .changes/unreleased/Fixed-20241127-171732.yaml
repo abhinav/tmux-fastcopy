@@ -1,0 +1,3 @@
+kind: Fixed
+body: Tweak label assignment algorithm to generate shorter labels in certain cases.
+time: 2024-11-27T17:17:32.425602-08:00

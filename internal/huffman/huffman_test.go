@@ -95,11 +95,33 @@ func TestLabel(t *testing.T) {
 		{
 			alphabet: _abcd,
 			items: []item{
-				{5, "a"},
-				{4, "bd"},
-				{3, "bc"},
+				{10, "dc"},
+				{12, "dd"},
+				{7, "dbb"},
+				{8, "da"},
+				{32, "c"},
+				{1, "dba"},
+				{17, "a"},
+				{18, "b"},
+			},
+		},
+		{
+			alphabet: _abcd,
+			items: []item{
+				{5, "d"},
+				{4, "c"},
+				{3, "a"},
 				{2, "bb"},
 				{1, "ba"},
+			},
+		},
+		{
+			alphabet: _abcd,
+			items: []item{
+				{50, "d"},
+				{25, "c"},
+				{12, "b"},
+				{6, "a"},
 			},
 		},
 	}
