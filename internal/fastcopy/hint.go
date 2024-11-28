@@ -4,9 +4,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/abhinav/tmux-fastcopy/internal/huffman"
 	"github.com/abhinav/tmux-fastcopy/internal/ui"
 	tcell "github.com/gdamore/tcell/v2"
+	"go.abhg.dev/algorithm/huffman"
 )
 
 type hint struct {
