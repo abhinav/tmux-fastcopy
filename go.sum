@@ -25,8 +25,8 @@ github.com/stretchr/testify v1.10.0 h1:Xv5erBjTwe/5IxqUQTdXv5kgmIvbHo3QQyRwhJsOf
 github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
-go.abhg.dev/algorithm/huffman v0.1.0 h1:riG8OyZ3CY6GhwIFhPLdg05msMoIj8oAA0dhUFD228Q=
-go.abhg.dev/algorithm/huffman v0.1.0/go.mod h1:FR+G7qqDYLe4hQ+8dFp6a3PjfNkg3MLCW0/oV3h6Py0=
+go.abhg.dev/algorithm/huffman v0.2.0 h1:ABToWAM+WRXa2jqwzvyN17iNn5MMqxXtFZ7b+RmRrjU=
+go.abhg.dev/algorithm/huffman v0.2.0/go.mod h1:FR+G7qqDYLe4hQ+8dFp6a3PjfNkg3MLCW0/oV3h6Py0=
 go.uber.org/multierr v1.11.0 h1:blXXJkSxSSfBVBlC76pxqeO+LN3aDfLQo+309xJstO0=
 go.uber.org/multierr v1.11.0/go.mod h1:20+QtiLqy0Nd6FdQB9TLXag12DsQkrbs3htMFfDN80Y=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=

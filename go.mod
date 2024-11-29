@@ -10,7 +10,7 @@ require (
 	github.com/mattn/go-shellwords v1.0.12
 	github.com/rivo/uniseg v0.4.7
 	github.com/stretchr/testify v1.10.0
-	go.abhg.dev/algorithm/huffman v0.1.0
+	go.abhg.dev/algorithm/huffman v0.2.0
 	go.uber.org/multierr v1.11.0
 	pgregory.net/rapid v1.1.0
 )
