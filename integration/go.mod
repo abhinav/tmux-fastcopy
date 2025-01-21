@@ -1,11 +1,14 @@
 module github.com/abhinav/tmux-fastcopy/integration
 
-go 1.23.3
+go 1.23.4
+
+toolchain go1.23.5
 
 require (
 	github.com/abhinav/tmux-fastcopy v0.14.1
 	github.com/creack/pty v1.1.24
 	github.com/stretchr/testify v1.10.0
+	go.abhg.dev/io/ioutil v0.1.0
 	go.uber.org/multierr v1.11.0
 )
 

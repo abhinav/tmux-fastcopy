@@ -5,13 +5,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/abhinav/tmux-fastcopy/internal/iotest"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux/tmuxopt"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux/tmuxtest"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.abhg.dev/io/ioutil"
 	"pgregory.net/rapid"
 )
 
@@ -272,7 +272,7 @@ func TestConfigFlags(t *testing.T) {
 
 			var cfg config
 			fset := flag.NewFlagSet(t.Name(), flag.ContinueOnError)
-			fset.SetOutput(iotest.Writer(t))
+			fset.SetOutput(ioutil.TestLogWriter(t, ""))
 			cfg.RegisterFlags(fset)
 
 			err := fset.Parse(tt.give)
@@ -291,7 +291,7 @@ func TestConfigFlags(t *testing.T) {
 				args := cfg.Flags()
 
 				fset := flag.NewFlagSet(t.Name(), flag.ContinueOnError)
-				fset.SetOutput(iotest.Writer(t))
+				fset.SetOutput(ioutil.TestLogWriter(t, ""))
 				var got config
 				got.RegisterFlags(fset)
 
@@ -484,8 +484,10 @@ func TestConfigFlags_rapid(t *testing.T) {
 			t.Skip()
 		}
 
+		output, done := ioutil.PrintfWriter(t.Logf, "")
+		defer done()
 		flag := flag.NewFlagSet(t.Name(), flag.ContinueOnError)
-		flag.SetOutput(iotest.Writer(t))
+		flag.SetOutput(output)
 
 		var got config
 		got.RegisterFlags(flag)
@@ -507,7 +509,7 @@ func TestUsageHasAllConfigFlags(t *testing.T) {
 	// _usage.
 
 	fset := flag.NewFlagSet(t.Name(), flag.ContinueOnError)
-	fset.SetOutput(iotest.Writer(t))
+	fset.SetOutput(ioutil.TestLogWriter(t, ""))
 	new(config).RegisterFlags(fset)
 
 	fset.VisitAll(func(f *flag.Flag) {

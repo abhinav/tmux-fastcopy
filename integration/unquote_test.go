@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/abhinav/tmux-fastcopy/internal/iotest"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux/tmuxopt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.abhg.dev/io/ioutil"
 )
 
 func TestUnquoteTmuxOptions(t *testing.T) {
@@ -39,7 +39,7 @@ func TestUnquoteTmuxOptions(t *testing.T) {
 		"SHELL=/bin/sh",
 		"TMUX_TMPDIR=" + tmpDir,
 	}
-	cmdout := iotest.Writer(t)
+	cmdout := ioutil.TestLogWriter(t, "")
 
 	cmd := exec.Command(tmuxExe, "start-server", ";", "new-session", "-d")
 	cmd.Dir = root
