@@ -6,13 +6,13 @@ import (
 	"testing"
 
 	"github.com/abhinav/tmux-fastcopy/internal/envtest"
-	"github.com/abhinav/tmux-fastcopy/internal/iotest"
 	"github.com/abhinav/tmux-fastcopy/internal/log/logtest"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux/tmuxtest"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.abhg.dev/io/ioutil"
 )
 
 func TestWrapper(t *testing.T) {
@@ -69,7 +69,7 @@ func TestWrapper(t *testing.T) {
 			mockTmux.EXPECT().NewSession(gomock.Any()).
 				Do(func(req tmux.NewSessionRequest) {
 					fset := flag.NewFlagSet(_name, flag.ContinueOnError)
-					fset.SetOutput(iotest.Writer(t))
+					fset.SetOutput(ioutil.TestLogWriter(t, ""))
 
 					var gotConfig config
 					gotConfig.RegisterFlags(fset)

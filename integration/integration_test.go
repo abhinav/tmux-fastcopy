@@ -16,10 +16,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/abhinav/tmux-fastcopy/internal/iotest"
 	"github.com/creack/pty"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.abhg.dev/io/ioutil"
 	"go.uber.org/multierr"
 )
 
@@ -634,10 +634,10 @@ type virtualTmuxConfig struct {
 }
 
 func (cfg *virtualTmuxConfig) Build(t testing.TB) *virtualTmux {
-	stderr := iotest.Writer(t)
+	stderr := ioutil.TestLogWriter(t, "")
 	cmd := exec.Command(cfg.Tmux)
 	cmd.Env = cfg.Env
-	cmd.Stderr = iotest.Writer(t)
+	cmd.Stderr = ioutil.TestLogWriter(t, "")
 	cmd.Dir = cfg.Dir
 
 	t.Logf("Starting tmux with size %dx%d", cfg.Width, cfg.Height)

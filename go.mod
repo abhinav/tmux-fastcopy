@@ -1,6 +1,8 @@
 module github.com/abhinav/tmux-fastcopy
 
-go 1.23.3
+go 1.23.4
+
+toolchain go1.23.5
 
 require (
 	github.com/benbjohnson/clock v1.3.5
@@ -11,6 +13,7 @@ require (
 	github.com/rivo/uniseg v0.4.7
 	github.com/stretchr/testify v1.10.0
 	go.abhg.dev/algorithm/huffman v0.2.0
+	go.abhg.dev/io/ioutil v0.1.0
 	go.uber.org/multierr v1.11.0
 	pgregory.net/rapid v1.1.0
 )
