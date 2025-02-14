@@ -49,7 +49,7 @@ test-integration: $(TMUX_FASTCOPY)
 	go test -C integration $(TEST_FLAGS) ./...
 
 .PHONY: cover
-cover: export GOEXPERIMENT = coverageredesign
+cover:
 cover:
 	go test $(TEST_FLAGS) -coverprofile=cover.out -coverpkg=./... ./...
 	go tool cover -html=cover.out -o cover.html
