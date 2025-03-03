@@ -13,7 +13,7 @@ require (
 	go.abhg.dev/algorithm/huffman v0.2.0
 	go.abhg.dev/io/ioutil v0.1.0
 	go.uber.org/multierr v1.11.0
-	pgregory.net/rapid v1.1.0
+	pgregory.net/rapid v1.2.0
 )
 
 require (
