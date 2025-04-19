@@ -69,7 +69,7 @@ GOCOVERDIR=$(mktemp -d)
 GOBIN=$GOBIN go install -race -cover -coverpkg=./... github.com/abhinav/tmux-fastcopy
 GOCOVERDIR=$GOCOVERDIR PATH=$GOBIN:$PATH \
     go test -C integration ./...
-go tool covdata textfmt -i=$COVERDIR -o=cover.integration.out
+go tool covdata textfmt -i=$GOCOVERDIR -o=cover.integration.out
 go tool cover -html=cover.integration.out -o cover.integration.html
 """
 
