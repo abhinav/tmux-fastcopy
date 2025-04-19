@@ -12,23 +12,14 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
       name: Check out repository
-    - uses: actions/setup-go@v5
-      name: Set up Go
+    - name: Set up mise
+      uses: jdx/mise-action@v2
       with:
-        go-version-file: go.mod
-        cache: false
-    - uses: golangci/golangci-lint-action@v6
-      name: Install golangci-lint
-      with:
-        version: latest
-        args: --help
-    - run: make lint
-      name: Lint
-
+        cache_key_prefix: mise-v0-stable
+    - run: mise run lint
 
   test:
     runs-on: ubuntu-latest
@@ -37,15 +28,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       name: Check out repository
-    - name: Set up Go
-      uses: actions/setup-go@v5
+    - name: Set up mise
+      uses: jdx/mise-action@v2
       with:
-        go-version-file: go.mod
-        cache: true
+        cache_key_prefix: mise-v0-stable
     - name: Build tmux-fastcopy
-      run: make build
+      run: mise run build
     - name: Test
-      run: PATH="$HOME/.local/bin:$PATH" make cover
+      run: mise run cover:unit
     - name: Coverage
       uses: codecov/codecov-action@v5
       with:
@@ -61,11 +51,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       name: Check out repository
-    - name: Set up Go
-      uses: actions/setup-go@v5
+    - name: Set up mise
+      uses: jdx/mise-action@v2
       with:
-        go-version-file: go.mod
-        cache: true
+        cache_key_prefix: mise-v0-stable
 
     - name: Checkout Tmux
       uses: actions/checkout@v4
@@ -94,11 +83,12 @@ jobs:
         fi
 
     - name: Build tmux-fastcopy
-      run: make build
+      run: mise run build
 
     - name: Integration test
-      run: make cover-integration
-    - name: Coverage
+      run: make cover:integration
+
+    - name: Upload coverage
       uses: codecov/codecov-action@v5
       with:
         files: ./cover.integration.out
