@@ -92,7 +92,7 @@ jobs:
       run: mise run build
 
     - name: Integration test
-      run: make cover:integration
+      run: mise run cover:integration
 
     - name: Upload coverage
       uses: codecov/codecov-action@v5
