@@ -1,0 +1,107 @@
+[env]
+GOBIN = "{{ config_root }}/bin"
+_.path = ["bin"]
+
+[tools]
+go = "latest"
+"aqua:golangci/golangci-lint" = "latest"
+"ubi:miniscruff/changie" = "latest"
+"ubi:abhinav/doc2go" = "latest"
+gofumpt = "latest"
+
+[tasks.all]
+description = "Build, lint and test the code."
+depends = ["build", "lint", "test"]
+
+[tasks.build]
+run = "go install github.com/abhinav/tmux-fastcopy"
+description = "Build the project"
+
+[tasks.generate]
+description = "Generate code"
+run = "go generate -x ./..."
+depends = ["tools"]
+
+[tasks.lint]
+description = "Run all linters"
+depends = ["lint:*"]
+
+[tasks.test]
+description = "Run all tests"
+depends = ["test:*"]
+
+[tasks.cover]
+description = "Run all tests with coverage"
+depends = ["cover:*"]
+
+[tasks.tools]
+description = "Install tools"
+run = "go install tool"
+
+[tasks.fmt]
+description = "Format the code"
+run = "golangci-lint fmt"
+
+[tasks."test:unit"]
+description = "Run tests"
+run = "go test -race ./..."
+
+[tasks."test:integration"]
+description = "Run integration tests"
+run = """
+GOBIN=$(mktemp -d)
+GOBIN=$GOBIN go install -race github.com/abhinav/tmux-fastcopy
+PATH=$GOBIN:$PATH go test -C integration ./...
+"""
+
+[tasks."cover:unit"]
+description = "Run tests with coverage"
+run = [
+    "go test -race -coverprofile=cover.out -coverpkg=./... ./...",
+    "go tool cover -html=cover.out -o cover.html"
+]
+
+[tasks."cover:integration"]
+description = "Run tests with coverage and generate HTML report"
+run = """
+GOBIN=$(mktemp -d)
+GOCOVERDIR=$(mktemp -d)
+GOBIN=$GOBIN go install -race -cover -coverpkg=./... github.com/abhinav/tmux-fastcopy
+GOCOVERDIR=$GOCOVERDIR PATH=$GOBIN:$PATH \
+    go test -C integration ./...
+go tool covdata textfmt -i=$GOCOVERDIR -o=cover.integration.out
+go tool cover -html=cover.integration.out -o cover.integration.html
+"""
+
+[tasks."lint:tidy"]
+description = "Ensure go.mod is tidy"
+run = [
+    "go mod tidy -diff",
+    "go -C integration mod tidy -diff"
+]
+
+[tasks."lint:golangci"]
+description = "Run golangci-lint"
+run = [
+  "golangci-lint run",
+  "(cd integration && golangci-lint run)"
+]
+
+[tasks."lint:generate"]
+description = "Ensure generated code is up to date"
+depends = ["generate"]
+run = """
+if ! git diff --quiet; then
+    echo "Working tree dirty after code generation"
+    git status --porcelain
+    false
+fi
+"""
+
+[tasks."changes:new"]
+description = "Add a changelog entry"
+run = "changie new"
+
+[tasks."changes:prepare"]
+description = "Prepare the changelog for release"
+run = 'changie batch {{arg(name="version")}} && changie merge'
