@@ -9,10 +9,10 @@ import (
 	"github.com/abhinav/tmux-fastcopy/internal/log/logtest"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux/tmuxtest"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.abhg.dev/io/ioutil"
+	"go.uber.org/mock/gomock"
 )
 
 func TestWrapper(t *testing.T) {

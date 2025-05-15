@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	tcell "github.com/gdamore/tcell/v2"
-	gomock "github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	gomock "go.uber.org/mock/gomock"
 )
 
 func TestRange(t *testing.T) {
