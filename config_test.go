@@ -8,10 +8,10 @@ import (
 	"github.com/abhinav/tmux-fastcopy/internal/tmux"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux/tmuxopt"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux/tmuxtest"
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.abhg.dev/io/ioutil"
+	"go.uber.org/mock/gomock"
 	"pgregory.net/rapid"
 )
 

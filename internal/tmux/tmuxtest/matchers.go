@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/abhinav/tmux-fastcopy/internal/tmux"
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 )
 
 // DisplayMessageRequestMatcher is a gomock matcher that matches
