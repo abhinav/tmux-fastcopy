@@ -13,10 +13,10 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       name: Check out repository
     - name: Set up mise
-      uses: jdx/mise-action@v2
+      uses: jdx/mise-action@v3
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
@@ -28,10 +28,10 @@ jobs:
     name: Unit Test
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       name: Check out repository
     - name: Set up mise
-      uses: jdx/mise-action@v2
+      uses: jdx/mise-action@v3
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
@@ -53,17 +53,17 @@ jobs:
         tmux-version: ["3.3a", "3.2a", "3.1c", "3.0a", "2.9a", "2.8", "2.7"]
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       name: Check out repository
     - name: Set up mise
-      uses: jdx/mise-action@v2
+      uses: jdx/mise-action@v3
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         cache_key_prefix: mise-v0-stable
 
     - name: Checkout Tmux
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         repository: tmux/tmux
         ref: ${{ matrix.tmux-version }}
