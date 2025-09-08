@@ -5,7 +5,7 @@ go 1.24
 require (
 	github.com/abhinav/tmux-fastcopy v0.14.1
 	github.com/creack/pty v1.1.24
-	github.com/stretchr/testify v1.11.0
+	github.com/stretchr/testify v1.11.1
 	go.abhg.dev/io/ioutil v0.1.0
 	go.uber.org/multierr v1.11.0
 )

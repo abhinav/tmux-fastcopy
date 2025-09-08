@@ -8,7 +8,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.16
 	github.com/mattn/go-shellwords v1.0.12
 	github.com/rivo/uniseg v0.4.7
-	github.com/stretchr/testify v1.11.0
+	github.com/stretchr/testify v1.11.1
 	go.abhg.dev/algorithm/huffman v0.2.0
 	go.abhg.dev/io/ioutil v0.1.0
 	go.uber.org/mock v0.6.0
