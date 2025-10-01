@@ -34,7 +34,7 @@ func (w *Writer) takeNextLine(line []byte) (remaining []byte) {
 	// in the buffer, skip the buffer and log directly.
 	if w.buff.Len() == 0 {
 		w.logLine(line)
-		return
+		return remaining
 	}
 
 	w.buff.Write(line)
