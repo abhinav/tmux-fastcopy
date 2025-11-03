@@ -23,7 +23,7 @@ jobs:
         ref: ${{ github.head_ref }}
 
     - name: Check or update README
-      uses: abhinav/stitchmd-action@v1
+      uses: abhinav/stitchmd-action@v2
       with:
         mode: ${{ github.event_name == 'pull_request_target' && 'write' || 'check' }}
         summary: doc/README.md
