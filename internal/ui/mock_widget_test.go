@@ -12,8 +12,8 @@ package ui
 import (
 	reflect "reflect"
 
-	tcell "github.com/gdamore/tcell/v2"
-	views "github.com/gdamore/tcell/v2/views"
+	tcell "github.com/gdamore/tcell/v3"
+	views "github.com/gdamore/tcell/v3/views"
 	gomock "go.uber.org/mock/gomock"
 )
 

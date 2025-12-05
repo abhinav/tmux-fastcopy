@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/abhinav/tmux-fastcopy/internal/ui"
-	tcell "github.com/gdamore/tcell/v2"
+	tcell "github.com/gdamore/tcell/v3"
 	"github.com/stretchr/testify/assert"
 )
 

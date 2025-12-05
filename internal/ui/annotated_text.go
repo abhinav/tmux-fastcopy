@@ -5,8 +5,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/gdamore/tcell/v2"
-	"github.com/gdamore/tcell/v2/views"
+	"github.com/gdamore/tcell/v3"
+	"github.com/gdamore/tcell/v3/views"
 )
 
 // TextAnnotation changes what gets rendered for AnnotatedText.

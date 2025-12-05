@@ -7,7 +7,7 @@ import (
 	"github.com/abhinav/tmux-fastcopy/internal/log"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux"
 	"github.com/abhinav/tmux-fastcopy/internal/ui"
-	tcell "github.com/gdamore/tcell/v2"
+	tcell "github.com/gdamore/tcell/v3"
 )
 
 // app implements the main fastcopy application logic. It assumes that it's
