@@ -37,7 +37,13 @@ jobs:
         echo "Releasing $VERSION"
         echo "Release notes:"
         echo "----"
-        parse-changelog CHANGELOG.md "${VERSION#v}" | tee "changes.$VERSION.txt"
+        {
+          parse-changelog CHANGELOG.md "${VERSION#v}"
+          echo ""
+          echo "---"
+          echo ""
+          echo "[Support this project](https://github.com/sponsors/abhinav)"
+        } | tee "changes.$VERSION.txt"
         echo "----"
 
     - name: Release
