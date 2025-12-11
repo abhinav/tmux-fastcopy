@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/benbjohnson/clock v1.3.5
-	github.com/gdamore/tcell/v2 v2.11.0
+	github.com/gdamore/tcell/v3 v3.0.3
 	github.com/mattn/go-runewidth v0.0.19
 	github.com/mattn/go-shellwords v1.0.12
 	github.com/rivo/uniseg v0.4.7
@@ -22,12 +22,12 @@ require (
 	github.com/gdamore/encoding v1.0.1 // indirect
 	github.com/lucasb-eyer/go-colorful v1.3.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	golang.org/x/mod v0.29.0 // indirect
-	golang.org/x/sync v0.18.0 // indirect
-	golang.org/x/sys v0.38.0 // indirect
-	golang.org/x/term v0.37.0 // indirect
-	golang.org/x/text v0.31.0 // indirect
-	golang.org/x/tools v0.38.0 // indirect
+	golang.org/x/mod v0.30.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/sys v0.39.0 // indirect
+	golang.org/x/term v0.38.0 // indirect
+	golang.org/x/text v0.32.0 // indirect
+	golang.org/x/tools v0.39.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/abhinav/tmux-fastcopy/internal/ui"
-	tcell "github.com/gdamore/tcell/v2"
+	tcell "github.com/gdamore/tcell/v3"
 	"go.abhg.dev/algorithm/huffman"
 )
 

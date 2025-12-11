@@ -3,7 +3,7 @@ package ui
 import (
 	"testing"
 
-	tcell "github.com/gdamore/tcell/v2"
+	tcell "github.com/gdamore/tcell/v3"
 	"github.com/stretchr/testify/require"
 )
 

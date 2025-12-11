@@ -7,7 +7,7 @@ import (
 
 	"github.com/abhinav/tmux-fastcopy/internal/log"
 	"github.com/abhinav/tmux-fastcopy/internal/paniclog"
-	"github.com/gdamore/tcell/v2"
+	"github.com/gdamore/tcell/v3"
 )
 
 // App drives the main UI for the application.
