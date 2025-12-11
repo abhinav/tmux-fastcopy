@@ -6,7 +6,7 @@ import (
 
 	"github.com/abhinav/tmux-fastcopy/internal/log"
 	"github.com/abhinav/tmux-fastcopy/internal/log/logtest"
-	tcell "github.com/gdamore/tcell/v2"
+	tcell "github.com/gdamore/tcell/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"

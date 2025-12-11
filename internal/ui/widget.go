@@ -1,8 +1,8 @@
 package ui
 
 import (
-	"github.com/gdamore/tcell/v2"
-	"github.com/gdamore/tcell/v2/views"
+	"github.com/gdamore/tcell/v3"
+	"github.com/gdamore/tcell/v3/views"
 )
 
 //go:generate mockgen -destination mock_widget_test.go -package ui github.com/abhinav/tmux-fastcopy/internal/ui Widget

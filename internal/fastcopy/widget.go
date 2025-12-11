@@ -9,8 +9,8 @@ import (
 	"unicode"
 
 	"github.com/abhinav/tmux-fastcopy/internal/ui"
-	tcell "github.com/gdamore/tcell/v2"
-	"github.com/gdamore/tcell/v2/views"
+	tcell "github.com/gdamore/tcell/v3"
+	"github.com/gdamore/tcell/v3/views"
 )
 
 // Match is a single entry matched by fastcopy.
