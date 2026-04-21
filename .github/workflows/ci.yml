@@ -16,7 +16,7 @@ jobs:
     - uses: actions/checkout@v6
       name: Check out repository
     - name: Set up mise
-      uses: jdx/mise-action@v3
+      uses: jdx/mise-action@v4
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
@@ -31,7 +31,7 @@ jobs:
     - uses: actions/checkout@v6
       name: Check out repository
     - name: Set up mise
-      uses: jdx/mise-action@v3
+      uses: jdx/mise-action@v4
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
@@ -41,7 +41,7 @@ jobs:
     - name: Test
       run: mise run cover:unit
     - name: Coverage
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@v6
       with:
         files: ./cover.out
 
@@ -66,7 +66,7 @@ jobs:
     - uses: actions/checkout@v6
       name: Check out repository
     - name: Set up mise
-      uses: jdx/mise-action@v3
+      uses: jdx/mise-action@v4
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
@@ -105,6 +105,6 @@ jobs:
       run: mise run cover:integration
 
     - name: Upload coverage
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@v6
       with:
         files: ./cover.integration.out
