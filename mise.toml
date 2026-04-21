@@ -5,7 +5,7 @@ _.path = ["bin"]
 [tools]
 go = "latest"
 "aqua:golangci/golangci-lint" = "latest"
-"ubi:miniscruff/changie" = "latest"
+"github:miniscruff/changie" = "latest"
 gofumpt = "latest"
 
 [tasks.all]
