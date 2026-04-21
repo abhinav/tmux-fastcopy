@@ -5,7 +5,7 @@ _.path = ["bin"]
 [tools]
 go = "latest"
 "aqua:golangci/golangci-lint" = "latest"
-"ubi:miniscruff/changie" = "latest"
+"github:miniscruff/changie" = "latest"
 gofumpt = "latest"
 
 [tasks.all]
@@ -90,9 +90,9 @@ run = [
 description = "Ensure generated code is up to date"
 depends = ["generate"]
 run = """
-if ! git diff --quiet; then
+if ! git diff --quiet -- . ':(exclude)mise.lock'; then
     echo "Working tree dirty after code generation"
-    git status --porcelain
+    git status --porcelain -- . ':(exclude)mise.lock'
     false
 fi
 """

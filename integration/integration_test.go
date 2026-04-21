@@ -2,12 +2,10 @@ package integration_test
 
 import (
 	"bytes"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
-	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,10 +13,12 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"unicode"
 
 	"github.com/creack/pty"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vito/midterm"
 	"go.abhg.dev/io/ioutil"
 	"go.uber.org/multierr"
 )
@@ -175,29 +175,33 @@ func testIntegrationSelectMatches(t *testing.T, shift bool) {
 	tmux.Clear()
 	fmt.Fprintln(tmux, "clear && cat", testFile)
 	if !assert.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second)) {
-		t.Fatalf("could not find EOF in %q", tmux.Contents())
+		t.Fatalf("could not find EOF\nscreen:\n%s\nraw:\n%s", tmux.Screen(), tmux.Contents())
 	}
+	time.Sleep(250 * time.Millisecond)
 
 	var matches []matchInfo
-	for i := 0; i < len(_wantMatches); i++ {
+	for i := range _wantMatches {
 		tmux.Clear()
 		fmt.Fprintln(tmux, "clear && cat", testFile)
 		require.NoError(t,
 			tmux.WaitUntilContains("--EOF--", 3*time.Second),
 			"wait for fastcopy window")
+		time.Sleep(250 * time.Millisecond)
 
+		base := tmux.Snapshot()
 		_, err := tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
 		require.NoError(t, err, "send ctrl-a f")
 
-		time.Sleep(250 * time.Millisecond)
-		require.NoError(t,
-			tmux.WaitUntilContains("--EOF--", 3*time.Second),
-			"wait for fastcopy window")
-
-		hints := tmux.Hints()
+		hints, overlay, err := tmux.WaitUntilHintLabels(base, 3*time.Second)
+		require.NoError(t, err, "wait for hint labels")
 		t.Logf("got hints %q", hints)
 		if !assert.Len(t, hints, len(_wantMatches)) {
-			t.Fatalf("expected %d hints in %q", len(_wantMatches), tmux.Contents())
+			t.Fatalf(
+				"expected %d hints\nscreen:\n%s\nraw:\n%s",
+				len(_wantMatches),
+				overlay,
+				tmux.Contents(),
+			)
 		}
 
 		hint := hints[i]
@@ -211,7 +215,7 @@ func testIntegrationSelectMatches(t *testing.T, shift bool) {
 		}
 		time.Sleep(250 * time.Millisecond)
 
-		got, err := tmux.Command("show-buffer").Output()
+		got, err := tmux.WaitUntilBuffer(5 * time.Second)
 		require.NoError(t, err)
 
 		var state jsonReport
@@ -254,19 +258,21 @@ func TestIntegration_ShiftNoop(t *testing.T) {
 	tmux.Clear()
 	fmt.Fprintln(tmux, "clear && cat", testFile)
 	if !assert.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second)) {
-		t.Fatalf("could not find EOF in %q", tmux.Contents())
+		t.Fatalf("could not find EOF\nscreen:\n%s\nraw:\n%s", tmux.Screen(), tmux.Contents())
 	}
+	time.Sleep(250 * time.Millisecond)
 
 	tmux.Clear()
+	base := tmux.Snapshot()
 	_, err := tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
 	require.NoError(t, err, "send ctrl-a f")
-	require.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second))
 
-	hints := tmux.Hints()
+	hints, overlay, err := tmux.WaitUntilHintLabels(base, 5*time.Second)
+	require.NoError(t, err, "wait for hint labels")
 	t.Logf("got hints %q", hints)
-	require.NotEmpty(t, hints, "expected hints in %q", tmux.Contents())
+	require.NotEmpty(t, hints, "expected hints\nscreen:\n%s\nraw:\n%s", overlay, tmux.Contents())
 
-	hint := hints[rand.Intn(len(hints))]
+	hint := hints[0]
 	t.Logf("selecting %q", hint)
 	_, err = io.WriteString(tmux, strings.ToUpper(hint))
 	require.NoError(t, err, "select hint")
@@ -282,10 +288,6 @@ func TestIntegration_ShiftNoop(t *testing.T) {
 
 func TestIntegration_ActionEnv(t *testing.T) {
 	t.Parallel()
-
-	seed := time.Now().UnixNano()
-	t.Logf("random seed %d", seed)
-	rand := rand.New(rand.NewSource(seed))
 
 	env := (&fakeEnvConfig{
 		Action: "json-report",
@@ -309,10 +311,7 @@ func TestIntegration_ActionEnv(t *testing.T) {
 
 	// Create a random directory in the home directory
 	// and cd into it.
-	bs := make([]byte, 8)
-	_, err := rand.Read(bs)
-	require.NoError(t, err, "generate random bytes")
-	cwd := filepath.Join(env.Home, hex.EncodeToString(bs))
+	cwd := filepath.Join(env.Home, "working-dir")
 	require.NoError(t, os.MkdirAll(cwd, 0o755), "create random directory")
 	fmt.Fprintln(tmux, "cd", cwd)
 	tmux.Clear()
@@ -320,12 +319,12 @@ func TestIntegration_ActionEnv(t *testing.T) {
 	// Sanity check: make sure we're in the right directory.
 	fmt.Fprintln(tmux, "pwd")
 	if !assert.NoError(t, tmux.WaitUntilContains(cwd, 5*time.Second)) {
-		t.Fatalf("could not find %q in %q", cwd, tmux.Contents())
+		t.Fatalf("could not find %q\nscreen:\n%s\nraw:\n%s", cwd, tmux.Screen(), tmux.Contents())
 	}
 	t.Logf("Running fastcopy in %q", cwd)
 
 	// Get the current pane's ID.
-	bs, err = tmux.Command("list-panes", "-F", "#{pane_id}").Output()
+	bs, err := tmux.Command("list-panes", "-F", "#{pane_id}").Output()
 	require.NoError(t, err)
 	targetPaneID := strings.TrimSpace(string(bs))
 	require.NotEmpty(t, targetPaneID, "expected pane ID")
@@ -335,26 +334,28 @@ func TestIntegration_ActionEnv(t *testing.T) {
 	tmux.Clear()
 	fmt.Fprintln(tmux, "clear && cat", testFile)
 	if !assert.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second)) {
-		t.Fatalf("could not find EOF in %q", tmux.Contents())
+		t.Fatalf("could not find EOF\nscreen:\n%s\nraw:\n%s", tmux.Screen(), tmux.Contents())
 	}
+	time.Sleep(250 * time.Millisecond)
 
 	tmux.Clear()
+	base := tmux.Snapshot()
 	_, err = tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
 	require.NoError(t, err, "send ctrl-a f")
-	require.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second))
 
-	hints := tmux.Hints()
+	hints, overlay, err := tmux.WaitUntilHintLabels(base, 5*time.Second)
+	require.NoError(t, err, "wait for hint labels")
 	t.Logf("got hints %q", hints)
-	require.NotEmpty(t, hints, "expected hints in %q", tmux.Contents())
+	require.NotEmpty(t, hints, "expected hints\nscreen:\n%s\nraw:\n%s", overlay, tmux.Contents())
 
-	hint := hints[rand.Intn(len(hints))]
+	hint := hints[0]
 	t.Logf("selecting %q", hint)
 
 	_, err = io.WriteString(tmux, hint)
 	require.NoError(t, err, "select hint")
 	time.Sleep(250 * time.Millisecond)
 
-	got, err := tmux.Command("show-buffer").Output()
+	got, err := tmux.WaitUntilBuffer(5 * time.Second)
 	require.NoError(t, err)
 
 	var state jsonReport
@@ -393,25 +394,32 @@ func TestIntegration_MultiSelect(t *testing.T) {
 	tmux.Clear()
 	fmt.Fprintln(tmux, "clear && cat", testFile)
 	if !assert.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second)) {
-		t.Fatalf("could not find EOF in %q", tmux.Contents())
+		t.Fatalf("could not find EOF\nscreen:\n%s\nraw:\n%s", tmux.Screen(), tmux.Contents())
 	}
+	time.Sleep(250 * time.Millisecond)
 
 	tmux.Clear()
+	base := tmux.Snapshot()
 	_, err := tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
 	require.NoError(t, err, "send ctrl-a f")
 
-	time.Sleep(250 * time.Millisecond)
-
 	// Enter multi-select mode.
+	hints, overlay, err := tmux.WaitUntilHintLabels(base, 5*time.Second)
+	require.NoError(t, err, "wait for hint labels")
+
 	_, err = tmux.Write([]byte{0x09})
 	require.NoError(t, err, "send tab")
 
 	time.Sleep(200 * time.Millisecond)
 
-	hints := tmux.Hints()
 	t.Logf("got hints %q", hints)
 	if !assert.Len(t, hints, len(_wantMatches)) {
-		t.Fatalf("expected %d hints in %q", len(_wantMatches), tmux.Contents())
+		t.Fatalf(
+			"expected %d hints\nscreen:\n%s\nraw:\n%s",
+			len(_wantMatches),
+			overlay,
+			tmux.Contents(),
+		)
 	}
 
 	// Select all hints.
@@ -427,7 +435,7 @@ func TestIntegration_MultiSelect(t *testing.T) {
 
 	time.Sleep(250 * time.Millisecond)
 
-	got, err := tmux.Command("show-buffer").Output()
+	got, err := tmux.WaitUntilBuffer(5 * time.Second)
 	require.NoError(t, err)
 
 	var state jsonReport
@@ -449,10 +457,6 @@ func TestIntegration_MultiSelect(t *testing.T) {
 
 func TestIntegration_DestroyUnattached(t *testing.T) {
 	t.Parallel()
-
-	seed := time.Now().UnixNano()
-	t.Logf("random seed %d", seed)
-	rand := rand.New(rand.NewSource(seed))
 
 	env := (&fakeEnvConfig{
 		Action:            "json-report",
@@ -480,27 +484,28 @@ func TestIntegration_DestroyUnattached(t *testing.T) {
 	tmux.Clear()
 	fmt.Fprintln(tmux, "clear && cat", testFile)
 	if !assert.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second)) {
-		t.Fatalf("could not find EOF in %q", tmux.Contents())
+		t.Fatalf("could not find EOF\nscreen:\n%s\nraw:\n%s", tmux.Screen(), tmux.Contents())
 	}
+	time.Sleep(250 * time.Millisecond)
 
 	tmux.Clear()
+	base := tmux.Snapshot()
 	_, err := tmux.Write([]byte{0x01, 'f'}) // ctrl-a f
 	require.NoError(t, err, "send ctrl-a f")
-	time.Sleep(250 * time.Millisecond)
-	require.NoError(t, tmux.WaitUntilContains("--EOF--", 5*time.Second))
 
-	hints := tmux.Hints()
+	hints, overlay, err := tmux.WaitUntilHintLabels(base, 5*time.Second)
+	require.NoError(t, err, "wait for hint labels")
 	t.Logf("got hints %q", hints)
-	require.NotEmpty(t, hints, "expected hints in %q", tmux.Contents())
+	require.NotEmpty(t, hints, "expected hints\nscreen:\n%s\nraw:\n%s", overlay, tmux.Contents())
 
-	hint := hints[rand.Intn(len(hints))]
+	hint := hints[0]
 	t.Logf("selecting %q", hint)
 
 	_, err = io.WriteString(tmux, hint)
 	require.NoError(t, err, "select hint")
 	time.Sleep(250 * time.Millisecond)
 
-	got, err := tmux.Command("show-buffer").Output()
+	got, err := tmux.WaitUntilBuffer(5 * time.Second)
 	require.NoError(t, err)
 
 	var state jsonReport
@@ -621,9 +626,12 @@ type virtualTmux struct {
 	w, h   int
 	stderr io.Writer
 
-	pty  *os.File
-	mu   sync.RWMutex // guards buff
-	buff bytes.Buffer // output
+	pty *os.File
+
+	mu            sync.RWMutex // guards raw and term
+	raw           bytes.Buffer
+	rawCheckpoint int
+	term          *midterm.Terminal
 }
 
 type virtualTmuxConfig struct {
@@ -654,6 +662,7 @@ func (cfg *virtualTmuxConfig) Build(t testing.TB) *virtualTmux {
 		env:    cfg.Env,
 		pty:    pty,
 		stderr: stderr,
+		term:   midterm.NewTerminal(int(cfg.Height), int(cfg.Width)),
 	}
 
 	readerDone := make(chan struct{})
@@ -692,7 +701,8 @@ func (vt *virtualTmux) readLoop(r io.Reader, done chan struct{}) {
 			return
 		}
 		vt.mu.Lock()
-		vt.buff.Write(bs[:n])
+		vt.raw.Write(bs[:n])
+		_, _ = vt.term.Write(bs[:n])
 		vt.mu.Unlock()
 	}
 }
@@ -702,90 +712,93 @@ func (vt *virtualTmux) Write(b []byte) (int, error) {
 }
 
 func (vt *virtualTmux) Clear() {
-	// TODO: Auto clear on escape sequence
 	vt.mu.Lock()
-	vt.buff.Reset()
+	vt.rawCheckpoint = vt.raw.Len()
 	vt.mu.Unlock()
 }
 
-func (vt *virtualTmux) Contains(s string) bool {
-	bs := []byte(s)
-
+// Snapshot reports the current decoded terminal contents.
+func (vt *virtualTmux) Snapshot() screenSnapshot {
 	vt.mu.RLock()
 	defer vt.mu.RUnlock()
-	return bytes.Contains(vt.buff.Bytes(), bs)
+
+	rows := make([][]rune, len(vt.term.Content))
+	for i, row := range vt.term.Content {
+		rows[i] = append([]rune(nil), row...)
+	}
+
+	return screenSnapshot{rows: rows}
+}
+
+// Screen renders the current decoded terminal contents for diagnostics.
+func (vt *virtualTmux) Screen() string {
+	return vt.Snapshot().String()
+}
+
+func (vt *virtualTmux) Contains(s string) bool {
+	return vt.Snapshot().Contains(s)
 }
 
 func (vt *virtualTmux) Contents() string {
 	vt.mu.RLock()
 	defer vt.mu.RUnlock()
-	return vt.buff.String()
+
+	bs := vt.raw.Bytes()
+	return string(bs[vt.rawCheckpoint:])
 }
 
-var _redText = [][]byte{
-	[]byte("\x1b[91m"),
-	[]byte("\x1b[31m"),
-}
+// WaitUntilHintLabels waits for decoded hint labels to appear relative to base.
+func (vt *virtualTmux) WaitUntilHintLabels(base screenSnapshot, timeout time.Duration) ([]string, screenSnapshot, error) {
+	after := time.After(timeout)
 
-func (vt *virtualTmux) Hints() []string {
-	vt.mu.RLock()
-	defer vt.mu.RUnlock()
+	ticker := time.NewTicker(50 * time.Millisecond)
+	defer ticker.Stop()
 
-	bs := vt.buff.Bytes()
-	var hints []string
-	seen := make(map[string]struct{})
 	for {
-		idx := bytes.IndexByte(bs, 0x1b)
-		if idx == -1 {
-			break // no more hints
-		}
-		bs = bs[idx:]
-
-		found := false
-		for _, red := range _redText {
-			if bytes.HasPrefix(bs, red) {
-				bs = bs[len(red):]
-				found = true
-				break
-			}
-		}
-		if !found {
-			bs = bs[1:]
-			continue // not red text; skip over the escape
+		snapshot := vt.Snapshot()
+		labels := snapshot.HintLabels(base)
+		if len(labels) > 0 {
+			return labels, snapshot, nil
 		}
 
-		end := bytes.IndexByte(bs, 0x1b)
-		if end == -1 {
-			break
+		select {
+		case <-after:
+			return nil, snapshot, fmt.Errorf("timeout waiting for hint labels")
+		case <-ticker.C:
 		}
-		if end == 0 {
-			// Empty hint.
-			continue
-		}
-		hint := string(bs[:end])
-		if _, ok := seen[hint]; !ok {
-			hints = append(hints, hint)
-			seen[hint] = struct{}{}
-		}
-		bs = bs[end+1:]
 	}
-	return hints
+}
+
+// WaitUntilBuffer waits for tmux's current paste buffer to become available.
+func (vt *virtualTmux) WaitUntilBuffer(timeout time.Duration) ([]byte, error) {
+	after := time.After(timeout)
+
+	ticker := time.NewTicker(50 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		bs, err := vt.Command("show-buffer").Output()
+		if err == nil {
+			return bs, nil
+		}
+
+		select {
+		case <-after:
+			return nil, fmt.Errorf("timeout waiting for tmux buffer")
+		case <-ticker.C:
+		}
+	}
 }
 
 func (vt *virtualTmux) WaitUntilContains(str string, timeout time.Duration) error {
-	bs := []byte(str)
-
 	after := time.After(timeout)
 
 	ticker := time.NewTicker(50 * time.Millisecond)
 	defer ticker.Stop()
 	for {
-		vt.mu.RLock()
-		if bytes.Contains(vt.buff.Bytes(), bs) {
-			vt.mu.RUnlock()
+		if vt.Contains(str) {
 			return nil
 		}
-		vt.mu.RUnlock()
 
 		select {
 		case <-after:
@@ -794,6 +807,89 @@ func (vt *virtualTmux) WaitUntilContains(str string, timeout time.Duration) erro
 			// Check again.
 		}
 	}
+}
+
+// screenSnapshot captures the decoded visible contents of the terminal.
+type screenSnapshot struct {
+	rows [][]rune
+}
+
+// String renders the snapshot as newline-separated rows.
+func (s screenSnapshot) String() string {
+	var out strings.Builder
+	for i, row := range s.rows {
+		if i > 0 {
+			out.WriteByte('\n')
+		}
+		out.WriteString(string(row))
+	}
+	return out.String()
+}
+
+// Contains reports whether the decoded screen contains the provided text.
+func (s screenSnapshot) Contains(str string) bool {
+	return strings.Contains(s.String(), str)
+}
+
+// HintLabels reports the visible hint labels introduced relative to base.
+func (s screenSnapshot) HintLabels(base screenSnapshot) []string {
+	var labels []string
+	seen := make(map[string]struct{})
+
+	// Compare only the overlapping visible region.
+	// The terminal model is fixed-size,
+	// but keeping the bounds explicit
+	// makes the diff logic safe
+	// if either snapshot shape changes in the future.
+	height := min(len(base.rows), len(s.rows))
+
+	for y := range height {
+		row := s.rows[y]
+		baseRow := base.rows[y]
+
+		width := min(len(baseRow), len(row))
+
+		for x := 0; x < width; {
+			// A hint label is the new lowercase text
+			// overlaid by fastcopy.
+			// Skip unchanged cells and non-label cells
+			// so we do not accidentally treat pane content
+			// as a selectable hint.
+			if row[x] == baseRow[x] || !unicode.IsLower(row[x]) {
+				x++
+				continue
+			}
+
+			start := x
+			// Consume one contiguous run
+			// of overlaid lowercase cells.
+			// This preserves the on-screen label order
+			// while avoiding any dependency
+			// on the original ANSI styling
+			// that produced the overlay.
+			for x < width && row[x] != baseRow[x] && unicode.IsLower(row[x]) {
+				x++
+			}
+
+			label := string(row[start:x])
+			if len(label) == 0 {
+				continue
+			}
+			if _, ok := seen[label]; ok {
+				continue
+			}
+
+			// The same label may be drawn more than once
+			// when the matched text appears multiple times.
+			// Keep only the first visible occurrence
+			// so the returned slice matches the order
+			// a user would discover on screen.
+			labels = append(labels, label)
+			seen[label] = struct{}{}
+		}
+	}
+
+	return labels
 }
 
 func writeLines(t testing.TB, path string, lines ...string) {
