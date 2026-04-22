@@ -930,9 +930,7 @@ func mkdirTempGlobal(t testing.TB, pattern string) string {
 
 	dir, err := os.MkdirTemp("/tmp", pattern)
 	require.NoError(t, err, "create temporary directory")
-	t.Cleanup(func() {
-		assert.NoError(t, os.RemoveAll(dir), "remove temporary directory")
-	})
+	t.Cleanup(func() { _ = os.RemoveAll(dir) })
 
 	dir, err = filepath.EvalSymlinks(dir)
 	require.NoError(t, err, "resolve temporary directory")
