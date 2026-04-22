@@ -31,7 +31,17 @@ func TestAppEvents(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		term, scr, fini := NewTestScreen(t, 80, 40)
 		widget := NewMockWidget(ctrl)
-		widget.EXPECT().Draw(gomock.Any()).AnyTimes()
+		drawn := make(chan struct{})
+		drawCalls := 0
+		widget.EXPECT().
+			Draw(gomock.Any()).
+			AnyTimes().
+			Do(func(any) {
+				drawCalls++
+				if drawCalls == 2 {
+					close(drawn)
+				}
+			})
 		app := newApp(scr, widget)
 		app.Start()
 		defer func() {
@@ -41,6 +51,11 @@ func TestAppEvents(t *testing.T) {
 		}()
 
 		term.SetSize(vt.Coord{X: 100, Y: 60})
+		select {
+		case <-drawn:
+		case <-time.After(100 * time.Millisecond):
+			t.Fatal("widget was not redrawn after resize")
+		}
 	})
 
 	t.Run("handled action", func(t *testing.T) {

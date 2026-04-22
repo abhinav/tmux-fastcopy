@@ -78,8 +78,7 @@ func TestDrawText(t *testing.T) {
 			if tt.h > 0 {
 				h = tt.h
 			}
-			_, scr, fini := NewTestScreen(t, w, h)
-			defer fini()
+			scr := newRenderScreen(w, h)
 
 			got := DrawText(
 				tt.text, tcell.StyleDefault, scr, tt.give,

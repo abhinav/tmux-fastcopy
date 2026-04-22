@@ -20,8 +20,7 @@ func TestAnnotatedText(t *testing.T) {
 	normal := tcell.StyleDefault
 	highlighted := tcell.StyleDefault.Foreground(tcolor.Red)
 
-	_, scr, fini := NewTestScreen(t, W, H)
-	defer fini()
+	scr := newRenderScreen(W, H)
 	at := AnnotatedText{
 		Text:  "foo\nbar\nbaz",
 		Style: normal,
