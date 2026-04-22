@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/benbjohnson/clock v1.3.5
-	github.com/gdamore/tcell/v2 v2.13.9
+	github.com/gdamore/tcell/v3 v3.3.0
 	github.com/mattn/go-runewidth v0.0.23
 	github.com/mattn/go-shellwords v1.0.13
 	github.com/rivo/uniseg v0.4.7
