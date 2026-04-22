@@ -3,7 +3,7 @@ package ui
 import (
 	"testing"
 
-	tcell "github.com/gdamore/tcell/v2"
+	tcell "github.com/gdamore/tcell/v3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -62,7 +62,7 @@ func TestDrawText(t *testing.T) {
 		{
 			desc: "combining rune",
 			text: string([]rune{0x1f3f3, 0xfe0f, 0x200d, 0x1f308}), // 🏳️‍🌈
-			want: Pos{1, 0},
+			want: Pos{2, 0},
 		},
 	}
 
@@ -78,7 +78,7 @@ func TestDrawText(t *testing.T) {
 			if tt.h > 0 {
 				h = tt.h
 			}
-			scr := NewTestScreen(t, w, h)
+			scr := newRenderScreen(w, h)
 
 			got := DrawText(
 				tt.text, tcell.StyleDefault, scr, tt.give,

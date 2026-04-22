@@ -7,7 +7,7 @@ import (
 
 	"github.com/abhinav/tmux-fastcopy/internal/log"
 	"github.com/abhinav/tmux-fastcopy/internal/paniclog"
-	"github.com/gdamore/tcell/v2"
+	"github.com/gdamore/tcell/v3"
 )
 
 // App drives the main UI for the application.
@@ -21,10 +21,10 @@ type App struct {
 	// Logger to post messages to. Optional.
 	Log *log.Logger
 
-	once   sync.Once
-	err    error // error, if any
-	quit   chan struct{}
-	events chan tcell.Event
+	once sync.Once
+	err  error // error, if any
+	quit chan struct{}
+	done chan struct{}
 }
 
 func (app *App) init() {
@@ -34,9 +34,7 @@ func (app *App) init() {
 		}
 
 		app.quit = make(chan struct{})
-		app.events = make(chan tcell.Event)
-
-		go app.streamEvents()
+		app.done = make(chan struct{})
 	})
 }
 
@@ -50,18 +48,19 @@ func (app *App) Start() {
 
 // Wait waits until the application is stopped with Stop.
 func (app *App) Wait() error {
-	<-app.quit
+	<-app.done
 	return app.err
 }
 
 func (app *App) run() {
+	defer close(app.done)
 	defer app.handlePanic()
 
 	app.Screen.Clear()
 	app.Root.Draw(app.Screen)
 	app.Screen.Show()
 
-	events := app.events
+	events := app.Screen.EventQ()
 	for {
 		select {
 		case <-app.quit:
@@ -123,12 +122,4 @@ func (app *App) handlePanic() {
 		app.err = err
 		app.Stop()
 	}
-}
-
-// streams events from tcell to the app.events channel. Blocks until Stop is
-// called.
-func (app *App) streamEvents() {
-	defer app.handlePanic()
-
-	app.Screen.ChannelEvents(app.events, app.quit)
 }

@@ -3,9 +3,9 @@ package ui
 import (
 	"testing"
 
-	"github.com/gdamore/tcell/v2"
+	"github.com/gdamore/tcell/v3"
+	tcolor "github.com/gdamore/tcell/v3/color"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 //nolint:paralleltest // shared state between subtests
@@ -18,41 +18,45 @@ func TestAnnotatedText(t *testing.T) {
 	)
 
 	normal := tcell.StyleDefault
-	highlighted := tcell.StyleDefault.Foreground(tcell.ColorRed)
+	highlighted := tcell.StyleDefault.Foreground(tcolor.Red)
 
-	scr := NewTestScreen(t, W, H)
+	scr := newRenderScreen(W, H)
 	at := AnnotatedText{
 		Text:  "foo\nbar\nbaz",
 		Style: normal,
 	}
 
-	matchScreen := func(t *testing.T, want ...tcell.SimCell) {
-		require.Len(t, want, W*H, "invalid test: not enough cells")
-
+	type wantCell struct {
+		str   string
+		style tcell.Style
+		width int
+	}
+	matchScreen := func(t *testing.T, want ...wantCell) {
 		t.Helper()
 
-		got, w, h := scr.GetContents()
-		assert.Equal(t, W, w)
-		assert.Equal(t, H, h)
-		assert.Equal(t, want, got)
+		if !assert.Len(t, want, W*H, "invalid test: not enough cells") {
+			return
+		}
+
+		for y := range H {
+			for x := range W {
+				gotStr, gotStyle, gotWidth := scr.Get(x, y)
+				cell := want[y*W+x]
+				assert.Equalf(t, cell.str, gotStr, "cell (%d,%d) string", x, y)
+				assert.Equalf(t, cell.style, gotStyle, "cell (%d,%d) style", x, y)
+				assert.Equalf(t, cell.width, gotWidth, "cell (%d,%d) width", x, y)
+			}
+		}
 	}
 
 	// n generates a normal cell
-	n := func(r rune) tcell.SimCell {
-		return tcell.SimCell{
-			Bytes: []byte(string(r)),
-			Style: normal,
-			Runes: []rune{r},
-		}
+	n := func(r rune) wantCell {
+		return wantCell{str: string(r), style: normal, width: 1}
 	}
 
 	// h generates a highlighted rune.
-	h := func(r rune) tcell.SimCell {
-		return tcell.SimCell{
-			Bytes: []byte(string(r)),
-			Style: highlighted,
-			Runes: []rune{r},
-		}
+	h := func(r rune) wantCell {
+		return wantCell{str: string(r), style: highlighted, width: 1}
 	}
 
 	t.Run("no annotations", func(t *testing.T) {

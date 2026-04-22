@@ -14,7 +14,7 @@ import (
 	"github.com/abhinav/tmux-fastcopy/internal/log"
 	"github.com/abhinav/tmux-fastcopy/internal/paniclog"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux"
-	tcell "github.com/gdamore/tcell/v2"
+	tcell "github.com/gdamore/tcell/v3"
 	"go.uber.org/multierr"
 )
 

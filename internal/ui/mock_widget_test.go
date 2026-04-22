@@ -12,8 +12,7 @@ package ui
 import (
 	reflect "reflect"
 
-	tcell "github.com/gdamore/tcell/v2"
-	views "github.com/gdamore/tcell/v2/views"
+	tcell "github.com/gdamore/tcell/v3"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -42,7 +41,7 @@ func (m *MockWidget) EXPECT() *MockWidgetMockRecorder {
 }
 
 // Draw mocks base method.
-func (m *MockWidget) Draw(arg0 views.View) {
+func (m *MockWidget) Draw(arg0 View) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Draw", arg0)
 }

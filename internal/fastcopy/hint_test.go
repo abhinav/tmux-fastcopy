@@ -4,7 +4,8 @@ import (
 	"testing"
 
 	"github.com/abhinav/tmux-fastcopy/internal/ui"
-	tcell "github.com/gdamore/tcell/v2"
+	tcell "github.com/gdamore/tcell/v3"
+	tcolor "github.com/gdamore/tcell/v3/color"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -109,10 +110,10 @@ func TestHintAnnotations(t *testing.T) {
 	t.Parallel()
 
 	style := AnnotationStyle{
-		Match:      tcell.StyleDefault.Foreground(tcell.ColorGreen),
-		Skipped:    tcell.StyleDefault.Foreground(tcell.ColorGray),
-		Label:      tcell.StyleDefault.Foreground(tcell.ColorRed),
-		LabelTyped: tcell.StyleDefault.Foreground(tcell.ColorYellow),
+		Match:      tcell.StyleDefault.Foreground(tcolor.Green),
+		Skipped:    tcell.StyleDefault.Foreground(tcolor.Gray),
+		Label:      tcell.StyleDefault.Foreground(tcolor.Red),
+		LabelTyped: tcell.StyleDefault.Foreground(tcolor.Yellow),
 	}
 
 	tests := []struct {
