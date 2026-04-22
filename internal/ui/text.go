@@ -1,9 +1,7 @@
 package ui
 
 import (
-	"github.com/gdamore/tcell/v2"
-	"github.com/gdamore/tcell/v2/views"
-	"github.com/mattn/go-runewidth"
+	"github.com/gdamore/tcell/v3"
 	"github.com/rivo/uniseg"
 )
 
@@ -15,7 +13,7 @@ import (
 //	pos = DrawText("ar", style, view, pos)
 //
 // Text that bleeds outside the bounds of the view is ignored.
-func DrawText(s string, style tcell.Style, view views.View, pos Pos) Pos {
+func DrawText(s string, style tcell.Style, view View, pos Pos) Pos {
 	if len(s) == 0 {
 		return pos
 	}
@@ -23,13 +21,6 @@ func DrawText(s string, style tcell.Style, view views.View, pos Pos) Pos {
 	w, h := view.Size()
 	g := uniseg.NewGraphemes(s)
 	for g.Next() {
-		r := g.Runes()
-		mainc := r[0]
-		var combc []rune
-		if len(r) > 1 {
-			combc = r[1:]
-		}
-
 		s := g.Str()
 		if pos.X >= w || s == "\n" {
 			pos.Y++
@@ -41,8 +32,8 @@ func DrawText(s string, style tcell.Style, view views.View, pos Pos) Pos {
 		}
 
 		if s != "\n" {
-			view.SetContent(pos.X, pos.Y, mainc, combc, style)
-			pos.X += runewidth.StringWidth(s)
+			_, width := view.Put(pos.X, pos.Y, s, style)
+			pos.X += width
 		}
 	}
 

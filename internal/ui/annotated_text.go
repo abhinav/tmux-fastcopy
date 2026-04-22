@@ -5,8 +5,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/gdamore/tcell/v2"
-	"github.com/gdamore/tcell/v2/views"
+	"github.com/gdamore/tcell/v3"
 )
 
 // TextAnnotation changes what gets rendered for AnnotatedText.
@@ -64,7 +63,7 @@ func (at *AnnotatedText) SetAnnotations(anns ...TextAnnotation) {
 }
 
 // Draw draws the annotated text onto the provided view.
-func (at *AnnotatedText) Draw(view views.View) {
+func (at *AnnotatedText) Draw(view View) {
 	at.mu.RLock()
 	defer at.mu.RUnlock()
 

@@ -3,10 +3,24 @@ package fastcopy
 import (
 	"testing"
 
-	tcell "github.com/gdamore/tcell/v2"
+	tcell "github.com/gdamore/tcell/v3"
+	tcolor "github.com/gdamore/tcell/v3/color"
 	"github.com/stretchr/testify/assert"
 	gomock "go.uber.org/mock/gomock"
 )
+
+type discardView struct {
+	w int
+	h int
+}
+
+func (v discardView) Size() (int, int) {
+	return v.w, v.h
+}
+
+func (discardView) Put(_ int, _ int, str string, _ tcell.Style) (string, int) {
+	return str, 1
+}
 
 func TestRange(t *testing.T) {
 	t.Parallel()
@@ -40,10 +54,10 @@ func TestRange(t *testing.T) {
 func sampleStyle() Style {
 	return Style{
 		Normal:         tcell.StyleDefault,
-		Match:          tcell.StyleDefault.Foreground(tcell.ColorGreen),
-		SkippedMatch:   tcell.StyleDefault.Foreground(tcell.ColorGray),
-		HintLabel:      tcell.StyleDefault.Foreground(tcell.ColorRed),
-		HintLabelInput: tcell.StyleDefault.Foreground(tcell.ColorYellow),
+		Match:          tcell.StyleDefault.Foreground(tcolor.Green),
+		SkippedMatch:   tcell.StyleDefault.Foreground(tcolor.Gray),
+		HintLabel:      tcell.StyleDefault.Foreground(tcolor.Red),
+		HintLabelInput: tcell.StyleDefault.Foreground(tcolor.Yellow),
 	}
 }
 
@@ -81,10 +95,7 @@ func TestWidget(t *testing.T) {
 		},
 	}).Build()
 
-	screen := tcell.NewSimulationScreen("")
-	screen.SetSize(3, 3)
-	screen.Clear()
-	w.Draw(screen)
+	w.Draw(discardView{w: 3, h: 3})
 
 	t.Run("mouse event", func(t *testing.T) {
 		ev := tcell.NewEventMouse(1, 1, tcell.Button1, 0)
@@ -94,13 +105,13 @@ func TestWidget(t *testing.T) {
 
 	t.Run("partial input", func(t *testing.T) {
 		assert.True(t,
-			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, 'a', 0)),
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, "a", 0)),
 			"widget must handle key event")
 
 		assert.Equal(t, "a", w.Input())
 
 		assert.True(t,
-			w.HandleEvent(tcell.NewEventKey(tcell.KeyBackspace, 0, 0)),
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyBackspace, "", 0)),
 			"widget must handle backspace event")
 
 		assert.Empty(t, w.Input())
@@ -111,12 +122,12 @@ func TestWidget(t *testing.T) {
 			HandleSelection(Selection{Text: "az", Matchers: []string{"r"}})
 
 		assert.True(t,
-			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, 'b', 0)))
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, "b", 0)))
 		assert.True(t,
-			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, 'a', 0)))
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, "a", 0)))
 	})
 
-	t.Run("shift select", func(t *testing.T) {
+	t.Run("shift select/uppercase payload", func(t *testing.T) {
 		handler.EXPECT().
 			HandleSelection(Selection{
 				Text:     "qu",
@@ -125,9 +136,9 @@ func TestWidget(t *testing.T) {
 			})
 
 		assert.True(t,
-			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, 'a', 0)))
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, "a", 0)))
 		assert.True(t,
-			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, 'B', 0)))
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, "B", 0)))
 	})
 
 	t.Run("multi-select", func(t *testing.T) {
@@ -139,30 +150,42 @@ func TestWidget(t *testing.T) {
 
 		// enter multi-select mode
 		assert.True(t,
-			w.HandleEvent(tcell.NewEventKey(tcell.KeyTab, 0, 0)))
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyTab, "", 0)))
 
 		// Select one.
 		assert.True(t,
-			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, 'a', 0)))
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, "a", 0)))
 		assert.True(t,
-			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, 'a', 0)))
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, "a", 0)))
 
 		// Select another.
 		assert.True(t,
-			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, 'b', 0)))
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, "b", 0)))
 		assert.True(t,
-			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, 'b', 0)))
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, "b", 0)))
 
 		// Accept selection.
 		assert.True(t,
-			w.HandleEvent(tcell.NewEventKey(tcell.KeyTab, 0, 0)))
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyTab, "", 0)))
 	})
 
 	t.Run("multi-select no match", func(t *testing.T) {
 		// Enter multi-select and accept right away.
 		assert.True(t,
-			w.HandleEvent(tcell.NewEventKey(tcell.KeyTab, 0, 0)))
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyTab, "", 0)))
 		assert.True(t,
-			w.HandleEvent(tcell.NewEventKey(tcell.KeyEnter, 0, 0)))
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyEnter, "", 0)))
+	})
+
+	t.Run("ignore multi-rune payload", func(t *testing.T) {
+		assert.False(t,
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, "ab", 0)))
+		assert.Empty(t, w.Input())
+	})
+
+	t.Run("single-rune payload still accepted after ignore", func(t *testing.T) {
+		assert.True(t,
+			w.HandleEvent(tcell.NewEventKey(tcell.KeyRune, "a", 0)))
+		assert.Equal(t, "a", w.Input())
 	})
 }

@@ -3,10 +3,12 @@ package ui
 import (
 	"bytes"
 	"testing"
+	"time"
 
 	"github.com/abhinav/tmux-fastcopy/internal/log"
 	"github.com/abhinav/tmux-fastcopy/internal/log/logtest"
-	tcell "github.com/gdamore/tcell/v2"
+	tcell "github.com/gdamore/tcell/v3"
+	"github.com/gdamore/tcell/v3/vt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -16,8 +18,103 @@ import (
 func TestAppEvents(t *testing.T) {
 	t.Parallel()
 
+	newApp := func(screen tcell.Screen, widget *MockWidget) *App {
+		t.Helper()
+		return &App{
+			Root:   widget,
+			Screen: screen,
+			Log:    logtest.NewLogger(t),
+		}
+	}
+
+	t.Run("resize", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		term, scr, fini := NewTestScreen(t, 80, 40)
+		widget := NewMockWidget(ctrl)
+		widget.EXPECT().Draw(gomock.Any()).AnyTimes()
+		app := newApp(scr, widget)
+		app.Start()
+		defer func() {
+			app.Stop()
+			assert.NoError(t, app.Wait())
+			fini()
+		}()
+
+		term.SetSize(vt.Coord{X: 100, Y: 60})
+	})
+
+	t.Run("handled action", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		term, scr, fini := NewTestScreen(t, 80, 40)
+		widget := NewMockWidget(ctrl)
+		widget.EXPECT().Draw(gomock.Any()).AnyTimes()
+		app := newApp(scr, widget)
+		app.Start()
+		defer func() {
+			app.Stop()
+			assert.NoError(t, app.Wait())
+			fini()
+		}()
+
+		done := make(chan struct{})
+		widget.EXPECT().
+			HandleEvent(gomock.Any()).
+			DoAndReturn(func(tcell.Event) bool {
+				close(done)
+				return true
+			})
+
+		term.KeyTap(vt.KeyF)
+		select {
+		case <-done:
+		case <-time.After(100 * time.Millisecond):
+			t.Fatal("widget did not receive injected key event")
+		}
+	})
+
+	t.Run("quit/escape", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		term, scr, fini := NewTestScreen(t, 80, 40)
+		widget := NewMockWidget(ctrl)
+		widget.EXPECT().Draw(gomock.Any()).AnyTimes()
+		app := newApp(scr, widget)
+		app.Start()
+		defer func() {
+			app.Stop()
+			assert.NoError(t, app.Wait())
+			fini()
+		}()
+
+		term.KeyTap(vt.KeyEsc)
+
+		// If this deadlocks, esc didn't quit.
+		assert.NoError(t, app.Wait())
+	})
+
+	t.Run("quit/ctrl-c", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		term, scr, fini := NewTestScreen(t, 80, 40)
+		widget := NewMockWidget(ctrl)
+		widget.EXPECT().Draw(gomock.Any()).AnyTimes()
+		app := newApp(scr, widget)
+		app.Start()
+		defer func() {
+			app.Stop()
+			assert.NoError(t, app.Wait())
+			fini()
+		}()
+
+		term.KeyTap(vt.KeyLCtrl, vt.KeyC)
+		assert.NoError(t, app.Wait())
+	})
+}
+
+func TestAppStopWithoutPendingInput(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
-	scr := NewTestScreen(t, 80, 40)
+	_, scr, fini := NewTestScreen(t, 80, 40)
+	defer fini()
 
 	widget := NewMockWidget(ctrl)
 	widget.EXPECT().Draw(gomock.Any()).AnyTimes()
@@ -28,29 +125,20 @@ func TestAppEvents(t *testing.T) {
 		Log:    logtest.NewLogger(t),
 	}
 	app.Start()
-	defer func() {
-		app.Stop()
-		assert.NoError(t, app.Wait())
+
+	done := make(chan error, 1)
+	go func() {
+		done <- app.Wait()
 	}()
 
-	t.Run("resize", func(t *testing.T) {
-		scr.SetSize(100, 60)
-	})
+	app.Stop()
 
-	t.Run("handled action", func(t *testing.T) {
-		widget.EXPECT().
-			HandleEvent(gomock.Any()).
-			Return(true)
-
-		scr.InjectKey(tcell.KeyRune, 'f', 0)
-	})
-
-	t.Run("quit", func(t *testing.T) {
-		scr.InjectKey(tcell.KeyEscape, 0, 0)
-
-		// If this deadlocks, esc didn't quit.
-		assert.NoError(t, app.Wait())
-	})
+	select {
+	case err := <-done:
+		assert.NoError(t, err)
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("Wait did not unblock after Stop")
+	}
 }
 
 func TestAppPanic(t *testing.T) {
@@ -71,7 +159,8 @@ func TestAppPanic(t *testing.T) {
 		t.Parallel()
 
 		ctrl := gomock.NewController(t)
-		scr := NewTestScreen(t, 80, 40)
+		term, scr, fini := NewTestScreen(t, 80, 40)
+		defer fini()
 
 		widget := NewMockWidget(ctrl)
 		widget.EXPECT().Draw(gomock.Any()).AnyTimes()
@@ -90,7 +179,7 @@ func TestAppPanic(t *testing.T) {
 				panic("great sadness")
 			})
 
-		scr.InjectKey(tcell.KeyRune, 'f', 0)
+		term.KeyTap(vt.KeyF)
 		assertPanic(t, &app, &buff)
 	})
 
@@ -98,7 +187,8 @@ func TestAppPanic(t *testing.T) {
 		t.Parallel()
 
 		ctrl := gomock.NewController(t)
-		scr := NewTestScreen(t, 80, 40)
+		_, scr, fini := NewTestScreen(t, 80, 40)
+		defer fini()
 
 		widget := NewMockWidget(ctrl)
 		widget.EXPECT().Draw(gomock.Any()).

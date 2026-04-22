@@ -9,8 +9,8 @@ import (
 	"unicode"
 
 	"github.com/abhinav/tmux-fastcopy/internal/ui"
-	tcell "github.com/gdamore/tcell/v2"
-	"github.com/gdamore/tcell/v2/views"
+	tcell "github.com/gdamore/tcell/v3"
+	"github.com/rivo/uniseg"
 )
 
 // Match is a single entry matched by fastcopy.
@@ -146,7 +146,7 @@ func (cfg *WidgetConfig) Build() *Widget {
 }
 
 // Draw draws the widget onto the provided view.
-func (w *Widget) Draw(view views.View) {
+func (w *Widget) Draw(view ui.View) {
 	w.textw.Draw(view)
 }
 
@@ -167,7 +167,7 @@ func (w *Widget) HandleEvent(ev tcell.Event) (handled bool) {
 	}
 
 	switch ek.Key() {
-	case tcell.KeyBackspace, tcell.KeyBackspace2:
+	case tcell.KeyBackspace:
 		handled = true
 		w.mu.Lock()
 		if n := len(w.input); n > 0 {
@@ -194,25 +194,48 @@ func (w *Widget) HandleEvent(ev tcell.Event) (handled bool) {
 		}
 
 	case tcell.KeyRune:
-		handled = true
-		w.mu.Lock()
-
-		r := ek.Rune()
-		// Per the documentation of EventKey, it may report the rune
-		// 'A' without the ModShift modifier set.
-		if unicode.IsUpper(r) {
-			r = unicode.ToLower(r)
-			w.shiftDown = true
-		} else {
-			w.shiftDown = ek.Modifiers()&tcell.ModShift != 0
+		var input string
+		input, w.shiftDown, handled = normalizeKeyInput(ek)
+		if handled {
+			w.mu.Lock()
+			w.input += input
+			defer w.inputChanged()
+			w.mu.Unlock()
 		}
-
-		w.input += string(r)
-		defer w.inputChanged()
-		w.mu.Unlock()
 	}
 
 	return handled
+}
+
+// normalizeKeyInput converts a rune key event into widget input.
+// It returns the normalized label input, whether the selection should be
+// treated as shifted, and whether the event should be handled at all.
+func normalizeKeyInput(ek *tcell.EventKey) (_ string, _ bool, ok bool) {
+	input := ek.Str()
+	if input == "" {
+		return "", false, false
+	}
+
+	// Accept only a single grapheme cluster so multi-rune key payloads
+	// cannot be split across multiple hint-label steps.
+	g := uniseg.NewGraphemes(input)
+	if !g.Next() || g.Str() != input {
+		return "", false, false
+	}
+
+	runes := g.Runes()
+	if len(runes) != 1 {
+		return "", false, false
+	}
+
+	r := runes[0]
+	shift := ek.Modifiers()&tcell.ModShift != 0
+	if unicode.IsUpper(r) {
+		r = unicode.ToLower(r)
+		shift = true
+	}
+
+	return string(r), shift, true
 }
 
 func (w *Widget) inputChanged() {

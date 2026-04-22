@@ -7,7 +7,8 @@ import (
 	"github.com/abhinav/tmux-fastcopy/internal/log"
 	"github.com/abhinav/tmux-fastcopy/internal/tmux"
 	"github.com/abhinav/tmux-fastcopy/internal/ui"
-	tcell "github.com/gdamore/tcell/v2"
+	tcell "github.com/gdamore/tcell/v3"
+	tcolor "github.com/gdamore/tcell/v3/color"
 )
 
 // app implements the main fastcopy application logic. It assumes that it's
@@ -167,8 +168,8 @@ type ctrl struct {
 
 func (c *ctrl) Init() {
 	base := tcell.StyleDefault.
-		Background(tcell.ColorBlack).
-		Foreground(tcell.ColorWhite)
+		Background(tcolor.Black).
+		Foreground(tcolor.White)
 
 	c.w = (&fastcopy.WidgetConfig{
 		Text:         c.Text,
@@ -177,12 +178,12 @@ func (c *ctrl) Init() {
 		HintAlphabet: c.Alphabet,
 		Style: fastcopy.Style{
 			Normal:         base,
-			Match:          base.Foreground(tcell.ColorGreen),
-			SkippedMatch:   base.Foreground(tcell.ColorGray),
-			HintLabel:      base.Foreground(tcell.ColorRed),
-			HintLabelInput: base.Foreground(tcell.ColorYellow),
-			SelectedMatch:  base.Foreground(tcell.ColorYellow),
-			DeselectLabel:  base.Foreground(tcell.ColorDarkRed),
+			Match:          base.Foreground(tcolor.Green),
+			SkippedMatch:   base.Foreground(tcolor.Gray),
+			HintLabel:      base.Foreground(tcolor.Red),
+			HintLabelInput: base.Foreground(tcolor.Yellow),
+			SelectedMatch:  base.Foreground(tcolor.Yellow),
+			DeselectLabel:  base.Foreground(tcell.GetColor("darkred")),
 		},
 	}).Build()
 
