@@ -4,13 +4,11 @@ on:
   push:
     branches: [main]
 
-  # Change the event to pull_request_target
-  # so that it runs in the context of the base repository.
-  pull_request_target:
+  pull_request:
 
 jobs:
   stitchmd:
-    name: ${{ github.event_name == 'pull_request_target' && 'Update' || 'Check' }}
+    name: ${{ github.event_name == 'pull_request' && 'Update' || 'Check' }}
     runs-on: ubuntu-latest
 
     permissions:
@@ -18,19 +16,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v6
-      with:
-        repository: ${{ github.event.pull_request.head.repo.full_name }}
-        ref: ${{ github.head_ref }}
-
     - name: Check or update README
       uses: abhinav/stitchmd-action@v2
       with:
-        mode: ${{ github.event_name == 'pull_request_target' && 'write' || 'check' }}
+        mode: ${{ github.event_name == 'pull_request' && 'write' || 'check' }}
         summary: doc/README.md
         output: README.md
 
     - uses: stefanzweifel/git-auto-commit-action@v7
-      if: ${{ github.event_name == 'pull_request_target' }}
+      if: ${{ github.event_name == 'pull_request' }}
       with:
         file_pattern: README.md
         commit_message: 'Update README.md'
