@@ -12,7 +12,7 @@ require (
 	go.abhg.dev/io/ioutil v0.1.0
 	go.uber.org/mock v0.6.0
 	go.uber.org/multierr v1.11.0
-	pgregory.net/rapid v1.2.0
+	pgregory.net/rapid v1.3.0
 )
 
 require (
