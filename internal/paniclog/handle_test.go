@@ -14,7 +14,7 @@ func TestHandle(t *testing.T) {
 
 	tests := []struct {
 		desc string
-		give interface{}
+		give any
 
 		wantMsg string // contains check
 		wantErr string // equals check
@@ -41,7 +41,6 @@ func TestHandle(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.desc, func(t *testing.T) {
 			t.Parallel()
 

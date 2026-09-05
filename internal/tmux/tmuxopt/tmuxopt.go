@@ -93,12 +93,12 @@ func (l *Loader) Load(req tmux.ShowOptionsRequest) (err error) {
 	for scan.Scan() {
 		line := scan.Bytes()
 
-		idx := bytes.IndexByte(line, ' ')
-		if idx < 0 {
+		before, after, ok := bytes.Cut(line, []byte{' '})
+		if !ok {
 			continue
 		}
 
-		name, value := string(line[:idx]), line[idx+1:]
+		name, value := string(before), after
 
 		var serr error
 		if r := l.lookupValue(name); r != nil {
@@ -123,8 +123,8 @@ func (l *Loader) lookupValue(name string) Value {
 
 func (l *Loader) lookupMapValue(name string) (key string, v MapValue) {
 	for prefix, val := range l.maps {
-		if strings.HasPrefix(name, prefix) {
-			return strings.TrimPrefix(name, prefix), val
+		if after, ok := strings.CutPrefix(name, prefix); ok {
+			return after, val
 		}
 	}
 	return name, nil

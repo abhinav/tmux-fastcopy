@@ -72,22 +72,22 @@ func (l *Logger) WithLevel(lvl Level) *Logger {
 func (l *Logger) Level() Level { return l.lvl }
 
 // Debugf logs messages at the debug level.
-func (l *Logger) Debugf(msg string, args ...interface{}) {
+func (l *Logger) Debugf(msg string, args ...any) {
 	l.Log(Debug, msg, args...)
 }
 
 // Infof logs messages at the info level.
-func (l *Logger) Infof(msg string, args ...interface{}) {
+func (l *Logger) Infof(msg string, args ...any) {
 	l.Log(Info, msg, args...)
 }
 
 // Errorf logs messages at the error level.
-func (l *Logger) Errorf(msg string, args ...interface{}) {
+func (l *Logger) Errorf(msg string, args ...any) {
 	l.Log(Error, msg, args...)
 }
 
 // Log logs messages at the provided level.
-func (l *Logger) Log(level Level, msg string, args ...interface{}) {
+func (l *Logger) Log(level Level, msg string, args ...any) {
 	if level < l.lvl {
 		return
 	}

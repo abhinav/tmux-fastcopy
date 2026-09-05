@@ -19,7 +19,7 @@ type app struct {
 	Tmux      tmux.Driver
 	NewAction func(newActionRequest) (action, error)
 
-	NewScreen func() (tcell.Screen, error) // == tcell.NewScreen
+	NewScreen func(...tcell.TerminfoScreenOption) (tcell.Screen, error) // == tcell.NewScreen
 }
 
 // Run runs the application with the provided configuration.
