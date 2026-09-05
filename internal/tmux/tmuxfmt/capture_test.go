@@ -12,28 +12,28 @@ func TestCapturer(t *testing.T) {
 
 	tests := []struct {
 		desc    string
-		give    []byte        // output from tmux
-		exprs   []Expr        // expressions to prepare
-		want    []interface{} // expected values in-order
-		wantErr string        // error (if set, want is used only to get types)
+		give    []byte // output from tmux
+		exprs   []Expr // expressions to prepare
+		want    []any  // expected values in-order
+		wantErr string // error (if set, want is used only to get types)
 	}{
 		{
 			desc:  "string",
 			exprs: []Expr{Var("pane_id")},
 			give:  []byte("%42\n"),
-			want:  []interface{}{"%42"},
+			want:  []any{"%42"},
 		},
 		{
 			desc:  "int",
 			exprs: []Expr{Var("height")},
 			give:  []byte("42"),
-			want:  []interface{}{42},
+			want:  []any{42},
 		},
 		{
 			desc:  "bool",
 			exprs: []Expr{Var("window_zoomed")},
 			give:  []byte("1\n"),
-			want:  []interface{}{true},
+			want:  []any{true},
 		},
 		{
 			desc: "multiple",
@@ -43,7 +43,7 @@ func TestCapturer(t *testing.T) {
 				Var("window_zoomed"),
 			},
 			give: []byte("%42	100	true\n"),
-			want: []interface{}{"%42", 100, true},
+			want: []any{"%42", 100, true},
 		},
 		{
 			desc: "empty",
@@ -52,25 +52,24 @@ func TestCapturer(t *testing.T) {
 				Var("pane_state"),
 			},
 			give: []byte("0	\n"),
-			want: []interface{}{false, ""},
+			want: []any{false, ""},
 		},
 		{
 			desc:    "int/error",
 			exprs:   []Expr{Var("height")},
 			give:    []byte("four\n"),
-			want:    []interface{}{0},
+			want:    []any{0},
 			wantErr: `capture "#{height}": .*invalid syntax`,
 		},
 		{
 			desc:  "too many results",
 			exprs: []Expr{Var("pane_width")},
 			give:  []byte("80	40	10\n"),
-			want:  []interface{}{80},
+			want:  []any{80},
 		},
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.desc, func(t *testing.T) {
 			t.Parallel()
 
@@ -79,8 +78,8 @@ func TestCapturer(t *testing.T) {
 				"number of expected values "+
 				"if an error is not expectedd")
 
-			got := make([]interface{}, len(tt.exprs))  // list of pointers
-			want := make([]interface{}, len(tt.exprs)) // list of pointers
+			got := make([]any, len(tt.exprs))  // list of pointers
+			want := make([]any, len(tt.exprs)) // list of pointers
 
 			var c Capturer
 			for i, expr := range tt.exprs {

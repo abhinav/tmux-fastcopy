@@ -81,7 +81,7 @@ func TestTee(t *testing.T) {
 	t.Run("write delayed", func(t *testing.T) {
 		defer buff.Reset()
 
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			clock.Add(_defaultDelay * 10)
 			assert.Empty(t, buff.String())
 		}

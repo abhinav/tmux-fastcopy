@@ -11,7 +11,7 @@ func TestBuilder(t *testing.T) {
 
 	type put struct {
 		key   string
-		value interface{}
+		value any
 	}
 
 	tests := []struct {
@@ -44,7 +44,6 @@ func TestBuilder(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.desc, func(t *testing.T) {
 			t.Parallel()
 

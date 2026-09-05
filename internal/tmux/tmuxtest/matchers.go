@@ -20,7 +20,7 @@ func (m DisplayMessageRequestMatcher) String() string {
 }
 
 // Matches reports whether the provided DisplayMessageRequest matches.
-func (m DisplayMessageRequestMatcher) Matches(x interface{}) bool {
+func (m DisplayMessageRequestMatcher) Matches(x any) bool {
 	req, ok := x.(tmux.DisplayMessageRequest)
 	if !ok {
 		return false

@@ -57,12 +57,12 @@ func (m regexes) String() string {
 }
 
 func (m *regexes) Set(v string) error {
-	idx := strings.IndexByte(v, ':')
-	if idx < 0 {
+	before, after, ok := strings.Cut(v, ":")
+	if !ok {
 		return errors.New("regex flags must be in the form NAME:REGEX")
 	}
 
-	return m.Put(v[:idx], v[idx+1:])
+	return m.Put(before, after)
 }
 
 func (m *regexes) FillFrom(o regexes) {

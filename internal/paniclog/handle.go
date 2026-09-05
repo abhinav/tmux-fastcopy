@@ -11,7 +11,7 @@ import (
 
 // Handle handles a panic value, logging it to the given io.Writer. Returns the
 // error version of the panic, if any.
-func Handle(pval interface{}, w io.Writer) error {
+func Handle(pval any, w io.Writer) error {
 	if pval == nil {
 		return nil
 	}

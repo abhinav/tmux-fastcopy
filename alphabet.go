@@ -4,7 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"sort"
+	"slices"
 )
 
 const _defaultAlphabet alphabet = "abcdefghijklmnopqrstuvwxyz"
@@ -44,9 +44,7 @@ func (al alphabet) Validate() error {
 	for r := range dupes {
 		dlist = append(dlist, r)
 	}
-	sort.Slice(dlist, func(i, j int) bool {
-		return dlist[i] < dlist[j]
-	})
+	slices.Sort(dlist)
 
 	return fmt.Errorf("alphabet has duplicates: %q", dlist)
 }

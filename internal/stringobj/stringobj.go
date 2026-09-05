@@ -17,7 +17,7 @@ type Builder struct {
 
 // Put adds the given attribute-value pair to the builder, skipping it if the
 // value is a zero value.
-func (b *Builder) Put(name string, value interface{}) {
+func (b *Builder) Put(name string, value any) {
 	// This whole module is icky; we can do something like
 	// zap.ObjectEncoders later.
 	if value == nil {
