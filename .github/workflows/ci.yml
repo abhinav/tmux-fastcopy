@@ -13,7 +13,7 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       name: Check out repository
     - name: Set up mise
       uses: jdx/mise-action@v4
@@ -28,7 +28,7 @@ jobs:
     name: Unit Test
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       name: Check out repository
     - name: Set up mise
       uses: jdx/mise-action@v4
@@ -41,7 +41,7 @@ jobs:
     - name: Test
       run: mise run cover:unit
     - name: Coverage
-      uses: codecov/codecov-action@v6
+      uses: codecov/codecov-action@v7
       with:
         files: ./cover.out
 
@@ -63,7 +63,7 @@ jobs:
           - "2.7"
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
       name: Check out repository
     - name: Set up mise
       uses: jdx/mise-action@v4
@@ -73,13 +73,13 @@ jobs:
         cache_key_prefix: mise-v0-stable
 
     - name: Checkout Tmux
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         repository: tmux/tmux
         ref: ${{ matrix.tmux-version }}
         path: src/tmux
     - name: Load cached Tmux
-      uses: actions/cache@v5
+      uses: actions/cache@v6
       with:
         path: ~/.local
         key: ${{ runner.os }}-tmux-${{ matrix.tmux-version }}
@@ -105,6 +105,6 @@ jobs:
       run: mise run cover:integration
 
     - name: Upload coverage
-      uses: codecov/codecov-action@v6
+      uses: codecov/codecov-action@v7
       with:
         files: ./cover.integration.out

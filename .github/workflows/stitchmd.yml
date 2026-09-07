@@ -15,7 +15,7 @@ jobs:
       contents: write
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7
     - name: Check or update README
       uses: abhinav/stitchmd-action@v2
       with:
