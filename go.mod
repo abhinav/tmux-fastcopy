@@ -4,8 +4,8 @@ go 1.27.0
 
 require (
 	github.com/benbjohnson/clock v1.3.5
-	github.com/gdamore/tcell/v3 v3.4.2
-	github.com/mattn/go-shellwords v1.0.14
+	github.com/gdamore/tcell/v3 v3.5.0
+	github.com/mattn/go-shellwords v1.0.15
 	github.com/rivo/uniseg v0.4.7
 	github.com/stretchr/testify v1.12.1
 	go.abhg.dev/algorithm/huffman v0.2.0
